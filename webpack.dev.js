@@ -3,9 +3,10 @@ const common = require('./webpack.common.js');
 
 module.exports = merge(common, {
   mode: 'development',
-  devtool: "eval-source-map",
+  devtool: "source-map",
   devServer: {
 		hot: false,
-		host: "0.0.0.0"
+		host: "0.0.0.0",
+        allowedHosts: "all",
   },
 });

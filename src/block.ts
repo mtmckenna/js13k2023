@@ -54,31 +54,23 @@ export default class Block implements IGameObject {
     }
 }
 
-export function drawPixels(ctx: CanvasRenderingContext2D, offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelsAsStrings: string[], characterColorMap: {[key: string]: string}, pixelSize: number, scale: number = 1, centerX: number, centerY: number, angle: number) {
-    const unscaledPixelSize = pixelSize;
-    pixelSize *= scale;
-    const halfWidth = (pixelsAsStrings[0].length * unscaledPixelSize) / 2;
-    const halfHeight = (pixelsAsStrings.length * unscaledPixelSize) / 2;
-    const width = pixelsAsStrings[0].length * unscaledPixelSize;
-    const height = pixelsAsStrings.length * unscaledPixelSize;
-
-    // Create an off-screen canvas
-    // const offscreenCanvas = document.createElement('canvas');
-    // offscreenCanvas.width = width;
-    // offscreenCanvas.height = height;
-    // const offscreenCtx = offscreenCanvas.getContext('2d');
+export function drawPixels(ctx: CanvasRenderingContext2D, offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, scale: number = 1, centerX: number, centerY: number, angle: number) {
+    const halfWidth = (pixelValues[0].length * pixelSize) / 2;
+    const halfHeight = (pixelValues.length * pixelSize) / 2;
+    const width = pixelValues[0].length * pixelSize;
+    const height = pixelValues.length * pixelSize;
     offscreenCtx.imageSmoothingEnabled = false;  // Ensure no smoothing
 
     // Draw the pixel data onto the off-screen canvas without any scaling
-    for (let y = 0; y < pixelsAsStrings.length; y++) {
-        const row = pixelsAsStrings[y];
+    for (let y = 0; y < pixelValues.length; y++) {
+        const row = pixelValues[y];
         for (let x = 0; x < row.length; x++) {
             const pixel = row[x];
-            if (pixel === " ") continue;
+            if (pixel === null) continue;
             const color = characterColorMap[pixel];
             if (color) {
                 offscreenCtx.fillStyle = color;
-                offscreenCtx.fillRect(x * unscaledPixelSize, y * unscaledPixelSize, unscaledPixelSize, unscaledPixelSize);
+                offscreenCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
             }
         }
     }

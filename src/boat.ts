@@ -7,30 +7,26 @@ const TURNING_SPEED_THRESHOLD = 0.1;
 const VEL_BOOST_ROAD = .25;
 const MAX_CELLS = 100;
 
-const PIXELS: string[] = [
-    "   BB   ",
-    "  BBBB  ",
-    " BBTTBB ",
-    " BTTTTB ",
-    " BTTTTB ",
-    "BBTTTTBB",
-    "BTTWWTTB",
-    "BTTTTTTB",
-    "BTTTTTTB",
-    "BTWWWWTB",
-    "BTTTTTTB",
-    "BTTTTTTB",
-    "BTTTTTTB",
-    "BTTWWTTB",
-    " BTTTTB ",
-    " BBBBBB ",
+const PIXELS = [
+    [0, 0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 2, 2, 1, 1, 0],
+    [0, 1, 2, 2, 2, 2, 1, 0],
+    [0, 1, 2, 2, 2, 2, 1, 0],
+    [1, 1, 2, 2, 2, 2, 1, 0],
+    [1, 2, 2, 3, 3, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 3, 3, 3, 3, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 3, 3, 2, 2, 1],
+    [0, 1, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
 ];
 
-const PIXELS_COLOR_MAP: {[key: string]: string} = {
-    "B": "#663931",
-    "T": "#8f563b",
-    "W": "#fff"
-}
+const PIXELS_COLOR_MAP = [null, "#663931", "#8f563b", "#fff"];
 
 const boatCanvas = document.createElement("canvas");
 const boatCtx = boatCanvas.getContext("2d");
