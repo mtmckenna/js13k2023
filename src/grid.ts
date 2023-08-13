@@ -109,8 +109,6 @@ export default class Grid {
         //     ctx.closePath();
         // }
 
-        drawCenterEdgesFromRegions(this.edges, ctx, scale);
-
         if (DEBUG) {
             ctx.globalAlpha = 1;
         }
@@ -286,21 +284,6 @@ export default class Grid {
             rotatedY <= halfHeight
         );
     }
-}
-
-function drawCenterEdgesFromRegions(edges: IEdge[], ctx: CanvasRenderingContext2D, scale: number) {
-
-    for (const edge of edges) {
-        ctx.strokeStyle = "yellow";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([10*scale, 20*scale]);
-        ctx.beginPath();
-        ctx.moveTo(edge.v0.x*scale, edge.v0.y*scale);
-        ctx.lineTo(edge.v1.x*scale, edge.v1.y*scale);
-        ctx.stroke();
-    };
-
-    ctx.setLineDash([]);
 }
 
 

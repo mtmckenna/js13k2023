@@ -13,8 +13,7 @@ export default class Road extends Block {
     center: IPoint;
     constructor(edge: IEdge, boundingBox: IPoint) {
         super();
-        // this.originalRoadColor = "#" + Math.floor(Math.random()*16777215).toString(16);
-        this.originalRoadColor = "#474747";
+        this.originalRoadColor = "#3469bf";
         this.color = this.originalRoadColor;
         this.edge = edge;
         this.size = {x: ROAD_WIDTH, y: 0};

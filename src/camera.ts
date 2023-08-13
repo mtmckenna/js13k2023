@@ -1,6 +1,7 @@
 import {IPoint} from "./interfaces";
 import Vehicle from "./vehicle";
 import {easeInQuad} from "./math";
+import Boat from "./boat";
 
 let lastTime = Date.now();
 
@@ -29,7 +30,7 @@ export default class Camera {
     }
 
 
-    centerOn(target: Vehicle, deltaTime: number) {
+    centerOn(target: Boat, deltaTime: number) {
         const sign = target.speed > 1 ? -1 : 1;
         this.currentZoom = this.clamp(this.currentZoom + sign * .01, this.minZoom, this.maxZoom);
 

@@ -29,6 +29,8 @@ import { FpsDisplay, DEBUG } from "./debug";
 import {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
 import {PointPool} from "./pools";
+import Boat from "./boat";
+import {updatePos} from "./block";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -191,7 +193,7 @@ for (let i = 0; i < subdividedRegions.length; i++) {
 const regionVertices = regions.map(r => r.vertices);
 const smallRegions = regions.map(r => shrinkPolygon(edgesFromPolygon(r), 10, true, grid.gameSize)).map(b => polygonFromEdges(b));
 
-const player = new Vehicle(grid, playerInputState);
+const player = new Boat(grid, playerInputState);
 grid.setRoads(roads);
 grid.setSubregionPolygons(subdividedRegions);
 grid.setBuildings(buildings);
@@ -200,7 +202,7 @@ grid.setRegions(smallRegions);
 // set player onto a random road
 const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoadPoint = randomRoad.center;
-player.updatePos(randomRoadPoint.x, randomRoadPoint.y);
+updatePos(randomRoadPoint.x, randomRoadPoint.y, player);
 player.angle = randomRoad.angle + Math.PI /2;
 
 for (let i = 0; i < NUM_ENEMIES; i++) {

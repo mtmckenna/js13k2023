@@ -1,4 +1,4 @@
-import {IGridCell, IPoint, IPoolPoint} from "./interfaces";
+import {IGameObject, IGridCell, IPoint, IPoolPoint} from "./interfaces";
 import Block from "./block";
 import Grid from "./grid";
 import {clamp, distanceBetweenPoints, squaredDistance} from "./math";
@@ -21,7 +21,7 @@ export default class Enemy extends Block {
     size: IPoint = {x: 16, y: 16};
     index: number = 0;
     grid: Grid | null;
-    player: Block | null;
+    player: IGameObject | null;
     neighborGridCells: IGridCell[];
     neighborEnemies: Enemy[] = [];
     numEnemies: number = 0;
@@ -35,7 +35,7 @@ export default class Enemy extends Block {
     time: number = 0;
     sign: number = 1;
 
-    constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: Block = null) {
+    constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IGameObject = null) {
         super();
         this.updatePos(pos.x, pos.y);
         this.color = "blue"
