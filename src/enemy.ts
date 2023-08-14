@@ -37,6 +37,10 @@ const characterHeight = PIXELS.length * PIXEL_SIZE + FRINGE_AMPLITUDE*2;
 offscreenCanvas.width = characterWidth;
 offscreenCanvas.height = characterHeight;
 
+const spriteSheetCanvas = document.createElement("canvas");
+const NUM_FRAMES = 120;
+createSpriteSheet({x: characterWidth, y: characterHeight})
+
 export default class Enemy implements IPositionable {
     size: IPoint = {x: 8 * PIXEL_SIZE, y: 8 * PIXEL_SIZE};
     index: number = 0;
@@ -59,6 +63,9 @@ export default class Enemy implements IPositionable {
     occupiedCells: IGridCell[] = new Array(2000).fill(null);
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
+    forwardDirection: boolean = true;
+    frameCounter: number = 0;
+
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         updatePos(pos.x, pos.y, this);
@@ -74,41 +81,46 @@ export default class Enemy implements IPositionable {
         drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
     }
 
+    // draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
+    //     const frame = Math.floor((t / (1000/60)) % NUM_FRAMES);
+    //
+    //     ctx.save();
+    //     ctx.translate(this.center.x * scale, this.center.y * scale);
+    //     ctx.rotate(this.angle);
+    //     ctx.imageSmoothingEnabled = false;
+    //
+    //     const sx = frame * this.size.x; // source x on sprite sheet
+    //     ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
+    //
+    //     ctx.restore();
+    // }
+
+
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
-        drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
-
-        // draw fringe
-        const yBase = 7 * PIXEL_SIZE;  // This is the base y position for the 8th row
-        const numWaves = 7;
-        const frequency = (2 * Math.PI) / (this.size.x / numWaves);  // Adjust frequency
-        for (let x = 0; x < this.size.x; x += PIXEL_SIZE) {
-            const yOffset = FRINGE_AMPLITUDE * Math.sin(frequency * (x/PIXEL_SIZE) + (t / 100));  // Negate the result
-            const h = FRINGE_AMPLITUDE+yOffset;
-            offscreenCtx.fillStyle = PIXELS_COLOR_MAP[1];  // Ghost color
-            offscreenCtx.fillRect(x, yBase, PIXEL_SIZE, h);  // Fill rectangle with ghost color and adjusted position
-        }
-
+        let frame = Math.floor((t / (1000/60)) % NUM_FRAMES);
 
         ctx.save();
         ctx.translate(this.center.x * scale, this.center.y * scale);
         ctx.rotate(this.angle);
-        ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
-        ctx.drawImage(offscreenCanvas, 0, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, (this.size.y+FRINGE_AMPLITUDE) * scale);
+        ctx.imageSmoothingEnabled = false;
+
+        const sx = this.frameCounter * this.size.x; // source x on sprite sheet
+        ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
+
         ctx.restore();
 
-
-        // draw mouth
-        ctx.save();
-        const mouthSize = PIXEL_SIZE * 2 * (1 - Math.abs((t % 2000) - 1000) / 1000);
-
-        const mouthX = PIXEL_SIZE * 4 + Math.sin(t / 50);
-        const mouthY = PIXEL_SIZE * 5 + Math.cos(t / 50);
-        ctx.translate(this.pos.x * scale, this.pos.y * scale);
-        ctx.fillStyle = "#000";
-        ctx.fillRect((mouthX - mouthSize/2) * scale, (mouthY - mouthSize/2) * scale, mouthSize * scale, mouthSize * scale);
-        ctx.restore();
+        if(this.forwardDirection) {
+            this.frameCounter++;
+            if(this.frameCounter >= NUM_FRAMES - 1) {
+                this.forwardDirection = false;
+            }
+        } else {
+            this.frameCounter--;
+            if(this.frameCounter <= 0) {
+                this.forwardDirection = true;
+            }
+        }
     }
-
     update(t: number) {
         if (!this.grid) return;
         this.time += t;
@@ -235,4 +247,38 @@ function calculateFlockingForces(enemy: Enemy, enemies: Enemy[], alignment: IPoi
         cohesion.x -= enemy.pos.x;
         cohesion.y -= enemy.pos.y;
     }
+}
+
+function createSpriteSheet(size: IPoint) {
+    spriteSheetCanvas.width = size.x * NUM_FRAMES;
+    spriteSheetCanvas.height = size.y + FRINGE_AMPLITUDE;
+    const spriteSheetCtx = spriteSheetCanvas.getContext('2d');
+
+    for (let frame = 0; frame < NUM_FRAMES; frame++) {
+        const t = frame / 60 * 1000; // convert frame number to time (assuming 60fps)
+
+        // Render the ghost's body
+        const xOffset = frame * size.x;
+        drawPixels(spriteSheetCanvas, spriteSheetCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE, xOffset);
+
+        // Render the ghost's fringe
+        const yBase = 7 * PIXEL_SIZE;
+        const numWaves = 7;
+        const frequency = (2 * Math.PI) / (size.x / numWaves);
+        for (let x = 0; x < size.x; x += PIXEL_SIZE) {
+            const yOffset = FRINGE_AMPLITUDE * Math.sin(frequency * (x/PIXEL_SIZE) + (t / 100));
+            const h = FRINGE_AMPLITUDE + yOffset;
+            spriteSheetCtx.fillStyle = PIXELS_COLOR_MAP[1];
+            spriteSheetCtx.fillRect(frame * size.x + x, yBase, PIXEL_SIZE, h);
+        }
+
+        // Render the ghost's mouth
+        const mouthSize = PIXEL_SIZE * 2 * (1 - Math.abs((t % 2000) - 1000) / 1000);
+        const mouthX = PIXEL_SIZE * 4 + Math.sin(t / 50);
+        const mouthY = PIXEL_SIZE * 5 + Math.cos(t / 50);
+        spriteSheetCtx.fillStyle = "#000";
+        spriteSheetCtx.fillRect(frame * size.x + (mouthX - mouthSize/2), (mouthY - mouthSize/2), mouthSize, mouthSize);
+    }
+
+    return spriteSheetCanvas;
 }

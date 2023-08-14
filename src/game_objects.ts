@@ -1,10 +1,10 @@
 import {IPositionable} from "./interfaces";
 
 export const PIXEL_SIZE = 5;
-export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number,) {
+export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, xOffset: number = 0, yOffset: number = 0) {
     offscreenCtx.imageSmoothingEnabled = false;  // Ensure no smoothing
     //clear the canvas
-    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+    // offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
     // Draw the pixel data onto the off-screen canvas without any scaling
     for (let y = 0; y < pixelValues.length; y++) {
@@ -15,7 +15,7 @@ export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: Can
             const color = characterColorMap[pixel];
             if (color) {
                 offscreenCtx.fillStyle = color;
-                offscreenCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                offscreenCtx.fillRect(x * pixelSize + xOffset, y * pixelSize, pixelSize, pixelSize);
             }
         }
     }
