@@ -83,7 +83,7 @@ export default class Boat implements IPositionable, ICircle {
         let magnitude = Math.hypot(this.inputState.pos.x, this.inputState.pos.y);
 
         if (magnitude > 0) {
-            this.angle = Math.atan2(-this.inputState.pos.y, this.inputState.pos.x);
+            this.angle = Math.atan2(-this.inputState.pos.y, this.inputState.pos.x) + Math.PI/2;
         }
     }
 

@@ -43,7 +43,7 @@ const GRID_SCALE = 1/2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 30;
+const NUM_ENEMIES = 100;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -224,7 +224,7 @@ function tick(t: number) {
         accumulator -= FIXED_TIMESTEP;
         if (DEBUG) fpsDisplay.update(t);
     }
-    draw()
+    draw(t)
 
     requestAnimationFrame(tick);
 }
@@ -276,7 +276,7 @@ function update(t: number) {
 
 }
 
-function draw() {
+function draw(t: number) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = false;
     groundCtx.clearRect(0, 0, groundCanvas.width, groundCanvas.height);
@@ -319,7 +319,7 @@ function draw() {
     ctx.drawImage(groundCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
     ctx.drawImage(buildingsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
 
-    for (const enemy of enemies) { enemy.draw(airCtx, GRID_SCALE); }
+    for (const enemy of enemies) { enemy.draw(airCtx, GRID_SCALE, t); }
 
     if (deliveryIndices.length > 0) {
         drawArrowToBuilding(airCtx, player.center, buildings[deliveryIndices[0]]);

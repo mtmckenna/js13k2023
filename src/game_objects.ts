@@ -3,6 +3,8 @@ import {IPositionable} from "./interfaces";
 export const PIXEL_SIZE = 5;
 export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number,) {
     offscreenCtx.imageSmoothingEnabled = false;  // Ensure no smoothing
+    //clear the canvas
+    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
     // Draw the pixel data onto the off-screen canvas without any scaling
     for (let y = 0; y < pixelValues.length; y++) {

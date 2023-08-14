@@ -2,7 +2,7 @@ import {IGridCell, IPoint, IPoolPoint, IPositionable} from "./interfaces";
 import Grid from "./grid";
 import {clamp, squaredDistance} from "./math";
 import {PointPool} from "./pools";
-import {updatePos} from "./game_objects";
+import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
 
 const ENEMY_MOVING_SPEED = .5;
 const ENEMY_SEPARATION_FORCE = 1;
@@ -13,12 +13,32 @@ const COHESION_RADIUS = 100;
 const SEPARATION_RADIUS = 100;
 const MAX_FORCE = ENEMY_MOVING_SPEED;
 const FORCE_UPDATE_TIME = 1;
-const ROTOR_SIZE = 4;
-const BODY_SIZE = 8;
 const MIN_DISTANCE_SQUARED = 100*100;
 const MAX_DISTANCE_SQUARED = 250*250;
+
+const PIXELS = [
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 2, 1, 1, 2, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+];
+
+const PIXELS_COLOR_MAP = [null, "#fff", "#000"];
+
+const FRINGE_AMPLITUDE = PIXEL_SIZE;  // Height of wave
+const offscreenCanvas = document.createElement("canvas");
+const offscreenCtx = offscreenCanvas.getContext("2d");
+const characterWidth = PIXELS[0].length * PIXEL_SIZE
+const characterHeight = PIXELS.length * PIXEL_SIZE + FRINGE_AMPLITUDE*2;
+offscreenCanvas.width = characterWidth;
+offscreenCanvas.height = characterHeight;
+
 export default class Enemy implements IPositionable {
-    size: IPoint = {x: 16, y: 16};
+    size: IPoint = {x: 8 * PIXEL_SIZE, y: 8 * PIXEL_SIZE};
     index: number = 0;
     grid: Grid | null;
     player: IPositionable | null;
@@ -29,9 +49,7 @@ export default class Enemy implements IPositionable {
     cohesion: IPoint = {x: 0, y: 0};
     separation: IPoint = {x: 0, y: 0};
     lastUpdateForceTime: number = 0;
-    rotorAngle: number = 0;
     rotorRandomOffsets: number[] = [];
-    rotorPositions: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     time: number = 0;
     sign: number = 1;
     pos: IPoint = {x: 0, y: 0};
@@ -41,7 +59,6 @@ export default class Enemy implements IPositionable {
     occupiedCells: IGridCell[] = new Array(2000).fill(null);
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
-
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         updatePos(pos.x, pos.y, this);
@@ -54,49 +71,48 @@ export default class Enemy implements IPositionable {
         this.vel.y = Math.cos(rand) * ENEMY_MOVING_SPEED;
         this.rotorRandomOffsets = new Array(4).fill(0).map(() => Math.random() * Math.PI * 2);
         this.sign = Math.random() > .5 ? 1 : -1;
+        drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
     }
 
-    draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
-        // super.draw(ctx, scale);
-        const x = this.pos.x * scale;
-        const y = this.pos.y * scale;
-        const halfRotorSizeScaled = ROTOR_SIZE / 2 * scale;
-        const rotorSizeScaled = ROTOR_SIZE * scale;
-        const bodySizeScaled = BODY_SIZE * scale;
+    draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
+        drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
 
-        ctx.fillStyle = "#313342";
-        ctx.strokeStyle = "#fff";
+        // draw fringe
+        const yBase = 7 * PIXEL_SIZE;  // This is the base y position for the 8th row
+        const numWaves = 7;
+        const frequency = (2 * Math.PI) / (this.size.x / numWaves);  // Adjust frequency
+        for (let x = 0; x < this.size.x; x += PIXEL_SIZE) {
+            const yOffset = FRINGE_AMPLITUDE * Math.sin(frequency * (x/PIXEL_SIZE) + (t / 100));  // Negate the result
+            const h = FRINGE_AMPLITUDE+yOffset;
+            offscreenCtx.fillStyle = PIXELS_COLOR_MAP[1];  // Ghost color
+            offscreenCtx.fillRect(x, yBase, PIXEL_SIZE, h);  // Fill rectangle with ghost color and adjusted position
+        }
+
 
         ctx.save();
-        ctx.translate(x, y);
-        // ctx.fillRect(x,y, 100,100);
-        ctx.fillRect(0, 0, bodySizeScaled, bodySizeScaled);
-        ctx.strokeRect(0, 0, bodySizeScaled, bodySizeScaled);
+        ctx.translate(this.center.x * scale, this.center.y * scale);
+        ctx.rotate(this.angle);
+        ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
+        ctx.drawImage(offscreenCanvas, 0, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, (this.size.y+FRINGE_AMPLITUDE) * scale);
         ctx.restore();
 
-        // Draw each rotor
-        this.rotorAngle += 0.1;
-        // this.rotorAngle = 0;
-        for (let i = 0; i < this.rotorPositions.length; i++) {
-            const pos = this.rotorPositions[i];
-            const x = pos.x * scale;
-            const y = pos.y * scale;
-            ctx.save(); // Save the current context state
-            // ctx.translate(x + halfRotorSizeScaled, y + halfRotorSizeScaled); // Move to the rotor center
-            ctx.translate(x + halfRotorSizeScaled , y + halfRotorSizeScaled ); // Move to the rotor center
-            // ctx.rotate(this.rotorAngle + this.rotorRandomOffsets[i]); // Rotate by the rotor angle
-            ctx.rotate(this.rotorAngle);
-            ctx.fillRect(-halfRotorSizeScaled, -halfRotorSizeScaled, rotorSizeScaled, rotorSizeScaled); // Draw the rotor
-            ctx.strokeRect(-halfRotorSizeScaled, -halfRotorSizeScaled, rotorSizeScaled, rotorSizeScaled); // Draw the rotor outline
-            ctx.restore(); // Restore the context state
-        }
+
+        // draw mouth
+        ctx.save();
+        const mouthSize = PIXEL_SIZE * 2 * (1 - Math.abs((t % 2000) - 1000) / 1000);
+
+        const mouthX = PIXEL_SIZE * 4 + Math.sin(t / 50);
+        const mouthY = PIXEL_SIZE * 5 + Math.cos(t / 50);
+        ctx.translate(this.pos.x * scale, this.pos.y * scale);
+        ctx.fillStyle = "#000";
+        ctx.fillRect((mouthX - mouthSize/2) * scale, (mouthY - mouthSize/2) * scale, mouthSize * scale, mouthSize * scale);
+        ctx.restore();
     }
 
     update(t: number) {
         if (!this.grid) return;
         this.time += t;
         const now = performance.now() / 1000;
-        // console.log(now, FORCE_UPDATE_TIME);
 
         let updateForce = false;
         if (now - this.lastUpdateForceTime > FORCE_UPDATE_TIME) {
@@ -141,56 +157,12 @@ export default class Enemy implements IPositionable {
             updatedVel.y = this.vel.y;
         }
 
-
-
-        // Limit the vel to the max speed
-        // const velMag = Math.sqrt(updatedVel.x * updatedVel.x + updatedVel.y * updatedVel.y);
-        // if (velMag > ENEMY_MAX_SPEED) {
-        //     updatedVel.x = (updatedVel.x / velMag) * ENEMY_MAX_SPEED;
-        //     updatedVel.y = (updatedVel.y / velMag) * ENEMY_MAX_SPEED;
-        // }
-
         this.vel.x = updatedVel.x;
         this.vel.y = updatedVel.y;
 
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.grid.cellSize.x);
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.grid.cellSize.y);
         updatePos(x, y, this);
-
-        // const positions = [
-        //     { x: x - ROTOR_SIZE + 1, y: y - ROTOR_SIZE + 1 },
-        //     { x: x + this.size.x - 1, y: y - ROTOR_SIZE + 1 },
-        //     { x: x - ROTOR_SIZE + 1, y: y + this.size.y -1 },
-        //     { x: x + this.size.x - 1, y: y + this.size.y - 1},
-        // ];
-
-        // this.rotorPositions[0].x = x - ROTOR_SIZE + 1;
-        // this.rotorPositions[0].y = y - ROTOR_SIZE + 1;
-        //
-        // this.rotorPositions[1].x = x + this.size.x - 1;
-        // this.rotorPositions[1].y = y - ROTOR_SIZE + 1;
-        //
-        // this.rotorPositions[2].x = x - ROTOR_SIZE + 1;
-        // this.rotorPositions[2].y = y + this.size.y -1;
-        //
-        // this.rotorPositions[3].x = x + this.size.x - 1;
-        // this.rotorPositions[3].y = y + this.size.y - 1;
-
-        this.rotorPositions[0].x = x - ROTOR_SIZE;
-        this.rotorPositions[0].y = y - ROTOR_SIZE;
-
-        this.rotorPositions[1].x = x + BODY_SIZE;
-        this.rotorPositions[1].y = y - ROTOR_SIZE;
-
-        this.rotorPositions[2].x = x - ROTOR_SIZE;
-        this.rotorPositions[2].y = y + BODY_SIZE;
-
-        this.rotorPositions[3].x = x + BODY_SIZE;
-        this.rotorPositions[3].y = y + BODY_SIZE;
-
-        this.index = this.grid.indexForPos(this.center.x, this.center.y);
-        this.grid.addToEnemyMap(this);
-
         PointPool.release(updatedVel);
 
     }
