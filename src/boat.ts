@@ -1,7 +1,7 @@
-import {ICircle, IGameObject, IGridCell, IPoint, IVehicleInputState} from "./interfaces";
+import {ICircle, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
 import Grid from "./grid";
 import {clamp} from "./math";
-import Block, {drawPixels, PIXEL_SIZE, updatePos} from "./block";
+import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
 
 const TURNING_SPEED_THRESHOLD = 0.1;
 const VEL_BOOST_ROAD = .25;
@@ -34,7 +34,7 @@ const boatWidth = PIXELS[0].length * PIXEL_SIZE
 const boatHeight = PIXELS.length * PIXEL_SIZE
 boatCanvas.width = boatWidth;
 boatCanvas.height = boatHeight;
-export default class Boat implements IGameObject, ICircle {
+export default class Boat implements IPositionable, ICircle {
     inputState: IVehicleInputState;
     grid: Grid;
     turnSpeed: number = .05;

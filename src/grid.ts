@@ -1,4 +1,4 @@
-import {CanvasColor, IEdge, IGameObject, IGridCell, IPoint, IPolygon, IRegion} from "./interfaces";
+import {CanvasColor, IEdge, IGridCell, IPoint, IPolygon, IPositionable} from "./interfaces";
 import Enemy from "./enemy";
 import Road from "./road";
 
@@ -218,7 +218,7 @@ export default class Grid {
         }
     }
 
-    occupiedCells(gameObject: IGameObject, occupiedCells: IGridCell[]): number {
+    occupiedCells(gameObject: IPositionable, occupiedCells: IGridCell[]): number {
         const { center, size, angle } = gameObject;
         const { cellSize, gridSize } = this;
 

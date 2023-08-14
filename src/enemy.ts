@@ -1,8 +1,8 @@
-import {IGameObject, IGridCell, IPoint, IPoolPoint} from "./interfaces";
-import Block from "./block";
+import {IGridCell, IPoint, IPoolPoint, IPositionable} from "./interfaces";
 import Grid from "./grid";
-import {clamp, distanceBetweenPoints, squaredDistance} from "./math";
+import {clamp, squaredDistance} from "./math";
 import {PointPool} from "./pools";
+import {updatePos} from "./game_objects";
 
 const ENEMY_MOVING_SPEED = .5;
 const ENEMY_SEPARATION_FORCE = 1;
@@ -17,11 +17,11 @@ const ROTOR_SIZE = 4;
 const BODY_SIZE = 8;
 const MIN_DISTANCE_SQUARED = 100*100;
 const MAX_DISTANCE_SQUARED = 250*250;
-export default class Enemy extends Block {
+export default class Enemy implements IPositionable {
     size: IPoint = {x: 16, y: 16};
     index: number = 0;
     grid: Grid | null;
-    player: IGameObject | null;
+    player: IPositionable | null;
     neighborGridCells: IGridCell[];
     neighborEnemies: Enemy[] = [];
     numEnemies: number = 0;
@@ -34,11 +34,17 @@ export default class Enemy extends Block {
     rotorPositions: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     time: number = 0;
     sign: number = 1;
+    pos: IPoint = {x: 0, y: 0};
+    center: IPoint = {x: 0, y: 0};
+    vel: IPoint = {x: 0, y: 0};
+    angle: number = 0;
+    occupiedCells: IGridCell[] = new Array(2000).fill(null);
+    numOccupiedCells: number = 0;
+    vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
 
-    constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IGameObject = null) {
-        super();
-        this.updatePos(pos.x, pos.y);
-        this.color = "blue"
+
+    constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
+        updatePos(pos.x, pos.y, this);
         this.grid = grid;
         this.player = player;
         this.neighborEnemies = new Array(25).fill(null);
@@ -149,7 +155,7 @@ export default class Enemy extends Block {
 
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.grid.cellSize.x);
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.grid.cellSize.y);
-        this.updatePos(x, y);
+        updatePos(x, y, this);
 
         // const positions = [
         //     { x: x - ROTOR_SIZE + 1, y: y - ROTOR_SIZE + 1 },

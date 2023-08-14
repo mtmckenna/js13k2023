@@ -1,18 +1,19 @@
-import {IPoint, IEdge, IGameObject, IGridCell} from "./interfaces";
-import Block from "./block";
+import {IPoint, IEdge, IGridCell, IPositionable} from "./interfaces";
+import {updatePos} from "./game_objects";
 
 export const ROAD_WIDTH = 100;
-export default class Road extends Block {
-
+export default class Road implements IPositionable {
     originalRoadColor = "#474747";
     edge: IEdge;
     color: string;
     angle: number;
-    size: IPoint;
-    pos: IPoint;
-    center: IPoint;
+    size: IPoint = {x: ROAD_WIDTH, y: 0};
+    pos: IPoint = {x: 0, y: 0};
+    center: IPoint = {x: 0, y: 0};
+    occupiedCells: IGridCell[] = new Array(2000).fill(null);
+    numOccupiedCells: number = 0;
+    vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     constructor(edge: IEdge, boundingBox: IPoint) {
-        super();
         this.originalRoadColor = "#3469bf";
         this.color = this.originalRoadColor;
         this.edge = edge;
@@ -20,7 +21,7 @@ export default class Road extends Block {
         this.angle = Math.atan2(edge.v1.y - edge.v0.y, edge.v1.x - edge.v0.x) + Math.PI / 2;
         this.extendToMeetBoundingBox(boundingBox);
         const pos = posFromEdge(this.edge);
-        this.updatePos(pos.x, pos.y);
+        updatePos(pos.x, pos.y, this);
     }
 
     // Make sure the road extends past the edge of the bounding box
@@ -49,7 +50,16 @@ export default class Road extends Block {
         this.edge.v1 = v1;
         this.size.y = Math.hypot(v0.x - v1.x, v0.y - v1.y);
         const pos = posFromEdge(this.edge);
-        this.updatePos(pos.x, pos.y);
+        updatePos(pos.x, pos.y, this);
+    }
+
+    draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
+        ctx.save();
+        ctx.translate(this.center.x*scale, this.center.y*scale);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size.x/2*scale, -this.size.y/2*scale, this.size.x*scale, this.size.y*scale);
+        ctx.restore();
     }
 }
 

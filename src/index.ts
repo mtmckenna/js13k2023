@@ -21,7 +21,6 @@ import {
 } from "./level_generation";
 import Grid from "./grid";
 import Enemy from "./enemy";
-import Vehicle from "./vehicle";
 
 // import {EXAMPLE_POINTS} from "./debug";
 
@@ -30,7 +29,7 @@ import {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
 import {PointPool} from "./pools";
 import Boat from "./boat";
-import {updatePos} from "./block";
+import {updatePos} from "./game_objects";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");

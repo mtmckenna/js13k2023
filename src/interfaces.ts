@@ -23,12 +23,6 @@ export interface ICircle {
     radius: number;
 }
 
-export interface IIntersection {
-    point: IPoint;
-    edge1: number;
-    edge2: number;
-}
-
 export interface ITriangle extends IPolygon {
     vertices: IVertices3;
 }
@@ -53,17 +47,16 @@ export interface ITriangleInTriangulation extends ITriangle {
     circumcircle: ICircle;
     neighbors: ITriangleInTriangulation[];
 }
-export interface IGameObject {
+
+export interface IPositionable {
     pos: IPoint;
+    center: IPoint;
     angle: number;
     size: IPoint;
-    color: CanvasColor;
-    center: IPoint;
+    vertices: IPoint[];
     occupiedCells: IGridCell[];
     numOccupiedCells: number;
-    vertices: IPoint[];
 }
-
 
 export interface ICollision {
     depth: number;
@@ -144,11 +137,6 @@ export interface IRegion extends IPolygon {
     insideEdges: IEdge[];
     unclippedEdges: IEdge[];
     polygonEdges: IEdge[];
-}
-
-export interface ILine {
-    p: IPoint; // a point on the line
-    v: IVector; // direction vector of the line
 }
 
 export type IVector = IPoint;

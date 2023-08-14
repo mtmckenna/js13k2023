@@ -1,9 +1,5 @@
 import {IPoint} from "./interfaces";
-import Vehicle from "./vehicle";
-import {easeInQuad} from "./math";
 import Boat from "./boat";
-
-let lastTime = Date.now();
 
 export default class Camera {
     pos: IPoint;  // The position of the camera.
