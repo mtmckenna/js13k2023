@@ -54,11 +54,7 @@ export default class Block implements IGameObject {
     }
 }
 
-export function drawPixels(ctx: CanvasRenderingContext2D, offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, scale: number = 1, centerX: number, centerY: number, angle: number) {
-    const halfWidth = (pixelValues[0].length * pixelSize) / 2;
-    const halfHeight = (pixelValues.length * pixelSize) / 2;
-    const width = pixelValues[0].length * pixelSize;
-    const height = pixelValues.length * pixelSize;
+export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number,) {
     offscreenCtx.imageSmoothingEnabled = false;  // Ensure no smoothing
 
     // Draw the pixel data onto the off-screen canvas without any scaling
@@ -74,14 +70,6 @@ export function drawPixels(ctx: CanvasRenderingContext2D, offscreenCanvas: HTMLC
             }
         }
     }
-
-    ctx.save();
-    ctx.translate(centerX * scale, centerY * scale);
-    ctx.rotate(angle);
-    ctx.translate(-halfWidth * scale, -halfHeight * scale);
-    ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
-    ctx.drawImage(offscreenCanvas, 0, 0, width, height, 0, 0, width * scale, height * scale);
-    ctx.restore();
 }
 
 

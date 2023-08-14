@@ -63,6 +63,7 @@ export default class Boat implements IGameObject, ICircle {
         this.occupiedCells = new Array(MAX_CELLS).fill(null);
 
         updatePos(grid.gameSize.x / 2, grid.gameSize.y / 2, this);
+        drawPixels(boatCanvas, boatCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
     }
 
     get speed(): number {
@@ -127,7 +128,6 @@ export default class Boat implements IGameObject, ICircle {
 
         this.updateVel();
 
-
         // update player pos but mind the edges of the canvas
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.size.x);
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.size.y);
@@ -135,6 +135,11 @@ export default class Boat implements IGameObject, ICircle {
     }
 
     draw(ctx: CanvasRenderingContext2D, scale:number = 1): void {
-        drawPixels(ctx, boatCanvas, boatCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE, scale, this.center.x, this.center.y, this.angle);
+        ctx.save();
+        ctx.translate(this.center.x * scale, this.center.y * scale);
+        ctx.rotate(this.angle);
+        ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
+        ctx.drawImage(boatCanvas, 0, 0, this.size.x, this.size.y, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, this.size.y * scale);
+        ctx.restore();
     }
 }
