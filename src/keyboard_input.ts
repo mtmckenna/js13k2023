@@ -27,7 +27,8 @@ export class KeyboardInput {
         }
 
         this.normalizedPos.x = this.keyboardInputState.right - this.keyboardInputState.left;
-        this.normalizedPos.y =  this.keyboardInputState.up - this.keyboardInputState.down;
+        // this.normalizedPos.y =  this.keyboardInputState.up - this.keyboardInputState.down;
+        this.normalizedPos.y =  this.keyboardInputState.up;
 
         this.callback();
     }
