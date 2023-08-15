@@ -3,6 +3,7 @@ import Enemy from "./enemy";
 import Road from "./road";
 
 import { DEBUG } from "./debug";
+import {getCos, getSin} from "./math";
 
 const GRID_CELL_SIZE = 10;
 const GRID_SIZE_X = 250;
@@ -270,7 +271,9 @@ export default class Grid {
         // const cosAngle = Math.cos(angle);
         // const sinAngle = Math.sin(angle);
 
-        const { cos: cosAngle, sin: sinAngle } = getTrigValues(Math.round(angle));
+        // const { cos: cosAngle, sin: sinAngle } = getTrigValues(angle);
+        const cosAngle = getCos(angle);
+        const sinAngle = getSin(angle);
 
         // Apply the inverse rotation to the transformed point
         const rotatedX = transformedX * cosAngle + transformedY * sinAngle;
@@ -284,17 +287,4 @@ export default class Grid {
             rotatedY <= halfHeight
         );
     }
-}
-
-
-const trigCache = {};
-
-function getTrigValues(angle) {
-    if (!trigCache[angle]) {
-        trigCache[angle] = {
-            cos: Math.cos(angle),
-            sin: Math.sin(angle)
-        };
-    }
-    return trigCache[angle];
 }

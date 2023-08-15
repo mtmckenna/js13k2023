@@ -69,8 +69,8 @@ export function distanceBetweenPoints(p1: IPoint, p2: IPoint): number {
 }
 
 export function rotatePoint(p: IPoint, angle: number, center: IPoint = {x: 0, y: 0}): IPoint {
-    const s = Math.sin(angle);
-    const c = Math.cos(angle);
+    const s = getSin(angle);
+    const c = getCos(angle);
 
     const dx = p.x - center.x;
     const dy = p.y - center.y;
@@ -237,3 +237,51 @@ export function randomIndex(array: any[]): number {
 export function edgesAreEqual(e1: IEdge, e2: IEdge, slop: number = 0): boolean {
     return (pointsAreEqual(e1.v0, e2.v0, slop) && pointsAreEqual(e1.v1, e2.v1, slop)) || (pointsAreEqual(e1.v0, e2.v1, slop) && pointsAreEqual(e1.v1, e2.v0, slop));
 }
+
+const trigCache = {};
+
+
+
+// building up trig cache
+for (let i = 0; i < 2*Math.PI; i+=.001) {
+   getSin(i);
+   getCos(i);
+}
+
+function normalizeAngle(angle: number): number {
+    return (angle + 2*Math.PI) % (2*Math.PI);
+}
+export function getCos(angle: number): number {
+    angle = normalizeAngle(angle)
+    const lookup = Math.floor(angle * 100);
+    setTrigCache(lookup);
+    return trigCache[lookup].cos;
+}
+
+function setTrigCache(lookup: number): void {
+    if (!trigCache[lookup]) {
+        const angle = lookup / 100;
+        trigCache[lookup] = {
+            cos: Math.cos(angle),
+            sin: Math.sin(angle)
+        };
+    }
+}
+
+export function getSin(angle: number): number {
+    angle = normalizeAngle(angle)
+    const lookup = Math.floor(angle * 100);
+    setTrigCache(lookup);
+    return trigCache[lookup].sin;
+}
+
+// export function getTrigValues(angle: number): number {
+//     angle = Math.round(angle * 100) / 100;
+//     if (!trigCache[angle]) {
+//         trigCache[angle] = {
+//             cos: Math.cos(angle),
+//             sin: Math.sin(angle)
+//         };
+//     }
+//     return trigCache[angle];
+// }

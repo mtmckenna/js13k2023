@@ -2,7 +2,7 @@ import {Joystick } from "./joystick";
 import { KeyboardInput} from "./keyboard_input";
 import {
     calculateAngle,
-    distanceBetweenPoints, midpointOfEdge, normalFromVector,
+    distanceBetweenPoints, getCos, getSin, midpointOfEdge, normalFromVector,
     normalizeVector, perpendicularDistanceFromPointToEdge,
     randomFloat, randomIndex,
     vectorFromEdge
@@ -341,8 +341,11 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
     const TRIANGLE_SIZE = 10;
     const RADIUS_AROUND_PLAYER = player.radius + TRIANGLE_SIZE * 2.5;
 
-    const circleX = player.center.x + Math.cos(angle - Math.PI/2) * RADIUS_AROUND_PLAYER;
-    const circleY = player.center.y + Math.sin(angle - Math.PI/2) * RADIUS_AROUND_PLAYER;
+    const cos = getCos(angle - Math.PI/2);
+    const sin = getSin(angle - Math.PI/2);
+
+    const circleX = player.center.x + cos * RADIUS_AROUND_PLAYER;
+    const circleY = player.center.y + angle * RADIUS_AROUND_PLAYER;
     const color = building.type === "depot" ? "green" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
 }

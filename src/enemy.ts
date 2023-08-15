@@ -1,6 +1,6 @@
 import {IGridCell, IPoint, IPoolPoint, IPositionable} from "./interfaces";
 import Grid from "./grid";
-import {clamp, squaredDistance} from "./math";
+import {clamp, getCos, getSin, squaredDistance} from "./math";
 import {PointPool} from "./pools";
 import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
 
@@ -74,8 +74,10 @@ export default class Enemy implements IPositionable {
         this.neighborEnemies = new Array(25).fill(null);
         this.neighborGridCells = new Array(4).fill(null);
         const rand = Math.random()*100;
-        this.vel.x =  Math.sin(rand)* ENEMY_MOVING_SPEED;
-        this.vel.y = Math.cos(rand) * ENEMY_MOVING_SPEED;
+        const cos = getCos(rand);
+        const sin = getSin(rand);
+        this.vel.x =  cos * ENEMY_MOVING_SPEED;
+        this.vel.y = sin * ENEMY_MOVING_SPEED;
         this.rotorRandomOffsets = new Array(4).fill(0).map(() => Math.random() * Math.PI * 2);
         this.sign = Math.random() > .5 ? 1 : -1;
         drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
@@ -160,8 +162,12 @@ export default class Enemy implements IPositionable {
                 updatedVel.y += Math.sign(this.player.center.y - this.center.y) * ENEMY_MOVING_SPEED;
             } else {
                 // go in a circle using sin
-                updatedVel.x += Math.sin(this.time) * ENEMY_MOVING_SPEED * this.sign;
-                updatedVel.y += Math.cos(this.time) * ENEMY_MOVING_SPEED * this.sign;
+
+                const cos = getCos(this.time);
+                const sin = getSin(this.time);
+
+                updatedVel.x += sin * ENEMY_MOVING_SPEED * this.sign;
+                updatedVel.y += cos * ENEMY_MOVING_SPEED * this.sign;
             }
         } else {
             // continue on existing direction
@@ -266,7 +272,8 @@ function createSpriteSheet(size: IPoint) {
         const numWaves = 7;
         const frequency = (2 * Math.PI) / (size.x / numWaves);
         for (let x = 0; x < size.x; x += PIXEL_SIZE) {
-            const yOffset = FRINGE_AMPLITUDE * Math.sin(frequency * (x/PIXEL_SIZE) + (t / 100));
+            const sin = getSin(frequency * (x/PIXEL_SIZE) + (t / 100));
+            const yOffset = FRINGE_AMPLITUDE * sin
             const h = FRINGE_AMPLITUDE + yOffset;
             spriteSheetCtx.fillStyle = PIXELS_COLOR_MAP[1];
             spriteSheetCtx.fillRect(frame * size.x + x, yBase, PIXEL_SIZE, h);
@@ -274,8 +281,10 @@ function createSpriteSheet(size: IPoint) {
 
         // Render the ghost's mouth
         const mouthSize = PIXEL_SIZE * 2 * (1 - Math.abs((t % 2000) - 1000) / 1000);
-        const mouthX = PIXEL_SIZE * 4 + Math.sin(t / 50);
-        const mouthY = PIXEL_SIZE * 5 + Math.cos(t / 50);
+        const sin = getSin(t / 100);
+        const cos = getCos(t / 100);
+        const mouthX = PIXEL_SIZE * 4 + sin;
+        const mouthY = PIXEL_SIZE * 5 + cos;
         spriteSheetCtx.fillStyle = "#000";
         spriteSheetCtx.fillRect(frame * size.x + (mouthX - mouthSize/2), (mouthY - mouthSize/2), mouthSize, mouthSize);
     }

@@ -1,4 +1,5 @@
 import {IPositionable} from "./interfaces";
+import {getSin, getCos} from "./math";
 
 export const PIXEL_SIZE = 5;
 export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, xOffset: number = 0, yOffset: number = 0) {
@@ -32,8 +33,9 @@ export function updatePos(x: number, y: number, object: IPositionable): void {
 export function generateVertices(object: IPositionable) {
     const { center, size, angle } = object;
     const { x: width, y: height } = size;
-    const cosAngle = Math.cos(angle);
-    const sinAngle = Math.sin(angle);
+    // const { cos: cosAngle, sin: sinAngle } = getTrigValues(angle);
+    const cosAngle = getCos(angle);
+    const sinAngle = getSin(angle);
 
     object.vertices[0].x = -width / 2;
     object.vertices[0].y = -height / 2;

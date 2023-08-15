@@ -1,6 +1,6 @@
 import {ICircle, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
 import Grid from "./grid";
-import {clamp} from "./math";
+import {clamp, getCos, getSin} from "./math";
 import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
 
 const TURNING_SPEED_THRESHOLD = 0.1;
@@ -95,8 +95,10 @@ export default class Boat implements IPositionable, ICircle {
         let direction = Math.hypot(this.inputState.pos.x, this.inputState.pos.y); // JS magnitude
         if (this.inputState.mode === "kb") direction = Math.sign(this.inputState.pos.y); // Keyboard magnitude
 
-        this.acc.x = Math.cos(this.angle - Math.PI/2) * direction * accMagnitude;
-        this.acc.y = Math.sin(this.angle - Math.PI/2) * direction * accMagnitude;
+        const cos = getCos(this.angle - Math.PI/2);
+        const sin = getSin(this.angle - Math.PI/2);
+        this.acc.x = cos * direction * accMagnitude;
+        this.acc.y = sin * direction * accMagnitude;
 
         this.vel.x += this.acc.x;
         this.vel.y += this.acc.y;

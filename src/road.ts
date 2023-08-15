@@ -1,5 +1,6 @@
 import {IPoint, IEdge, IGridCell, IPositionable} from "./interfaces";
 import {updatePos} from "./game_objects";
+import {getCos, getSin} from "./math";
 
 export const ROAD_WIDTH = 100;
 export default class Road implements IPositionable {
@@ -37,8 +38,8 @@ export default class Road implements IPositionable {
             const otherV = points[(i + 1) % 2];
 
             const angle = Math.atan2(v.y - otherV.y, v.x - otherV.x);
-            const xExtend = Math.cos(angle) * this.size.x;
-            const yExtend = Math.sin(angle) * this.size.x;
+            const xExtend = getCos(angle)* this.size.x;
+            const yExtend = getSin(angle) * this.size.x;
 
             if (v.x <= Number.EPSILON || v.y <= Number.EPSILON || v.x >= boundingBox.x - Number.EPSILON || v.y >= boundingBox.y - Number.EPSILON) {
                 v.x += xExtend;
