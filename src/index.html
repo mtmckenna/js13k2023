@@ -14,6 +14,8 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
+        font-family: Helvetica, Arial, Sans-Serif;
+        color: #2C3E50;
       }
 
       body {
@@ -35,16 +37,106 @@
         image-rendering: crisp-edges;
       }
 
-      hide {
-        display: none;
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 24px;
       }
 
-      show {
+      .menu-list {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      .menu-list li {
+        border-bottom: 2px solid #F39C12;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+      .menu-list li[data-selected="true"] {
+        background-color: #F39C12;
+        color: #000;
+      }
+
+      .menu-container {
+        width: 80%;
+        max-width: 500px;
+        margin: 50px auto;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border: 3px solid #F39C12;
+        position: absolute;
+        opacity: 0;            /* hidden */
+        transform: translateY(30px);   /* pushed downward */
+      }
+
+      .menu-btn {
         display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #F0E68C;
+        color: #000;
+        border: 2px solid #F39C12;
+        border-radius: 0;
+        cursor: pointer;
+        font-size: 20px;
+        margin-top: 20px;
+      }
+
+      .menu-btn:hover {
+        background-color: #FFD700;
+        border-color: #F0E68C;
+      }
+
+      @keyframes slideUpFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDownFadeOut {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+      }
+
+      .hide {
+        animation: slideDownFadeOut 0.5s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        pointer-events: none;
+      }
+
+      .show {
+        animation: slideUpFadeIn 0.5s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        pointer-events: auto;
+      }
+
+      .select-btn {
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
 
+  <div class="menu-container">
+    <h2>Select Upgrade</h2>
+    <ul class="menu-list">
+      <li>
+        <span class="menu-item" data-selected="false">Gun</span>
+      </li>
+      <!-- Add more deliveries as needed -->
+    </ul>
+    <button type="button" class="menu-btn">Add Upgrades</button>
+  </div>
   </body>
 </html>

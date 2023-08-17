@@ -275,13 +275,3 @@ export function getSin(angle: number): number {
     return trigCache[lookup].sin;
 }
 
-// export function getTrigValues(angle: number): number {
-//     angle = Math.round(angle * 100) / 100;
-//     if (!trigCache[angle]) {
-//         trigCache[angle] = {
-//             cos: Math.cos(angle),
-//             sin: Math.sin(angle)
-//         };
-//     }
-//     return trigCache[angle];
-// }

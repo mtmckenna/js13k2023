@@ -11,7 +11,7 @@ import {circlesCollide, findCollisions} from "./collision";
 import {
     IPoint,
     IVehicleInputState,
-    IEdge, ICollision, IBuilding, CanvasColor,
+    IEdge, ICollision, IBuilding, CanvasColor, IPolygon,
 } from "./interfaces";
 import {
     edgesFromPolygon, polygonFromEdges,
@@ -34,6 +34,7 @@ import {updatePos} from "./game_objects";
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
+const menu: HTMLElement = document.querySelector(".menu-container");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -66,7 +67,7 @@ for (let i = 0; i < MAX_COLLISIONS; i++) {
 
 const div = document.createElement("div");
 div.appendChild(canvas);
-document.body.appendChild(canvas);
+document.body.prepend(canvas);
 
 const gridCanvas = document.createElement('canvas');
 const gridCtx = gridCanvas.getContext('2d');
@@ -96,6 +97,9 @@ const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = { pos: { x:0, y:0 }, mode: "kb" };
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
+const UI_STATE = {
+    deliveryMenuVisible: false
+}
 
 for (let i = 0; i < NUM_POINTS; i++) {
     let tries = 0;
@@ -132,9 +136,12 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 
 let { roads, regions } = roadsAndRegionsFromPoints(points, grid.gameSize);
 const subdividedRegions = subdivideRegions(regions, grid.gameSize);
+const randomRoad = roads[Math.floor(Math.random() * roads.length)];
+const randomRoadPoint = randomRoad.center;
 
 let buildings: IBuilding[] = [];
-const depotIndex = randomIndex(subdividedRegions);
+// const depotIndex = randomIndex(subdividedRegions);
+const depotIndex = subdividedRegions.indexOf(closestRegionToPos(randomRoadPoint, subdividedRegions));
 const deliveryIndices: number []= [];
 const DROP_OFF_RADIUS = 50;
 let circleSize = DROP_OFF_RADIUS * .9 * GRID_SCALE; // Starting size
@@ -142,14 +149,6 @@ let sizeDirection = 1; // 1 for increasing, -1 for decreasing
 const SIZE_SPEED = 0.25 * GRID_SCALE; // Adjust this to make the pulse faster or slower
 const SIZE_MAX = DROP_OFF_RADIUS * .9 * GRID_SCALE; // Maximum size value
 const SIZE_MIN = DROP_OFF_RADIUS * .6 * GRID_SCALE; // Minimum size value
-
-for (let i = 0; i < 3; i++) {
-    let index = randomIndex(subdividedRegions)
-    while (deliveryIndices.includes(index) || index === depotIndex) {
-        index = randomIndex(subdividedRegions)
-    }
-    deliveryIndices.push(index);
-}
 
 for (let i = 0; i < subdividedRegions.length; i++) {
     const region = subdividedRegions[i];
@@ -198,9 +197,6 @@ grid.setSubregionPolygons(subdividedRegions);
 grid.setBuildings(buildings);
 grid.setRegions(smallRegions);
 
-// set player onto a random road
-const randomRoad = roads[Math.floor(Math.random() * roads.length)];
-const randomRoadPoint = randomRoad.center;
 updatePos(randomRoadPoint.x, randomRoadPoint.y, player);
 player.angle = randomRoad.angle + Math.PI /2;
 
@@ -229,6 +225,7 @@ function tick(t: number) {
     requestAnimationFrame(tick);
 }
 function update(t: number) {
+    if (UI_STATE.deliveryMenuVisible) return;
     grid.update();
 
     player.update();
@@ -264,10 +261,24 @@ function update(t: number) {
                 buildings[deliveryIndices[0]].color = "red";
                 grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
             } else {
-                buildings[depotIndex].color = "green";
-                grid.drawBuilding(buildingsCtx, buildings[depotIndex], GRID_SCALE, "green");
+                // buildings[depotIndex].color = "green";
+                // grid.drawBuilding(buildingsCtx, buildings[depotIndex], GRID_SCALE, "green");
             }
         }
+
+        buildings[depotIndex].color = "#fff";
+        grid.drawBuilding(buildingsCtx, buildings[depotIndex], GRID_SCALE, "#fff");
+    } else {
+        const { x: x1, y: y1 } = player.center;
+        const { radius: r1 } = player;
+        const { x: x2, y: y2 } = buildings[depotIndex].dropOffPoint;
+        const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
+        if (inDropOffRadius && player.speed < 1) {
+            if (!UI_STATE.deliveryMenuVisible) showMenu();
+        }
+
+        buildings[depotIndex].color = "green";
+        grid.drawBuilding(buildingsCtx, buildings[depotIndex], GRID_SCALE, "green");
     }
 
     camera.centerOn(player, FIXED_TIMESTEP); // Update the camera to center on the player.
@@ -295,8 +306,6 @@ function draw(t: number) {
     const destHeight = camera.canvasSize.y;
 
     ctx.drawImage(gridCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-    // ctx.drawImage(regionsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-
 
     // Logic to pulse circle size
     circleSize += SIZE_SPEED * sizeDirection;
@@ -345,7 +354,7 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
     const sin = getSin(angle - Math.PI/2);
 
     const circleX = player.center.x + cos * RADIUS_AROUND_PLAYER;
-    const circleY = player.center.y + angle * RADIUS_AROUND_PLAYER;
+    const circleY = player.center.y + sin * RADIUS_AROUND_PLAYER;
     const color = building.type === "depot" ? "green" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
 }
@@ -364,6 +373,18 @@ function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, size:
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.restore();
+}
+
+function generateDeliveryIndices(num: number, depotIndex: number, regions: IPolygon[]): number[] {
+    const indices: number[] = [];
+    for (let i = 0; i < num; i++) {
+        let index = randomIndex(regions);
+        while (indices.includes(index) || index === depotIndex) {
+            index = randomIndex(regions);
+        }
+        indices.push(index);
+    }
+    return indices;
 }
 
 // function drawCollisions(ctx: CanvasRenderingContext2D, collisions: ICollision[]) {
@@ -421,11 +442,46 @@ function resizeCanvas() {
     joystick.resize();
 }
 
+function closestRegionToPos(pos: IPoint, regions: IPolygon[]): IPolygon {
+    let minDist = Number.MAX_VALUE;
+    let closestRegion = null;
+    for (const region of regions) {
+        const dist = distanceBetweenPoints(pos, region.center);
+        if (dist < minDist) {
+            minDist = dist;
+            closestRegion = region;
+        }
+    }
+    return closestRegion;
+}
+
+function showMenu() {
+    menu.classList.remove("hide");
+    menu.classList.add("show");
+    menu.style.removeProperty("opacity");
+    UI_STATE.deliveryMenuVisible = true;
+
+}
+
+function hideMenu() {
+    menu.classList.remove("show");
+    menu.classList.add("hide");
+    UI_STATE.deliveryMenuVisible = false;
+
+    // menu.style.opacity = "0";
+}
+
 resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
 // grid.drawRegions(regionsCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, GRID_SCALE);
 grid.drawBuildings(buildingsCtx, GRID_SCALE);
-grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
+if (deliveryIndices.length) grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
+
+// hide menu after clicking button
+document.querySelector(".menu-btn").addEventListener("click", () => {
+    hideMenu();
+    deliveryIndices.push(...generateDeliveryIndices(3, depotIndex, regions));
+});
