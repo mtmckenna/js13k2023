@@ -1,7 +1,8 @@
 import {ICircle, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
-import Grid from "./grid";
-import {clamp, getCos, getSin} from "./math";
+import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
+import {clamp, getCos, getSin, normalizeVector, subtractVectors} from "./math";
 import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
+import {BulletPool} from "./pools";
 
 const TURNING_SPEED_THRESHOLD = 0.1;
 const VEL_BOOST_ROAD = .25;
@@ -52,6 +53,12 @@ export default class Boat implements IPositionable, ICircle {
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     upgrades: string[] = [];
+    gunFiringSpeed: number = .5;
+    lastFiredTime: number = 0;
+    currentTime: number = 0;
+    bulletDirection: IPoint = {x: 0, y: 0};
+    bulletSpeed: number = 1.5;
+    index: number = 0;
 
     constructor(grid: Grid, inputState: IVehicleInputState) {
         this.inputState = inputState;
@@ -121,7 +128,8 @@ export default class Boat implements IPositionable, ICircle {
 
     }
 
-    update(): void {
+    update(t: number): void {
+        this.currentTime += t;
 
         if (this.inputState.mode === "js") {
             this.turnJoyStick();
@@ -135,6 +143,14 @@ export default class Boat implements IPositionable, ICircle {
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.size.x);
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.size.y);
         updatePos(x, y, this);
+
+        if ((this.currentTime - this.lastFiredTime) > this.gunFiringSpeed) {
+            this.lastFiredTime = this.currentTime;
+            const enemy = this.grid.getNearestEnemy(this.center)
+            if (!enemy) return;
+            normalizeVector(subtractVectors(enemy.center, this.center, this.bulletDirection), this.bulletDirection);
+            shootGun(this.center, this.bulletDirection, this.bulletSpeed);
+        }
     }
 
     draw(ctx: CanvasRenderingContext2D, scale:number = 1): void {
@@ -145,4 +161,11 @@ export default class Boat implements IPositionable, ICircle {
         ctx.drawImage(boatCanvas, 0, 0, this.size.x, this.size.y, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, this.size.y * scale);
         ctx.restore();
     }
+}
+
+function shootGun(pos: IPoint, direction: IPoint, speed: number = 1.5) {
+    const bullet = BulletPool.get(pos.x, pos.y);
+    bullet.vel.x = direction.x * speed;
+    bullet.vel.y = direction.y * speed;
+    return bullet;
 }

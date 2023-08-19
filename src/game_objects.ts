@@ -1,5 +1,6 @@
 import {IPositionable} from "./interfaces";
 import {getSin, getCos} from "./math";
+import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
 
 export const PIXEL_SIZE = 5;
 export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, xOffset: number = 0, yOffset: number = 0) {
@@ -27,6 +28,7 @@ export function updatePos(x: number, y: number, object: IPositionable): void {
     object.pos.y = y;
     object.center.x = object.pos.x + object.size.x / 2;
     object.center.y = object.pos.y + object.size.y / 2;
+    object.index = indexForPos(object.pos.x, object.pos.y, GRID_SIZE_X);
     generateVertices(object);
 }
 

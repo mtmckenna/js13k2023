@@ -19,7 +19,7 @@ import {
     shrinkPolygon,
     subdivideRegions,
 } from "./level_generation";
-import Grid from "./grid";
+import Grid, {indexForPos} from "./grid";
 import Enemy from "./enemy";
 
 // import {EXAMPLE_POINTS} from "./debug";
@@ -27,7 +27,7 @@ import Enemy from "./enemy";
 import { FpsDisplay, DEBUG } from "./debug";
 import {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
-import {PointPool} from "./pools";
+import {BulletPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
 
@@ -44,7 +44,7 @@ const GRID_SCALE = 1/2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 100;
+const NUM_ENEMIES = 1;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -89,6 +89,10 @@ groundCanvas.width = grid.gameSize.x*GRID_SCALE;
 groundCanvas.height = grid.gameSize.y*GRID_SCALE;
 airCanvas.width = grid.gameSize.x*GRID_SCALE;
 airCanvas.height = grid.gameSize.y*GRID_SCALE;
+
+BulletPool.gameSize = grid.gameSize;
+BulletPool.grid = grid;
+BulletPool.initialize(1000);
 
 let fpsDisplay = null;
 if (DEBUG) fpsDisplay = new FpsDisplay();
@@ -206,10 +210,16 @@ grid.setRegions(smallRegions);
 const depot = buildings[depotIndex];
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI /2;
+//
+// for (let i = 0; i < NUM_ENEMIES; i++) {
+//     const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
+//     enemies.push(enemy);
+//     grid.addToEnemyMap(enemy);
+// }
 
-for (let i = 0; i < NUM_ENEMIES; i++) {
-    enemies.push(new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player));
-}
+const enemy = new Enemy({x: player.pos.x, y: player.pos.y}, grid, player)
+enemies.push(enemy);
+grid.addToEnemyMap(enemy);
 
 const NUM_INTIAL_DELIVERIES = 3;
 deliveryIndices.push(...findRegionIndexesWithinDistances(randomRoadPoint, subdividedRegions, NUM_INTIAL_DELIVERIES, 750, 150));
@@ -237,9 +247,20 @@ function tick(t: number) {
 function update(t: number) {
     if (UI_STATE.deliveryMenuVisible) return;
     grid.update();
+    for (const enemy of enemies) { enemy.update(t); }
 
-    player.update();
+    player.update(t);
+    BulletPool.update(t);
     numRegionCollisions = findCollisions(player.vertices, regionVertices, regionCollisions);
+
+    // go through the cells and print out the number of enemies in total
+    let num = 0;
+    for (let i = 0; i < grid.cells.length; i++) {
+        const cell = grid.cells[i];
+        num += cell.enemies.filter(e => !!e).length;
+        // console.log(cell.numEnemies);
+    }
+    // console.log(num);
 
     for (let i = 0; i < numRegionCollisions; i++) {
         const collision = regionCollisions[i];
@@ -294,7 +315,6 @@ function update(t: number) {
 
     camera.centerOn(player, FIXED_TIMESTEP); // Update the camera to center on the player.
 
-    for (const enemy of enemies) { enemy.update(t); }
 
 }
 
@@ -340,6 +360,8 @@ function draw(t: number) {
     ctx.drawImage(buildingsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
 
     for (const enemy of enemies) { enemy.draw(airCtx, GRID_SCALE, t); }
+
+    BulletPool.draw(airCtx, GRID_SCALE);
 
     if (deliveryIndices.length > 0) {
         drawArrowToBuilding(airCtx, player.center, buildings[deliveryIndices[0]]);

@@ -1,5 +1,5 @@
 import {IGridCell, IPoint, IPoolPoint, IPositionable} from "./interfaces";
-import Grid from "./grid";
+import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
 import {clamp, getCos, getSin, squaredDistance} from "./math";
 import {PointPool} from "./pools";
 import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
@@ -68,8 +68,8 @@ export default class Enemy implements IPositionable {
 
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
-        updatePos(pos.x, pos.y, this);
         this.grid = grid;
+        updatePos(pos.x, pos.y, this);
         this.player = player;
         this.neighborEnemies = new Array(25).fill(null);
         this.neighborGridCells = new Array(4).fill(null);
@@ -181,6 +181,7 @@ export default class Enemy implements IPositionable {
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.grid.cellSize.x);
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.grid.cellSize.y);
         updatePos(x, y, this);
+        this.grid.addToEnemyMap(this);
         PointPool.release(updatedVel);
 
     }

@@ -5,9 +5,9 @@ import Road from "./road";
 import { DEBUG } from "./debug";
 import {getCos, getSin} from "./math";
 
-const GRID_CELL_SIZE = 10;
-const GRID_SIZE_X = 250;
-const GRID_SIZE_Y = 250;
+const GRID_CELL_SIZE = 500;
+export const GRID_SIZE_X = 5;
+const GRID_SIZE_Y = 5;
 export const GAME_WIDTH = GRID_CELL_SIZE * GRID_SIZE_X;
 export const GAME_HEIGHT = GRID_CELL_SIZE * GRID_SIZE_Y;
 
@@ -89,26 +89,54 @@ export default class Grid {
     setSubregionPolygons(subregionPolygons: IPolygon[]) {
         this.subregionPolygons = subregionPolygons;
     }
+
+    getNearestEnemy(pos: IPoint): Enemy | null {
+        // TODO: don't allocate memory
+        const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
+        const visited: { [index: number]: boolean } = {};
+        const queue: number[] = [startCellIndex];
+
+        let tries = 0;
+        while (queue.length > 0) {
+            if (tries > 10) break;
+            const currentCellIndex = queue.shift()!;
+            visited[currentCellIndex] = true;
+
+            const currentCell = this.cells[currentCellIndex];
+
+            // Check if there's an enemy in this cell.
+            for (let i = 0; i < currentCell.numEnemies; i++) {
+                const enemy = currentCell.enemies[i];
+                if (enemy) {
+                    return enemy; // Found an enemy, return it.
+                }
+            }
+            // Add neighboring cells to the queue if they haven't been visited.
+            const neighbors: IGridCell[] = [];
+            // console.log(startCellIndex, neighbors);
+            this.getNeighbors(currentCellIndex, neighbors);
+            for (const neighbor of neighbors) {
+                if (neighbor && !visited[neighbor.index]) {
+                    queue.push(neighbor.index);
+                }
+            }
+
+            tries++;
+        }
+
+        console.log("no enemy found");
+
+        return null;
+    }
+
+
+
     draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
         ctx.imageSmoothingEnabled = false;
 
         for (const road of this.roads) {
             road.draw(ctx, scale);
         }
-
-        // for (const region of this.subregionPolygons) {
-        //     // random color fill
-        //     ctx.fillStyle = region.color;
-        //     ctx.beginPath();
-        //     ctx.moveTo(region.vertices[0].x*scale, region.vertices[0].y*scale);
-        //     for (let i = 1; i < region.vertices.length; i++) {
-        //         const vertex = region.vertices[i];
-        //         ctx.lineTo(vertex.x*scale, vertex.y*scale);
-        //     }
-        //
-        //     ctx.fill();
-        //     ctx.closePath();
-        // }
 
         if (DEBUG) {
             ctx.globalAlpha = 1;
@@ -177,29 +205,9 @@ export default class Grid {
                 // neighborGridCells.push(cells[neighborIndex]);
                 neighborGridCells[i] = cells[neighborIndex];
             }
-
-
         }
 
         return neighborGridCells;
-    }
-
-    indexForPos(x: number, y: number): number {
-        const x2 = this.cellCoordinateForXPos(x);
-        const y2 = this.cellCoordinateForYPos(y);
-        return(this.indexForCellCoordinates(x2,y2));
-    }
-
-    cellCoordinateForXPos(x: number): number {
-        return Math.floor(x / this.cellSize.x);
-    }
-
-    cellCoordinateForYPos(y: number): number {
-        return Math.floor(y / this.cellSize.y);
-    }
-
-    indexForCellCoordinates(x: number, y:number): number {
-        return x + y * this.gridSize.x;
     }
 
     addToEnemyMap(enemy: Enemy) {
@@ -208,6 +216,7 @@ export default class Grid {
         const numEnemies = cell.numEnemies;
         cell.enemies[numEnemies] = enemy;
         cell.numEnemies++;
+
     }
 
     clearEnemyMap() {
@@ -287,4 +296,10 @@ export default class Grid {
             rotatedY <= halfHeight
         );
     }
+}
+
+export function indexForPos(x: number, y: number, gridSizeX: number): number {
+    const x2 =  Math.floor(x / GRID_CELL_SIZE);
+    const y2 =  Math.floor(y / GRID_CELL_SIZE);
+    return x2 + y2 * gridSizeX;
 }

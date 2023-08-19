@@ -5,7 +5,9 @@ export interface IPoint {
     y: number;
 }
 
-export interface IPoolPoint extends IPoint {
+export interface IPoolPoint extends IPoint, IPoolable {}
+
+export interface IPoolable {
     active: boolean;
 }
 export interface IEdge {
@@ -56,6 +58,7 @@ export interface IPositionable {
     vertices: IPoint[];
     occupiedCells: IGridCell[];
     numOccupiedCells: number;
+    index: number;
 }
 
 export interface ICollision {
@@ -107,12 +110,6 @@ export interface IVertices3 extends Array<IPoint> {
     1: IPoint;
     2: IPoint;
     length: 3;
-}
-
-export interface ISubdividedRegion {
-    regions: IPolygon[];
-    obb: IOrientedBoundingBox;
-    edges: IEdge[];
 }
 
 export interface IOrientedBoundingBox {

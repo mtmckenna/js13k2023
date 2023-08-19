@@ -1,6 +1,7 @@
 import {IPoint, IEdge, IGridCell, IPositionable} from "./interfaces";
 import {updatePos} from "./game_objects";
 import {getCos, getSin} from "./math";
+import Grid from "./grid";
 
 export const ROAD_WIDTH = 100;
 export default class Road implements IPositionable {
@@ -14,6 +15,9 @@ export default class Road implements IPositionable {
     occupiedCells: IGridCell[] = new Array(2000).fill(null);
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
+    index: number = 0;
+    grid: Grid;
+
     constructor(edge: IEdge, boundingBox: IPoint) {
         this.originalRoadColor = "#3469bf";
         this.color = this.originalRoadColor;
