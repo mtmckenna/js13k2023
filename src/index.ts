@@ -197,12 +197,16 @@ grid.setSubregionPolygons(subdividedRegions);
 grid.setBuildings(buildings);
 grid.setRegions(smallRegions);
 
-updatePos(randomRoadPoint.x, randomRoadPoint.y, player);
+const depot = buildings[depotIndex];
+updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI /2;
 
 for (let i = 0; i < NUM_ENEMIES; i++) {
     enemies.push(new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player));
 }
+
+const NUM_INTIAL_DELIVERIES = 3;
+deliveryIndices.push(...findRegionIndexesWithinDistances(randomRoadPoint, subdividedRegions, NUM_INTIAL_DELIVERIES, 750, 100));
 
 function tick(t: number) {
     let deltaTime = (t - lastTime) / 1000;  // convert to seconds
@@ -375,18 +379,6 @@ function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, size:
     ctx.restore();
 }
 
-function generateDeliveryIndices(num: number, depotIndex: number, regions: IPolygon[]): number[] {
-    const indices: number[] = [];
-    for (let i = 0; i < num; i++) {
-        let index = randomIndex(regions);
-        while (indices.includes(index) || index === depotIndex) {
-            index = randomIndex(regions);
-        }
-        indices.push(index);
-    }
-    return indices;
-}
-
 // function drawCollisions(ctx: CanvasRenderingContext2D, collisions: ICollision[]) {
 //     for (let i = 0; i < numRegionCollisions; i++) {
 //         const collision = collisions[i];
@@ -455,11 +447,32 @@ function closestRegionToPos(pos: IPoint, regions: IPolygon[]): IPolygon {
     return closestRegion;
 }
 
+function findRegionIndexesWithinDistances(pos: IPoint, regions: IPolygon[], numRegions: number, maxDistance: number, minDistance: number): number[] {
+    const closeRegions: number[] = [];
+    // for (const region of regions) {
+    for (let i = 0; i < regions.length; i++) {
+        const region = regions[i];
+        const dist = distanceBetweenPoints(pos, region.center);
+        if (dist < maxDistance && dist > minDistance && i !== depotIndex) {
+            closeRegions.push(i);
+        }
+    }
+
+    console.log(closeRegions.length);
+    return closeRegions.slice(0, numRegions);
+}
+
 function showMenu() {
     menu.classList.remove("hide");
     menu.classList.add("show");
     menu.style.removeProperty("opacity");
     UI_STATE.deliveryMenuVisible = true;
+
+
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+        item.addEventListener('click', handleMenuItemClick);
+    });
 
 }
 
@@ -468,8 +481,20 @@ function hideMenu() {
     menu.classList.add("hide");
     UI_STATE.deliveryMenuVisible = false;
 
-    // menu.style.opacity = "0";
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+        item.removeEventListener('click', handleMenuItemClick);
+    });
 }
+
+function handleMenuItemClick(e: Event) {
+    const element = e.target as HTMLElement;
+    const isSelected = element.getAttribute('data-selected') === 'true';
+    element.setAttribute('data-selected', (!isSelected).toString());
+    element.style.backgroundColor = isSelected ? '' : '#F0E68C';
+    element.style.color = isSelected ? '' : '#000';
+}
+
 
 resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
@@ -479,9 +504,7 @@ grid.drawBuildings(buildingsCtx, GRID_SCALE);
 if (deliveryIndices.length) grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
-
-// hide menu after clicking button
 document.querySelector(".menu-btn").addEventListener("click", () => {
     hideMenu();
-    deliveryIndices.push(...generateDeliveryIndices(3, depotIndex, regions));
+    deliveryIndices.push(...findRegionIndexesWithinDistances(buildings[depotIndex].dropOffPoint, regions, NUM_INTIAL_DELIVERIES, 1000, 100));
 });

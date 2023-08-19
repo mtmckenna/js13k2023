@@ -49,6 +49,7 @@
       }
 
       .menu-list li {
+        display: block;
         border-bottom: 2px solid #F39C12;
         padding: 10px;
         cursor: pointer;
@@ -121,7 +122,7 @@
         pointer-events: auto;
       }
 
-      .select-btn {
+      .menu-btn {
         cursor: pointer;
       }
     </style>
@@ -131,8 +132,11 @@
   <div class="menu-container">
     <h2>Select Upgrade</h2>
     <ul class="menu-list">
-      <li>
-        <span class="menu-item" data-selected="false">Gun</span>
+      <li class="menu-item" data-selected="false">
+        <span>Gun</span>
+      </li>
+      <li class="menu-item" data-selected="false">
+        <span>Armor</span>
       </li>
       <!-- Add more deliveries as needed -->
     </ul>
