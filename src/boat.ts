@@ -51,6 +51,7 @@ export default class Boat implements IPositionable, ICircle {
     occupiedCells: IGridCell[] = new Array(2000).fill(null);
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
+    upgrades: string[] = [];
 
     constructor(grid: Grid, inputState: IVehicleInputState) {
         this.inputState = inputState;

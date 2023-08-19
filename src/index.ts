@@ -56,6 +56,7 @@ let lastTime = performance.now();
 const roadCollisions: IEdge[] = []
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
+let cash = 0;
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
     roadCollisions[i] = {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}};
@@ -138,6 +139,11 @@ let { roads, regions } = roadsAndRegionsFromPoints(points, grid.gameSize);
 const subdividedRegions = subdivideRegions(regions, grid.gameSize);
 const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoadPoint = randomRoad.center;
+const upgrades: { [key: string]: number } = {
+    "Fast Sails": 100,
+    "Armored Hull": 100,
+    "Gun": 100,
+}
 
 let buildings: IBuilding[] = [];
 // const depotIndex = randomIndex(subdividedRegions);
@@ -206,7 +212,7 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
 }
 
 const NUM_INTIAL_DELIVERIES = 3;
-deliveryIndices.push(...findRegionIndexesWithinDistances(randomRoadPoint, subdividedRegions, NUM_INTIAL_DELIVERIES, 750, 100));
+deliveryIndices.push(...findRegionIndexesWithinDistances(randomRoadPoint, subdividedRegions, NUM_INTIAL_DELIVERIES, 750, 150));
 
 function tick(t: number) {
     let deltaTime = (t - lastTime) / 1000;  // convert to seconds
@@ -260,6 +266,7 @@ function update(t: number) {
             buildings[deliveryIndices[0]].type = "empty";
             buildings[deliveryIndices[0]].color = "#fff";
             grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "#fff");
+            updateCash(100);
             deliveryIndices.shift();
             if (deliveryIndices.length > 0) {
                 buildings[deliveryIndices[0]].color = "red";
@@ -345,6 +352,11 @@ function draw(t: number) {
 
     joystick.draw(ctx);
 
+}
+function updateCash(amount: number) {
+    cash += amount;
+    const cashElement = document.querySelector('#cash');
+    cashElement.innerHTML = `$${cash}`;
 }
 
 function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IBuilding) {
@@ -468,6 +480,22 @@ function showMenu() {
     menu.style.removeProperty("opacity");
     UI_STATE.deliveryMenuVisible = true;
 
+    // remove existing menu items from DOM and add upgrades
+    const list = document.querySelector('.menu-list');
+    list.innerHTML = '';
+
+    for (const upgrade in upgrades) {
+        const li = document.createElement('li');
+        li.classList.add('menu-item');
+        li.setAttribute('data-selected', 'false');
+        // set cash amount in data attribute
+        li.setAttribute('data-cash', upgrades[upgrade].toString());
+        // set upgrade name in data attribute
+        li.setAttribute('data-upgrade', upgrade);
+        li.innerHTML = `${upgrade} - $${upgrades[upgrade]}`;
+        list.appendChild(li);
+    }
+
 
     const menuItems = document.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
@@ -482,7 +510,16 @@ function hideMenu() {
     UI_STATE.deliveryMenuVisible = false;
 
     const menuItems = document.querySelectorAll('.menu-item');
+    // add selected upgrades to player and subtract cash
     menuItems.forEach(item => {
+        const isSelected = item.getAttribute('data-selected') === 'true';
+        if (isSelected) {
+            const upgrade = item.getAttribute('data-upgrade');
+            const cash = parseInt(item.getAttribute('data-cash'));
+            player.upgrades.push(upgrade);
+            updateCash(-cash);
+        }
+
         item.removeEventListener('click', handleMenuItemClick);
     });
 }
@@ -506,5 +543,5 @@ requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector(".menu-btn").addEventListener("click", () => {
     hideMenu();
-    deliveryIndices.push(...findRegionIndexesWithinDistances(buildings[depotIndex].dropOffPoint, regions, NUM_INTIAL_DELIVERIES, 1000, 100));
+    deliveryIndices.push(...findRegionIndexesWithinDistances(buildings[depotIndex].dropOffPoint, regions, NUM_INTIAL_DELIVERIES, 1000, 150));
 });
