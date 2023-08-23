@@ -44,7 +44,7 @@ const GRID_SCALE = 1/2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 1000;
+const NUM_ENEMIES = 100;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;

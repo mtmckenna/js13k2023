@@ -121,8 +121,7 @@ export default class Grid {
                     queue.push(neighbor.index);
                 }
             }
-            // Add neighboring cells to the queue if they haven't been visited.
-            // queue.push(...this.getNeighborGridCells(currentCellIndex, visited));
+            n--;
 
         }
 
@@ -140,6 +139,7 @@ export default class Grid {
         let minDistance = Number.MAX_VALUE;
         let minEnemy: Enemy | null = null;
 
+        // TODOL consolidate this while loop with getEnemiesFromNeighborsLoopingNTimes
         while (queue.length > 0 && tries < 3) {
             const currentCellIndex = queue.shift()!;
             visited[currentCellIndex] = true;
@@ -271,8 +271,8 @@ export default class Grid {
             // Check if the neighbor coordinates are within the grid bounds
             if (neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height) {
                 const neighborIndex = neighborX + neighborY * width;
-                // neighborGridCells.push(cells[neighborIndex]);
-                neighborGridCells[i] = cells[neighborIndex];
+                // check that neighbor isn't null
+                if (cells[neighborIndex]) neighborGridCells[i] = cells[neighborIndex];
             }
         }
 
