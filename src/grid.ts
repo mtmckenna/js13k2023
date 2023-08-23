@@ -3,17 +3,20 @@ import Enemy from "./enemy";
 import Road from "./road";
 
 import { DEBUG } from "./debug";
-import {getCos, getSin} from "./math";
+import {getCos, getSin, squaredDistance} from "./math";
 
-const GRID_CELL_SIZE = 500;
-export const GRID_SIZE_X = 5;
-const GRID_SIZE_Y = 5;
+export const GRID_CELL_SIZE = 300;
+export const GRID_SIZE_X = 10;
+const GRID_SIZE_Y = 10;
 export const GAME_WIDTH = GRID_CELL_SIZE * GRID_SIZE_X;
 export const GAME_HEIGHT = GRID_CELL_SIZE * GRID_SIZE_Y;
 
 
 const MAX_ROADS_PER_CELL = 10;
 const MAX_ENEMIES_PER_CELL = 10;
+
+const neighbors: IGridCell[] = [];
+
 
 const OFFSETS = [
     { x: -1, y: 0 }, // Left
@@ -90,15 +93,14 @@ export default class Grid {
         this.subregionPolygons = subregionPolygons;
     }
 
-    getNearestEnemy(pos: IPoint): Enemy | null {
+    getEnemiesFromNeighborsLoopingNTimes(pos: IPoint, n: number, enemies: Enemy[]): Enemy[] {
+        neighbors.length = 0; // TODO: make this a fixed length array
         // TODO: don't allocate memory
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: { [index: number]: boolean } = {};
         const queue: number[] = [startCellIndex];
 
-        let tries = 0;
-        while (queue.length > 0) {
-            if (tries > 10) break;
+        while (queue.length > 0 && n > 0) {
             const currentCellIndex = queue.shift()!;
             visited[currentCellIndex] = true;
 
@@ -107,14 +109,64 @@ export default class Grid {
             // Check if there's an enemy in this cell.
             for (let i = 0; i < currentCell.numEnemies; i++) {
                 const enemy = currentCell.enemies[i];
-                if (enemy) {
-                    return enemy; // Found an enemy, return it.
+                if (enemy && i < enemies.length - 1) {
+                    enemies[i] = enemy;
+                    // enemies.push(enemy);
+                }
+            }
+
+            this.setNeighborGridCells(currentCellIndex, neighbors);
+            for (const neighbor of neighbors) {
+                if (neighbor && !visited[neighbor.index]) {
+                    queue.push(neighbor.index);
                 }
             }
             // Add neighboring cells to the queue if they haven't been visited.
-            const neighbors: IGridCell[] = [];
-            // console.log(startCellIndex, neighbors);
-            this.getNeighbors(currentCellIndex, neighbors);
+            // queue.push(...this.getNeighborGridCells(currentCellIndex, visited));
+
+        }
+
+        return enemies;
+    }
+
+    getNearestEnemy(pos: IPoint): Enemy | null {
+        neighbors.length = 0;
+        // TODO: don't allocate memory
+        const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
+        const visited: { [index: number]: boolean } = {};
+        const queue: number[] = [startCellIndex];
+
+        let tries = 0;
+        let minDistance = Number.MAX_VALUE;
+        let minEnemy: Enemy | null = null;
+
+        while (queue.length > 0 && tries < 3) {
+            const currentCellIndex = queue.shift()!;
+            visited[currentCellIndex] = true;
+
+            const currentCell = this.cells[currentCellIndex];
+
+
+            // Check if there's an enemy in this cell.
+            for (let i = 0; i < currentCell.numEnemies; i++) {
+                const enemy = currentCell.enemies[i];
+                if (enemy) {
+                    // const distance = Math.hypot((pos.x - enemy.center.x), (pos.y - enemy.center.y));
+                    const distance = squaredDistance(pos, enemy.center);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        minEnemy = enemy;
+                        // return enemy;
+                    }
+                }
+                // if (enemy) {
+                //     return enemy; // Found an enemy, return it.
+                // }
+            }
+            // Add neighboring cells to the queue if they haven't been visited.
+            // TODO: don't allocate memory
+            // const neighbors: IGridCell[] = [];
+            this.setNeighborGridCells(currentCellIndex, neighbors);
             for (const neighbor of neighbors) {
                 if (neighbor && !visited[neighbor.index]) {
                     queue.push(neighbor.index);
@@ -124,15 +176,32 @@ export default class Grid {
             tries++;
         }
 
-        console.log("no enemy found");
-
-        return null;
+        return minEnemy;
     }
 
 
 
     draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
         ctx.imageSmoothingEnabled = false;
+
+        // draw cells
+        if (DEBUG) {
+            ctx.globalAlpha = .5;
+            let color = "red";
+            for (let i = 0; i < this.cells.length; i++) {
+                const cell = this.cells[i];
+                // make checkboard pattern
+                const row = Math.floor(i / this.gridSize.x) % 2 === 0;
+                if (row) {
+                    color = i % 2 === 0 ? "red" : "blue";
+                } else {
+                    color = i % 2 === 0 ? "blue" : "red";
+                }
+
+                ctx.fillStyle = color;
+                ctx.fillRect(cell.index % this.gridSize.x * this.cellSize.x * scale, Math.floor(cell.index / this.gridSize.x) * this.cellSize.y * scale, this.cellSize.x * scale, this.cellSize.y * scale);
+            }
+        }
 
         for (const road of this.roads) {
             road.draw(ctx, scale);
@@ -171,7 +240,7 @@ export default class Grid {
     drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
         ctx.imageSmoothingEnabled = false;
         ctx.lineWidth = 5;
-        ctx.fillStyle = "gray";
+        ctx.fillStyle = "#654321";
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -182,9 +251,9 @@ export default class Grid {
         }
         ctx.closePath();
         ctx.fill();
-        ctx.stroke();
+        // ctx.stroke();
     }
-    getNeighbors(currentIndex: number, neighborGridCells: IGridCell[]): Array<IGridCell> {
+    setNeighborGridCells(currentIndex: number, neighborGridCells: IGridCell[]): Array<IGridCell> {
         // const neighbors: Array<IGridCell> = [];
         const { cells } = this;
         const width = this.gridSize.x;
@@ -211,12 +280,10 @@ export default class Grid {
     }
 
     addToEnemyMap(enemy: Enemy) {
-        // this.cells[enemy.index].enemies.push(enemy);
         const cell = this.cells[enemy.index];
         const numEnemies = cell.numEnemies;
         cell.enemies[numEnemies] = enemy;
         cell.numEnemies++;
-
     }
 
     clearEnemyMap() {

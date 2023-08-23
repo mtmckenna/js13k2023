@@ -20,14 +20,27 @@ export function addVectors(a: IPoint, b: IPoint, out: IPoint): IPoint {
     return out;
 }
 
-export function easeInQuad(value: number): number {
-    return value  * value;
-}
-
 export function scaleVector(a: IPoint, scalar: number, out: IPoint): IPoint {
     out.x = a.x * scalar;
     out.y = a.y * scalar;
     return out;
+}
+
+export function limitVector(a: IPoint, scalar: number, out: IPoint): IPoint {
+    const length = Math.hypot(a.x, a.y);
+    if (length > scalar) {
+        const ratio = scalar / length;
+        out.x = a.x * ratio;
+        out.y = a.y * ratio;
+    } else {
+        out.x = a.x;
+        out.y = a.y;
+    }
+    return out;
+}
+
+export function normalizeAndScaleVector(a: IPoint, scalar: number, out: IPoint): IPoint {
+    return scaleVector(normalizeVector(a, out), scalar, out);
 }
 
 export function normalizeVector(vector: IPoint, out: IPoint): IPoint {

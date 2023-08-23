@@ -1,20 +1,32 @@
 import {IGridCell, IPoint, IPoolPoint, IPositionable} from "./interfaces";
-import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
-import {clamp, getCos, getSin, squaredDistance} from "./math";
+import Grid, {GRID_CELL_SIZE, GRID_SIZE_X, indexForPos} from "./grid";
+import {
+    clamp,
+    distanceBetweenPoints,
+    getCos,
+    getSin,
+    limitVector,
+    normalizeAndScaleVector, normalizeVector,
+    squaredDistance,
+    subtractVectors
+} from "./math";
 import {PointPool} from "./pools";
 import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
+import Boat from "./boat";
 
-const ENEMY_MOVING_SPEED = .5;
-const ENEMY_SEPARATION_FORCE = 1;
-const ENEMY_ALIGNMENT_FORCE = .1;
-const ENEMY_COHESION_FORCE = .1;
-const ALIGNMENT_RADIUS = 100;
-const COHESION_RADIUS = 100;
-const SEPARATION_RADIUS = 100;
+const ENEMY_MOVING_SPEED = 1.5;
 const MAX_FORCE = ENEMY_MOVING_SPEED;
-const FORCE_UPDATE_TIME = 1;
-const MIN_DISTANCE_SQUARED = 100*100;
-const MAX_DISTANCE_SQUARED = 250*250;
+const ENEMY_SEPARATION_FORCE = 2;
+const ENEMY_ALIGNMENT_FORCE = 0.0;
+const ENEMY_COHESION_FORCE = 0.0;
+const PLAYER_ATTRACTION_FORCE = 2.1;
+const PERCEPTION_RADIUS = 500;
+const MAX_DISTANCE_SQUARED = GRID_CELL_SIZE * GRID_CELL_SIZE;
+const OVERCOMMIT_DISTANCE = 100;
+const REENGAGE_DISTANCE = 100;
+const MAX_RETURN_SPEED = ENEMY_MOVING_SPEED;
+const DECELERATION = 0.9; // Decelerate by 10% every frame while overcommitting.
+
 
 const PIXELS = [
     [0, 0, 1, 1, 1, 1, 0, 0],
@@ -33,7 +45,7 @@ const FRINGE_AMPLITUDE = PIXEL_SIZE;  // Height of wave
 const offscreenCanvas = document.createElement("canvas");
 const offscreenCtx = offscreenCanvas.getContext("2d");
 const characterWidth = PIXELS[0].length * PIXEL_SIZE
-const characterHeight = PIXELS.length * PIXEL_SIZE + FRINGE_AMPLITUDE*2;
+const characterHeight = PIXELS.length * PIXEL_SIZE + FRINGE_AMPLITUDE * 2;
 offscreenCanvas.width = characterWidth;
 offscreenCanvas.height = characterHeight;
 
@@ -52,7 +64,14 @@ export default class Enemy implements IPositionable {
     alignment: IPoint = {x: 0, y: 0};
     cohesion: IPoint = {x: 0, y: 0};
     separation: IPoint = {x: 0, y: 0};
+    attraction: IPoint = {x: 0, y: 0};
     lastUpdateForceTime: number = 0;
+    overcommitting: boolean = false;
+    returning: boolean = false;
+    overcommitDistanceMoved: number = 0;
+     passedPlayer: boolean = false;
+     overcommitEndTime: number | null = null;
+    overcommitAmount: IPoint = {x: 0, y: 0};
     rotorRandomOffsets: number[] = [];
     time: number = 0;
     sign: number = 1;
@@ -62,10 +81,9 @@ export default class Enemy implements IPositionable {
     angle: number = 0;
     occupiedCells: IGridCell[] = new Array(2000).fill(null);
     numOccupiedCells: number = 0;
-    vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
+    vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}];
     forwardDirection: boolean = true;
     frameCounter: number = 0;
-
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -73,33 +91,18 @@ export default class Enemy implements IPositionable {
         this.player = player;
         this.neighborEnemies = new Array(25).fill(null);
         this.neighborGridCells = new Array(4).fill(null);
-        const rand = Math.random()*100;
+        const rand = Math.random() * 100;
         const cos = getCos(rand);
         const sin = getSin(rand);
-        this.vel.x =  cos * ENEMY_MOVING_SPEED;
+        this.vel.x = cos * ENEMY_MOVING_SPEED;
         this.vel.y = sin * ENEMY_MOVING_SPEED;
         this.rotorRandomOffsets = new Array(4).fill(0).map(() => Math.random() * Math.PI * 2);
         this.sign = Math.random() > .5 ? 1 : -1;
         drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
+        this.frameCounter = Math.floor(Math.random() * NUM_FRAMES);
     }
 
-    // draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
-    //     const frame = Math.floor((t / (1000/60)) % NUM_FRAMES);
-    //
-    //     ctx.save();
-    //     ctx.translate(this.center.x * scale, this.center.y * scale);
-    //     ctx.rotate(this.angle);
-    //     ctx.imageSmoothingEnabled = false;
-    //
-    //     const sx = frame * this.size.x; // source x on sprite sheet
-    //     ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
-    //
-    //     ctx.restore();
-    // }
-
-
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
-        let frame = Math.floor((t / (1000/60)) % NUM_FRAMES);
 
         ctx.save();
         ctx.translate(this.center.x * scale, this.center.y * scale);
@@ -107,93 +110,67 @@ export default class Enemy implements IPositionable {
         ctx.imageSmoothingEnabled = false;
 
         const sx = this.frameCounter * this.size.x; // source x on sprite sheet
-        ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
+        ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x / 2 * scale, -this.size.y / 2 * scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
 
         ctx.restore();
 
-        if(this.forwardDirection) {
+        if (this.forwardDirection) {
             this.frameCounter++;
-            if(this.frameCounter >= NUM_FRAMES - 1) {
+            if (this.frameCounter >= NUM_FRAMES - 1) {
                 this.forwardDirection = false;
             }
         } else {
             this.frameCounter--;
-            if(this.frameCounter <= 0) {
+            if (this.frameCounter <= 0) {
                 this.forwardDirection = true;
             }
         }
     }
+
     update(t: number) {
-        if (!this.grid) return;
+        if (!this.grid || !this.player) return;
         this.time += t;
-        const now = performance.now() / 1000;
 
-        let updateForce = false;
-        if (now - this.lastUpdateForceTime > FORCE_UPDATE_TIME) {
-            this.lastUpdateForceTime = now;
-            updateForce = true;
-        }
+        const dirToPlayer = PointPool.get();
+        normalizeVector({x: this.player.center.x - this.center.x, y: this.player.center.y - this.center.y}, dirToPlayer);
 
-        this.lastUpdateForceTime = t;
-        this.neighborEnemiesFromCellIndex(this.index, this, this.grid, this.neighborGridCells, this.neighborEnemies);
-        calculateFlockingForces(this, this.neighborEnemies, this.alignment, this.cohesion, this.separation);
-
-        const updatedVel: IPoolPoint = PointPool.get(0,0);
-
-        if (updateForce) {
-            const forcesVel: IPoolPoint = PointPool.get(0, 0);
-            forcesVel.x = this.separation.x * ENEMY_SEPARATION_FORCE + this.alignment.x * ENEMY_ALIGNMENT_FORCE + this.cohesion.x * ENEMY_COHESION_FORCE;
-            forcesVel.y = this.separation.y * ENEMY_SEPARATION_FORCE + this.alignment.y * ENEMY_ALIGNMENT_FORCE + this.cohesion.y * ENEMY_COHESION_FORCE;
-            const forcesVelMag = Math.hypot(forcesVel.x, forcesVel.y);
-
-            if (forcesVelMag > MAX_FORCE) {
-                forcesVel.x = (forcesVel.x / forcesVelMag) * MAX_FORCE;
-                forcesVel.y = (forcesVel.y / forcesVelMag) * MAX_FORCE;
-            }
-
-            updatedVel.x += forcesVel.x;
-            updatedVel.y += forcesVel.y;
-            PointPool.release(forcesVel);
-
-            if (this.player &&
-                squaredDistance(this.player.center, this.center) > MIN_DISTANCE_SQUARED &&
-                squaredDistance(this.player.center, this.center) < MAX_DISTANCE_SQUARED) {
-                updatedVel.x += Math.sign(this.player.center.x - this.center.x) * ENEMY_MOVING_SPEED;
-                updatedVel.y += Math.sign(this.player.center.y - this.center.y) * ENEMY_MOVING_SPEED;
-            } else {
-                // go in a circle using sin
-
-                const cos = getCos(this.time);
-                const sin = getSin(this.time);
-
-                updatedVel.x += sin * ENEMY_MOVING_SPEED * this.sign;
-                updatedVel.y += cos * ENEMY_MOVING_SPEED * this.sign;
-            }
+        const DECAY = 0.05;
+        if (Math.sign(this.vel.x) !== Math.sign(dirToPlayer.x)) {
+            this.vel.x = this.vel.x + Math.sign(dirToPlayer.x) * DECAY;
         } else {
-            // continue on existing direction
-            updatedVel.x = this.vel.x;
-            updatedVel.y = this.vel.y;
+            this.vel.x = dirToPlayer.x * ENEMY_MOVING_SPEED;
         }
 
-        this.vel.x = updatedVel.x;
-        this.vel.y = updatedVel.y;
+        if (Math.sign(this.vel.y) !== Math.sign(dirToPlayer.y)) {
+            this.vel.y = this.vel.y + Math.sign(dirToPlayer.y) * DECAY
+        } else {
+            this.vel.y = dirToPlayer.y * ENEMY_MOVING_SPEED;
+        }
 
-        const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.grid.cellSize.x);
-        const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.grid.cellSize.y);
+        const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.size.x);
+        const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.size.y);
         updatePos(x, y, this);
-        this.grid.addToEnemyMap(this);
-        PointPool.release(updatedVel);
 
+        PointPool.release(dirToPlayer);
     }
 
-    neighborEnemiesFromCellIndex(index: number, currentEnemy: Enemy, grid: Grid, neighborGridCells: IGridCell[], enemies: Enemy[]): Enemy[] {
-        grid.getNeighbors(index, neighborGridCells);
+    setNeighborEnemies(index: number, currentEnemy: Enemy, grid: Grid, neighborGridCells: IGridCell[], enemies: Enemy[]): Enemy[] {
+        grid.setNeighborGridCells(index, neighborGridCells);
 
         let numEnemies = 0;
 
-        for (let neighbor of neighborGridCells) {
+        const currentGridCell = grid.cells[index];
+        for (let i = 0; i < currentGridCell.numEnemies; i++) {
+            const enemy = currentGridCell.enemies[i];
+            if (enemy !== currentEnemy) {
+                enemies[numEnemies] = enemy;
+                numEnemies++;
+            }
+        }
+
+        for (let i = 0; i < neighborGridCells.length; i++) {
+            const neighbor = neighborGridCells[i];
             if (!neighbor || neighbor.index === index) continue;
-            // const enemiesAtIndex = grid.enemiesAtIndex(neighbor.index);
             for (let i = 0; i < neighbor.numEnemies; i++) {
                 const enemy = neighbor.enemies[i];
                 if (enemy !== currentEnemy) {
@@ -213,47 +190,103 @@ export default class Enemy implements IPositionable {
     }
 }
 
-function calculateFlockingForces(enemy: Enemy, enemies: Enemy[], alignment: IPoint, cohesion: IPoint, separation: IPoint) {
+function calculateFlockingForces(enemy: Enemy, player: IPositionable, enemies: Enemy[], alignment: IPoint, cohesion: IPoint, separation: IPoint, attraction: IPoint) {
     let neighbors = 0;
+    let separationNeighbors = 0;
+    separation.x = 0;
+    separation.y = 0;
+    alignment.x = 0;
+    alignment.y = 0;
+    cohesion.x = 0;
+    cohesion.y = 0;
+    attraction.x = 0;
+    attraction.y = 0;
+
+    if (player) {
+        let dx = enemy.pos.x - player.pos.x;
+        let dy = enemy.pos.y - player.pos.y;
+        // let distance = distanceBetweenPoints(enemy.pos, player.pos)
+        // let distance = Math.abs(dx) + Math.abs(dy); // Manhattan distance
+        let distance = Math.hypot(dx, dy);
+
+        if (distance < Number.EPSILON) distance = Number.EPSILON;
+
+        if (distance < PERCEPTION_RADIUS) {
+            attraction.x -= dx / distance;
+            attraction.y -= dy / distance;
+            // attraction.x -= dx;
+            // attraction.y -= dy;
+        }
+
+        normalizeAndScaleVector(attraction, ENEMY_MOVING_SPEED, attraction);
+        subtractVectors(attraction, enemy.vel, attraction);
+        limitVector(attraction, MAX_FORCE, attraction);
+    }
 
     for (let i = 0; i < enemies.length; i++) {
         const other = enemies[i];
         if (!other || other === enemy) continue;
         let dx = enemy.pos.x - other.pos.x;
         let dy = enemy.pos.y - other.pos.y;
-        let distance = Math.abs(dx) + Math.abs(dy); // Manhattan distance
+        // let distance = Math.abs(dx) + Math.abs(dy); // Manhattan distance
+        // let distance = distanceBetweenPoints(enemy.pos, other.pos)
+        let distance = Math.hypot(dx, dy);
+        let distanceToPlayer = distanceBetweenPoints(enemy.pos, player.pos);
 
-        // if (distance < Number.EPSILON) distance = Number.EPSILON;
         if (distance < Number.EPSILON) distance = Number.EPSILON;
+        if (distanceToPlayer < Number.EPSILON) distanceToPlayer = Number.EPSILON;
 
-        if (distance < SEPARATION_RADIUS) {
-            separation.x += dx / distance;
-            separation.y += dy / distance;
-        }
-
-        if (distance < ALIGNMENT_RADIUS) {
+        if (distance < PERCEPTION_RADIUS) {
             alignment.x += other.vel.x;
             alignment.y += other.vel.y;
-        }
-
-        if (distance < COHESION_RADIUS) {
             cohesion.x += other.pos.x;
             cohesion.y += other.pos.y;
+            attraction.x -= dx / distance;
+            attraction.y -= dy / distance;
+
+            neighbors++;
         }
 
-        neighbors++;
+        if (distance < 50) {
+            separation.x += dx / distance;
+            separation.y += dy / distance;
+            const randomDirection = Math.random() > .5 ? 1 : -1;
+            if (separation.x < Number.EPSILON) separation.x = 1  * randomDirection
+            if (separation.y < Number.EPSILON) separation.y = 1 * randomDirection;
+            separationNeighbors++;
+        }
     }
 
     if (neighbors > 0) {
         alignment.x /= neighbors;
         alignment.y /= neighbors;
+        alignment.x -= enemy.vel.x;
+        alignment.y -= enemy.vel.y;
 
         cohesion.x /= neighbors;
         cohesion.y /= neighbors;
-
         cohesion.x -= enemy.pos.x;
         cohesion.y -= enemy.pos.y;
+
+        normalizeAndScaleVector(alignment, ENEMY_MOVING_SPEED, alignment);
+        subtractVectors(alignment, enemy.vel, alignment);
+        limitVector(alignment, MAX_FORCE, alignment);
+
+        normalizeAndScaleVector(cohesion, ENEMY_MOVING_SPEED, cohesion);
+        subtractVectors(cohesion, enemy.vel, cohesion);
+        limitVector(cohesion, MAX_FORCE, cohesion);
     }
+
+    if (separationNeighbors > 0) {
+        separation.x /= separationNeighbors;
+        separation.y /= separationNeighbors;
+        normalizeAndScaleVector(separation, ENEMY_MOVING_SPEED, separation);
+        subtractVectors(separation, enemy.vel, separation);
+        limitVector(separation, MAX_FORCE, separation);
+    }
+
+    // attraction.x = 0;
+    // attraction.y = 0;
 }
 
 function createSpriteSheet(size: IPoint) {
@@ -273,7 +306,7 @@ function createSpriteSheet(size: IPoint) {
         const numWaves = 7;
         const frequency = (2 * Math.PI) / (size.x / numWaves);
         for (let x = 0; x < size.x; x += PIXEL_SIZE) {
-            const sin = getSin(frequency * (x/PIXEL_SIZE) + (t / 100));
+            const sin = getSin(frequency * (x / PIXEL_SIZE) + (t / 100));
             const yOffset = FRINGE_AMPLITUDE * sin
             const h = FRINGE_AMPLITUDE + yOffset;
             spriteSheetCtx.fillStyle = PIXELS_COLOR_MAP[1];
@@ -287,7 +320,7 @@ function createSpriteSheet(size: IPoint) {
         const mouthX = PIXEL_SIZE * 4 + sin;
         const mouthY = PIXEL_SIZE * 5 + cos;
         spriteSheetCtx.fillStyle = "#000";
-        spriteSheetCtx.fillRect(frame * size.x + (mouthX - mouthSize/2), (mouthY - mouthSize/2), mouthSize, mouthSize);
+        spriteSheetCtx.fillRect(frame * size.x + (mouthX - mouthSize / 2), (mouthY - mouthSize / 2), mouthSize, mouthSize);
     }
 
     return spriteSheetCanvas;

@@ -3,7 +3,7 @@ import {updatePos} from "./game_objects";
 import {getCos, getSin} from "./math";
 import Grid from "./grid";
 
-export const ROAD_WIDTH = 100;
+export const ROAD_WIDTH = 200;
 export default class Road implements IPositionable {
     originalRoadColor = "#474747";
     edge: IEdge;

@@ -159,6 +159,7 @@ export default class Boat implements IPositionable, ICircle {
         ctx.rotate(this.angle);
         ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
         ctx.drawImage(boatCanvas, 0, 0, this.size.x, this.size.y, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, this.size.y * scale);
+
         ctx.restore();
     }
 }

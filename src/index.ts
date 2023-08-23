@@ -44,7 +44,7 @@ const GRID_SCALE = 1/2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 1;
+const NUM_ENEMIES = 1000;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -150,10 +150,9 @@ const upgrades: { [key: string]: number } = {
 }
 
 let buildings: IBuilding[] = [];
-// const depotIndex = randomIndex(subdividedRegions);
 const depotIndex = subdividedRegions.indexOf(closestRegionToPos(randomRoadPoint, subdividedRegions));
 const deliveryIndices: number []= [];
-const DROP_OFF_RADIUS = 50;
+const DROP_OFF_RADIUS = ROAD_WIDTH/2;
 let circleSize = DROP_OFF_RADIUS * .9 * GRID_SCALE; // Starting size
 let sizeDirection = 1; // 1 for increasing, -1 for decreasing
 const SIZE_SPEED = 0.25 * GRID_SCALE; // Adjust this to make the pulse faster or slower
@@ -210,19 +209,23 @@ grid.setRegions(smallRegions);
 const depot = buildings[depotIndex];
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI /2;
-//
-// for (let i = 0; i < NUM_ENEMIES; i++) {
-//     const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
-//     enemies.push(enemy);
-//     grid.addToEnemyMap(enemy);
-// }
 
-const enemy = new Enemy({x: player.pos.x, y: player.pos.y}, grid, player)
-enemies.push(enemy);
-grid.addToEnemyMap(enemy);
+for (let i = 0; i < NUM_ENEMIES; i++) {
+    const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
+    enemies.push(enemy);
+    grid.addToEnemyMap(enemy);
+}
+
+// const enemy = new Enemy({x: player.pos.x, y: player.pos.y}, grid, player)
+// enemies.push(enemy);
+// grid.addToEnemyMap(enemy);
+//
+// const enemy2 = new Enemy({x: player.pos.x, y: player.pos.y}, grid, player)
+// enemies.push(enemy2);
+// grid.addToEnemyMap(enemy2);
 
 const NUM_INTIAL_DELIVERIES = 3;
-deliveryIndices.push(...findRegionIndexesWithinDistances(randomRoadPoint, subdividedRegions, NUM_INTIAL_DELIVERIES, 750, 150));
+deliveryIndices.push(...findRegionIndexesWithinDistances(player.center, subdividedRegions, NUM_INTIAL_DELIVERIES, ROAD_WIDTH*5, ROAD_WIDTH));
 
 function tick(t: number) {
     let deltaTime = (t - lastTime) / 1000;  // convert to seconds
@@ -244,10 +247,23 @@ function tick(t: number) {
 
     requestAnimationFrame(tick);
 }
+
 function update(t: number) {
     if (UI_STATE.deliveryMenuVisible) return;
     grid.update();
-    for (const enemy of enemies) { enemy.update(t); }
+
+    for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        if (!enemy) continue;
+        grid.addToEnemyMap(enemy);
+    }
+
+    for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        if (!enemy) continue;
+        enemy.update(t);
+    }
+    // for (const enemy of enemies) { enemy.update(t); }
 
     player.update(t);
     BulletPool.update(t);
@@ -288,7 +304,7 @@ function update(t: number) {
             buildings[deliveryIndices[0]].color = "#fff";
             grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "#fff");
             updateCash(100);
-            deliveryIndices.shift();
+            const index = deliveryIndices.shift();
             if (deliveryIndices.length > 0) {
                 buildings[deliveryIndices[0]].color = "red";
                 grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
@@ -487,18 +503,19 @@ function findRegionIndexesWithinDistances(pos: IPoint, regions: IPolygon[], numR
     for (let i = 0; i < regions.length; i++) {
         const region = regions[i];
         const dist = distanceBetweenPoints(pos, region.center);
-        if (dist < maxDistance && dist > minDistance && i !== depotIndex) {
+        if (dist < maxDistance && dist > minDistance && i !== depotIndex && !deliveryIndices.includes(i)) {
             closeRegions.push(i);
         }
     }
 
-    console.log(closeRegions.length);
-    return closeRegions.slice(0, numRegions);
+    const toReturn = closeRegions.slice(0, numRegions);
+    return toReturn;
 }
 
 function showMenu() {
     menu.classList.remove("hide");
     menu.classList.add("show");
+    menu.style.pointerEvents = "auto";
     menu.style.removeProperty("opacity");
     UI_STATE.deliveryMenuVisible = true;
 
@@ -528,6 +545,7 @@ function showMenu() {
 
 function hideMenu() {
     menu.classList.remove("show");
+    menu.style.pointerEvents = "none";
     menu.classList.add("hide");
     UI_STATE.deliveryMenuVisible = false;
 
@@ -565,5 +583,5 @@ requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector(".menu-btn").addEventListener("click", () => {
     hideMenu();
-    deliveryIndices.push(...findRegionIndexesWithinDistances(buildings[depotIndex].dropOffPoint, regions, NUM_INTIAL_DELIVERIES, 1000, 150));
+    deliveryIndices.push(...findRegionIndexesWithinDistances(buildings[depotIndex].dropOffPoint, regions, NUM_INTIAL_DELIVERIES, ROAD_WIDTH*10, 150));
 });

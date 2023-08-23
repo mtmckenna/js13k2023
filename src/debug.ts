@@ -1,4 +1,4 @@
-export const DEBUG = true;
+export const DEBUG = false;
 export class FpsDisplay {
     div: HTMLDivElement;
     lastFrameTime: number = 0;
