@@ -15,9 +15,7 @@ import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
 import Boat from "./boat";
 
 const ENEMY_MOVING_SPEED = 1.5;
-const MAX_FORCE = ENEMY_MOVING_SPEED;
 const ENEMY_SEPARATION_FORCE = .9;
-const PERCEPTION_RADIUS = 500;
 
 const PIXELS = [
     [0, 0, 1, 1, 1, 1, 0, 0],

@@ -155,8 +155,8 @@ export class Joystick {
         this.drawInnerJoystick(ctx);
     }
     drawOuterJoystick(ctx: CanvasRenderingContext2D) {
-        ctx.strokeStyle = "blue";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#FFD700";
+        ctx.lineWidth = 6;
 
         ctx.beginPath();
         ctx.arc(this.outerPos.x, this.outerPos.y, JOYSTICK_RADIUS, 0, 2 * Math.PI);
@@ -165,8 +165,8 @@ export class Joystick {
     }
 
     drawInnerJoystick(ctx: CanvasRenderingContext2D) {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#F0E68C";
+        ctx.lineWidth = 6;
         ctx.beginPath();
 
         ctx.arc(
@@ -177,7 +177,11 @@ export class Joystick {
             2 * Math.PI
         );
 
-        ctx.stroke();
+        // ctx.stroke();
+        ctx.fillStyle = "#F0E68C";
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+        ctx.globalAlpha = 1;
         ctx.closePath();
     }
 }
