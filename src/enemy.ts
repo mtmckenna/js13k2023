@@ -16,7 +16,7 @@ import Boat from "./boat";
 
 const ENEMY_MOVING_SPEED = 1.5;
 const MAX_FORCE = ENEMY_MOVING_SPEED;
-const ENEMY_SEPARATION_FORCE = .75;
+const ENEMY_SEPARATION_FORCE = .9;
 const PERCEPTION_RADIUS = 500;
 
 const PIXELS = [
