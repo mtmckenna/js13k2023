@@ -64,6 +64,7 @@ export default class Enemy implements IPositionable {
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}];
     forwardDirection: boolean = true;
     frameCounter: number = 0;
+    randomStart: number = 0;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -80,6 +81,7 @@ export default class Enemy implements IPositionable {
         this.sign = Math.random() > .5 ? 1 : -1;
         drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
         this.frameCounter = Math.floor(Math.random() * NUM_FRAMES);
+        this.randomStart = Math.random() * 2 * Math.PI;
     }
 
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
@@ -140,17 +142,28 @@ export default class Enemy implements IPositionable {
         dirToPlayer.x += separation.x;
         dirToPlayer.y += separation.y;
 
-        const DECAY = 0.05;
-        if (Math.sign(this.vel.x) !== Math.sign(dirToPlayer.x)) {
-            this.vel.x = this.vel.x + Math.sign(dirToPlayer.x) * DECAY;
-        } else {
-            this.vel.x = dirToPlayer.x * ENEMY_MOVING_SPEED;
-        }
+        const distanceToPlayer = distanceBetweenPoints(this.center, this.player.center);
 
-        if (Math.sign(this.vel.y) !== Math.sign(dirToPlayer.y)) {
-            this.vel.y = this.vel.y + Math.sign(dirToPlayer.y) * DECAY
+        if (distanceToPlayer < 200) {
+            const DECAY = 0.05;
+            if (Math.sign(this.vel.x) !== Math.sign(dirToPlayer.x)) {
+                this.vel.x = this.vel.x + Math.sign(dirToPlayer.x) * DECAY;
+            } else {
+                this.vel.x = dirToPlayer.x * ENEMY_MOVING_SPEED;
+            }
+
+            if (Math.sign(this.vel.y) !== Math.sign(dirToPlayer.y)) {
+                this.vel.y = this.vel.y + Math.sign(dirToPlayer.y) * DECAY
+            } else {
+                this.vel.y = dirToPlayer.y * ENEMY_MOVING_SPEED;
+            }
         } else {
-            this.vel.y = dirToPlayer.y * ENEMY_MOVING_SPEED;
+            // move sinusoidally
+            const t = this.time *1000;
+            const cos = getCos(t / 1000 + this.randomStart)/2;
+            const sin = getSin(t / 1000 + this.randomStart)/2;
+            this.vel.x = cos * ENEMY_MOVING_SPEED;
+            this.vel.y = sin * ENEMY_MOVING_SPEED;
         }
 
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.size.x);

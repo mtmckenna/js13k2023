@@ -44,7 +44,7 @@ const GRID_SCALE = 1/2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 100;
+const NUM_ENEMIES = 50;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -225,7 +225,31 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
 // grid.addToEnemyMap(enemy2);
 
 const NUM_INTIAL_DELIVERIES = 3;
-deliveryIndices.push(...findRegionIndexesWithinDistances(player.center, subdividedRegions, NUM_INTIAL_DELIVERIES, ROAD_WIDTH*5, ROAD_WIDTH));
+
+function generateDeliveryIndices() {
+    // find not overlapping delivery buildings
+    for (let i = 0; i < NUM_INTIAL_DELIVERIES; i++) {
+        let index = randomIndex(buildings);
+        let tries = 0;
+        while (tries < 100) {
+            const building = buildings[index];
+            if (building.type === "empty") {
+                for (const deliveryIndex of deliveryIndices) {
+                    if (distanceBetweenPoints(building.center, buildings[deliveryIndex].center) < ROAD_WIDTH * 2) {
+                        // index = randomIndex(buildings);
+                        tries++;
+                        continue;
+                    }
+                }
+                building.type = "delivery";
+                building.color = "red";
+                deliveryIndices.push(index);
+                break;
+            }
+            tries++;
+        }
+    }
+}
 
 function tick(t: number) {
     let deltaTime = (t - lastTime) / 1000;  // convert to seconds
@@ -578,10 +602,11 @@ grid.draw(gridCtx, GRID_SCALE);
 // grid.drawRegions(regionsCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, GRID_SCALE);
 grid.drawBuildings(buildingsCtx, GRID_SCALE);
-if (deliveryIndices.length) grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
+generateDeliveryIndices();
+grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector(".menu-btn").addEventListener("click", () => {
     hideMenu();
-    deliveryIndices.push(...findRegionIndexesWithinDistances(buildings[depotIndex].dropOffPoint, regions, NUM_INTIAL_DELIVERIES, ROAD_WIDTH*10, 150));
+    generateDeliveryIndices();
 });
