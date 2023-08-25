@@ -234,53 +234,6 @@ getNearestEnemy(pos: IPoint): Enemy | null {
         }
     }
 
-    drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
-        ctx.imageSmoothingEnabled = false;
-        ctx.lineWidth = 5;
-        ctx.fillStyle = "#654321";
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
-        for (let i = 1; i < building.vertices.length; i++) {
-            const vertex = building.vertices[i];
-            ctx.lineTo(vertex.x*scale, vertex.y*scale);
-        }
-        ctx.closePath();
-        ctx.fill();
-
-        const lightDirection = {x: 0, y: .5};
-
-        for (let i = 0; i < building.vertices.length; i++) {
-            const A = building.center;
-            const B = building.vertices[i];
-            const C = building.vertices[(i+1)%building.vertices.length];
-
-            const edge1 = {x: B.x - A.x, y: B.y - A.y};
-            const edge2 = {x: C.x - A.x, y: C.y - A.y};
-
-            const normal = {
-                x: edge1.y - edge2.y,
-                y: edge2.x - edge1.x
-            };
-
-            const dotProduct = (normal.x * lightDirection.x + normal.y * lightDirection.y) / (Math.sqrt(normal.x * normal.x + normal.y * normal.y) * Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
-
-            ctx.beginPath();
-            ctx.moveTo(A.x*scale, A.y*scale);
-            ctx.lineTo(B.x*scale, B.y*scale);
-            ctx.lineTo(C.x*scale, C.y*scale);
-            ctx.closePath();
-
-            ctx.globalAlpha = .2
-            ctx.fillStyle = mapDotProductToShade(dotProduct);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-
-        }
-        // ctx.stroke();
-    }
-
     // drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
     //     ctx.imageSmoothingEnabled = false;
     //     ctx.lineWidth = 5;
@@ -296,31 +249,54 @@ getNearestEnemy(pos: IPoint): Enemy | null {
     //     ctx.closePath();
     //     ctx.fill();
     //
-    //     // construct polygons from the center of the building to two vertices
-    //     // and then fill the polygon where the polygons on the buttom are shaded
-    //     // and the polygons on the top are not shaded
-    //     ctx.fillStyle = "#000";
+    //     const lightDirection = {x: 0, y: .5};
+    //
     //     for (let i = 0; i < building.vertices.length; i++) {
-    //         const vertex = building.vertices[i];
-    //         const vertex2 = building.vertices[(i+1)%building.vertices.length];
+    //         const A = building.center;
+    //         const B = building.vertices[i];
+    //         const C = building.vertices[(i+1)%building.vertices.length];
+    //
+    //         const edge1 = {x: B.x - A.x, y: B.y - A.y};
+    //         const edge2 = {x: C.x - A.x, y: C.y - A.y};
+    //
+    //         const normal = {
+    //             x: edge1.y - edge2.y,
+    //             y: edge2.x - edge1.x
+    //         };
+    //
+    //         const dotProduct = (normal.x * lightDirection.x + normal.y * lightDirection.y) / (Math.sqrt(normal.x * normal.x + normal.y * normal.y) * Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
+    //
     //         ctx.beginPath();
-    //         ctx.moveTo(building.center.x*scale, building.center.y*scale);
-    //         ctx.lineTo(vertex.x*scale, vertex.y*scale);
-    //         ctx.lineTo(vertex2.x*scale, vertex2.y*scale);
+    //         ctx.moveTo(A.x*scale, A.y*scale);
+    //         ctx.lineTo(B.x*scale, B.y*scale);
+    //         ctx.lineTo(C.x*scale, C.y*scale);
     //         ctx.closePath();
-    //         const polygon = {vertices: [building.center, vertex, vertex2]};
-    //         const center = centerOfVertices(polygon.vertices);
-    //         if (center.y > building.center.y) {
-    //             ctx.fillStyle = "#000";
-    //         } else {
-    //             ctx.fillStyle = "#fff";
-    //         }
+    //
+    //         ctx.globalAlpha = .2
+    //         ctx.fillStyle = mapDotProductToShade(dotProduct);
     //         ctx.fill();
+    //         ctx.globalAlpha = 1;
+    //
     //     }
-    //
-    //
     //     // ctx.stroke();
     // }
+
+    drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
+        ctx.imageSmoothingEnabled = false;
+        ctx.lineWidth = 5;
+        ctx.fillStyle = "#654321";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
+        for (let i = 1; i < building.vertices.length; i++) {
+            const vertex = building.vertices[i];
+            ctx.lineTo(vertex.x*scale, vertex.y*scale);
+        }
+        ctx.closePath();
+        ctx.fill();
+        // ctx.stroke();
+    }
     setNeighborGridCells(currentIndex: number, neighborGridCells: IGridCell[]): Array<IGridCell> {
         // const neighbors: Array<IGridCell> = [];
         for(let i = 0; i < neighborGridCells.length; i++) {

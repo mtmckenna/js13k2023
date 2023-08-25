@@ -18,7 +18,7 @@ export default class Road implements IPositionable {
     grid: Grid;
 
     constructor(edge: IEdge, boundingBox: IPoint) {
-        this.color = "#76552b";
+        this.color = "#5f80c0";
         this.edge = edge;
         this.size = {x: ROAD_WIDTH, y: 0};
         this.angle = Math.atan2(edge.v1.y - edge.v0.y, edge.v1.x - edge.v0.x) + Math.PI / 2;
