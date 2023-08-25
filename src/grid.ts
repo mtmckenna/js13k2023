@@ -248,16 +248,29 @@ getNearestEnemy(pos: IPoint): Enemy | null {
         ctx.save();
         ctx.imageSmoothingEnabled = false;
         ctx.globalAlpha = 1.0
-        ctx.fillStyle = "#699169";
+        ctx.fillStyle = "#C2B280";
         ctx.beginPath();
         ctx.moveTo(region.vertices[0].x*scale, region.vertices[0].y*scale);
         for (let i = 1; i < region.vertices.length; i++) {
             const vertex = region.vertices[i];
             ctx.lineTo(vertex.x*scale, vertex.y*scale);
         }
-
         ctx.closePath();
         ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        // ctx.globalAlpha = .5
+        ctx.beginPath();
+        ctx.moveTo(region.shrunkPolygon.vertices[0].x * scale, region.shrunkPolygon.vertices[0].y * scale);
+        for (let i = 1; i < region.shrunkPolygon.vertices.length; i++) {
+            const vertex = region.shrunkPolygon.vertices[i];
+            ctx.lineTo(vertex.x*scale, vertex.y*scale);
+        }
+        ctx.closePath();
+        ctx.fillStyle = "#699169";
+        ctx.fill();
+        // ctx.globalAlpha = 1;
         ctx.restore();
     }
 

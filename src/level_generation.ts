@@ -21,7 +21,7 @@ import {
     isPointOnLineSegment,
     isPointAlongLine,
     edgesAreEqual,
-    calculateCrossProduct, perpendicularDistanceFromPointToEdge, normalFromVector
+    calculateCrossProduct, perpendicularDistanceFromPointToEdge, normalFromVector, randomFloat
 } from "./math";
 import {PointPool} from "./pools";
 
@@ -177,20 +177,25 @@ function regionFromPolygon(polygon: IPolygon, boundingBox): IRegion | null {
         if (!isSubsegmentOfBoundary(edge, boundaryEdges)) internalEdges.push(edge);
     }
     const insideEdges = shrinkPolygon(polygonEdges, ROAD_WIDTH / 2, true, boundingBox);
-    const unclippedEdges = shrinkPolygon(polygonEdges, ROAD_WIDTH/2, false, boundingBox);
 
     if (!insideEdges) return null;
 
     const smallerPolygon = polygonFromEdges(insideEdges);
+
+    const smallerPolygonEdges = edgesFromPolygon(smallerPolygon);
+    const moreInsideEdges = shrinkPolygon(smallerPolygonEdges, ROAD_WIDTH/4, true, boundingBox);
+    if (!moreInsideEdges) return null;
+    const evenSmallerPolygon = polygonFromEdges(moreInsideEdges);
+
     return {
         vertices: smallerPolygon.vertices,
         center: smallerPolygon.center,
         edges: internalEdges,
         insideEdges: insideEdges,
-        unclippedEdges,
         polygonEdges,
         dropOffPoint: {x: 0, y: 0},
         type: "empty",
+        shrunkPolygon: evenSmallerPolygon
     }
 }
 

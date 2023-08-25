@@ -132,8 +132,8 @@ export interface IBoundingBox {
 export interface IRegion extends IPolygon, IDropOff {
     edges: IEdge[];
     insideEdges: IEdge[];
-    unclippedEdges: IEdge[];
     polygonEdges: IEdge[];
+    shrunkPolygon: IPolygon;
 }
 
 export type IVector = IPoint;
