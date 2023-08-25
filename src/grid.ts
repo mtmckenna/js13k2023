@@ -3,7 +3,7 @@ import Enemy from "./enemy";
 import Road from "./road";
 
 import { DEBUG } from "./debug";
-import {distanceBetweenPoints, getCos, getSin, squaredDistance} from "./math";
+import { getCos, getSin, squaredDistance} from "./math";
 import {centerOfVertices} from "./level_generation";
 
 export const GRID_CELL_SIZE = 300;
@@ -251,36 +251,34 @@ getNearestEnemy(pos: IPoint): Enemy | null {
 
         const lightDirection = {x: 0, y: .5};
 
-        // If the building has four vertices, we treat it as a special case
-            for (let i = 0; i < building.vertices.length; i++) {
-                const A = building.center;
-                const B = building.vertices[i];
-                const C = building.vertices[(i+1)%building.vertices.length];
+        for (let i = 0; i < building.vertices.length; i++) {
+            const A = building.center;
+            const B = building.vertices[i];
+            const C = building.vertices[(i+1)%building.vertices.length];
 
-                const edge1 = {x: B.x - A.x, y: B.y - A.y};
-                const edge2 = {x: C.x - A.x, y: C.y - A.y};
+            const edge1 = {x: B.x - A.x, y: B.y - A.y};
+            const edge2 = {x: C.x - A.x, y: C.y - A.y};
 
-                const normal = {
-                    x: edge1.y - edge2.y,
-                    y: edge2.x - edge1.x
-                };
+            const normal = {
+                x: edge1.y - edge2.y,
+                y: edge2.x - edge1.x
+            };
 
-                const dotProduct = (normal.x * lightDirection.x + normal.y * lightDirection.y) /
-                    (Math.sqrt(normal.x * normal.x + normal.y * normal.y) *
-                        Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
+            const dotProduct = (normal.x * lightDirection.x + normal.y * lightDirection.y) / (Math.sqrt(normal.x * normal.x + normal.y * normal.y) * Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
 
-                ctx.beginPath();
-                ctx.moveTo(A.x*scale, A.y*scale);
-                ctx.lineTo(B.x*scale, B.y*scale);
-                ctx.lineTo(C.x*scale, C.y*scale);
-                ctx.closePath();
+            ctx.beginPath();
+            ctx.moveTo(A.x*scale, A.y*scale);
+            ctx.lineTo(B.x*scale, B.y*scale);
+            ctx.lineTo(C.x*scale, C.y*scale);
+            ctx.closePath();
 
-                ctx.globalAlpha = .2;
-                ctx.fillStyle = mapDotProductToShade(dotProduct);
-                ctx.fill();
-                ctx.globalAlpha = 1;
+            ctx.globalAlpha = .2
+            ctx.fillStyle = mapDotProductToShade(dotProduct);
+            ctx.fill();
+            ctx.globalAlpha = 1;
 
         }
+        // ctx.stroke();
     }
 
     // drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
@@ -449,20 +447,6 @@ export function indexForPos(x: number, y: number, gridSizeX: number): number {
     const x2 =  Math.floor(x / GRID_CELL_SIZE);
     const y2 =  Math.floor(y / GRID_CELL_SIZE);
     return x2 + y2 * gridSizeX;
-}
-
-function getShade(A, B, C, lightDirection) {
-    const edge1 = {x: B.x - A.x, y: B.y - A.y};
-    const edge2 = {x: C.x - A.x, y: C.y - A.y};
-
-    const normal = {
-        x: edge1.y - edge2.y,
-        y: edge2.x - edge1.x
-    };
-
-    return (normal.x * lightDirection.x + normal.y * lightDirection.y) /
-        (Math.sqrt(normal.x * normal.x + normal.y * normal.y) *
-            Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
 }
 
 interface IQueueItem {

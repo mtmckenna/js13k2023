@@ -43,7 +43,7 @@ const GRID_SCALE = 1 / 2;
 
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
-const NUM_POINTS = 30;
+const NUM_POINTS = 100;
 const NUM_ENEMIES = 100;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
@@ -366,8 +366,8 @@ function update(t: number) {
             updateCash(100);
             const index = deliveryIndices.shift();
             if (deliveryIndices.length > 0) {
-                buildings[deliveryIndices[0]].color = "#F0E68C";
-                grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "#F0E68C");
+                buildings[deliveryIndices[0]].color = "red";
+                grid.drawBuilding(buildingsCtx, buildings[deliveryIndices[0]], GRID_SCALE, "red");
             } else {
                 // buildings[depotIndex].color = "green";
                 // grid.drawBuilding(buildingsCtx, buildings[depotIndex], GRID_SCALE, "green");
@@ -422,7 +422,7 @@ function draw(t: number) {
     groundCtx.fillStyle = "green";
     let building = buildings[depotIndex];
     if (deliveryIndices.length > 0) {
-        groundCtx.fillStyle = "#F0E68C";
+        groundCtx.fillStyle = "red";
         building = buildings[deliveryIndices[0]];
     }
     groundCtx.beginPath();
@@ -472,7 +472,7 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
 
     const circleX = player.center.x + cos * RADIUS_AROUND_PLAYER;
     const circleY = player.center.y + sin * RADIUS_AROUND_PLAYER;
-    const color = building.type === "depot" ? "green" : "#F0E68C";
+    const color = building.type === "depot" ? "green" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
 }
 
