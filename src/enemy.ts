@@ -49,7 +49,6 @@ export default class Enemy implements IPositionable {
     player: IPositionable | null;
     neighborGridCells: IGridCell[];
     neighborEnemies: Enemy[] = [];
-    numEnemies: number = 0;
     alignment: IPoint = {x: 0, y: 0};
     returning: boolean = false;
     rotorRandomOffsets: number[] = [];
@@ -65,6 +64,8 @@ export default class Enemy implements IPositionable {
     forwardDirection: boolean = true;
     frameCounter: number = 0;
     randomStart: number = 0;
+    active: boolean = true;
+    radius: number = 8 * PIXEL_SIZE/2;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -82,10 +83,11 @@ export default class Enemy implements IPositionable {
         drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
         this.frameCounter = Math.floor(Math.random() * NUM_FRAMES);
         this.randomStart = Math.random() * 2 * Math.PI;
+        updatePos(pos.x, pos.y, this);
     }
 
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
-
+        if (!this.active) return;
         ctx.save();
         ctx.translate(this.center.x * scale, this.center.y * scale);
         ctx.rotate(this.angle);
@@ -110,14 +112,14 @@ export default class Enemy implements IPositionable {
     }
 
     update(t: number) {
-        if (!this.grid || !this.player) return;
+        if (!this.grid || !this.player || !this.active) return;
         this.time += t;
 
         const dirToPlayer = PointPool.get();
         const separation = PointPool.get();
         normalizeVector({x: this.player.center.x - this.center.x, y: this.player.center.y - this.center.y}, dirToPlayer);
 
-        this.grid.getEnemiesFromNeighborsLoopingNTimes(this.pos, 3, this.neighborEnemies);
+        this.grid.getNeighborEnemies(this.pos, this.neighborEnemies);
         const SEPARATION_DISTANCE = 50;
 
         // Calculate separation force
@@ -127,7 +129,9 @@ export default class Enemy implements IPositionable {
 
             const dx = this.center.x - enemy.center.x;
             const dy = this.center.y - enemy.center.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < Number.EPSILON) continue;  // Skip if the enemy is on top of this enemy
 
             if (distance < SEPARATION_DISTANCE) {  // SEPARATION_DISTANCE could be, e.g., 20 units
                 const force = (SEPARATION_DISTANCE - distance) / SEPARATION_DISTANCE;

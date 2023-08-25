@@ -16,10 +16,6 @@ export interface IEdge {
     color?: CanvasColor;
 }
 
-export interface IPoolEdge extends IEdge {
-    active: boolean;
-}
-
 export interface ICircle {
     center: IPoint;
     radius: number;

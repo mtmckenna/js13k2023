@@ -1,5 +1,5 @@
-import {Joystick } from "./joystick";
-import { KeyboardInput} from "./keyboard_input";
+import {Joystick} from "./joystick";
+import {KeyboardInput} from "./keyboard_input";
 import {
     calculateAngle,
     distanceBetweenPoints, getCos, getSin, midpointOfEdge, normalFromVector,
@@ -24,7 +24,7 @@ import Enemy from "./enemy";
 
 // import {EXAMPLE_POINTS} from "./debug";
 
-import { FpsDisplay, DEBUG } from "./debug";
+import {FpsDisplay, DEBUG} from "./debug";
 import {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
 import {BulletPool, PointPool} from "./pools";
@@ -39,12 +39,12 @@ const menu: HTMLElement = document.querySelector(".menu-container");
 canvas.id = "game";
 canvas.width = 1000
 canvas.height = 1000;
-const GRID_SCALE = 1/2;
+const GRID_SCALE = 1 / 2;
 
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 50;
+const NUM_ENEMIES = 100;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -63,7 +63,7 @@ for (let i = 0; i < MAX_COLLISIONS; i++) {
 }
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
-    regionCollisions[i] = {edge: { v0: {x: 0, y: 0}, v1: {x: 0, y: 0}}, depth: 0};
+    regionCollisions[i] = {edge: {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}}, depth: 0};
 }
 
 const div = document.createElement("div");
@@ -79,16 +79,16 @@ const groundCanvas: HTMLCanvasElement = document.createElement("canvas");
 const groundCtx: CanvasRenderingContext2D = groundCanvas.getContext("2d");
 const airCanvas: HTMLCanvasElement = document.createElement("canvas");
 const airCtx: CanvasRenderingContext2D = airCanvas.getContext("2d");
-gridCanvas.width = grid.gameSize.x*GRID_SCALE;
-gridCanvas.height = grid.gameSize.y*GRID_SCALE;
-buildingsCanvas.width = grid.gameSize.x*GRID_SCALE;
-buildingsCanvas.height = grid.gameSize.y*GRID_SCALE;
-regionsCanvas.width = grid.gameSize.x*GRID_SCALE;
-regionsCanvas.height = grid.gameSize.y*GRID_SCALE;
-groundCanvas.width = grid.gameSize.x*GRID_SCALE;
-groundCanvas.height = grid.gameSize.y*GRID_SCALE;
-airCanvas.width = grid.gameSize.x*GRID_SCALE;
-airCanvas.height = grid.gameSize.y*GRID_SCALE;
+gridCanvas.width = grid.gameSize.x * GRID_SCALE;
+gridCanvas.height = grid.gameSize.y * GRID_SCALE;
+buildingsCanvas.width = grid.gameSize.x * GRID_SCALE;
+buildingsCanvas.height = grid.gameSize.y * GRID_SCALE;
+regionsCanvas.width = grid.gameSize.x * GRID_SCALE;
+regionsCanvas.height = grid.gameSize.y * GRID_SCALE;
+groundCanvas.width = grid.gameSize.x * GRID_SCALE;
+groundCanvas.height = grid.gameSize.y * GRID_SCALE;
+airCanvas.width = grid.gameSize.x * GRID_SCALE;
+airCanvas.height = grid.gameSize.y * GRID_SCALE;
 
 BulletPool.gameSize = grid.gameSize;
 BulletPool.grid = grid;
@@ -99,7 +99,7 @@ if (DEBUG) fpsDisplay = new FpsDisplay();
 
 const joystick = new Joystick(canvas, joystickMoveCallback, doubleTapCallback);
 const keyboard = new KeyboardInput(window, keyCallback);
-const playerInputState: IVehicleInputState = { pos: { x:0, y:0 }, mode: "kb" };
+const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
 const UI_STATE = {
@@ -132,6 +132,7 @@ for (let i = 0; i < NUM_POINTS; i++) {
 // points = EXAMPLE_POINTS;
 
 console.log(points);
+
 function randomPointWithinBounds(bounds: IPoint): IPoint {
     return {
         x: randomFloat(0, bounds.x),
@@ -139,7 +140,7 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
     };
 }
 
-let { roads, regions } = roadsAndRegionsFromPoints(points, grid.gameSize);
+let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
 const subdividedRegions = subdivideRegions(regions, grid.gameSize);
 const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoadPoint = randomRoad.center;
@@ -151,8 +152,8 @@ const upgrades: { [key: string]: number } = {
 
 let buildings: IBuilding[] = [];
 const depotIndex = subdividedRegions.indexOf(closestRegionToPos(randomRoadPoint, subdividedRegions));
-const deliveryIndices: number []= [];
-const DROP_OFF_RADIUS = ROAD_WIDTH/2;
+const deliveryIndices: number [] = [];
+const DROP_OFF_RADIUS = ROAD_WIDTH / 2;
 let circleSize = DROP_OFF_RADIUS * .9 * GRID_SCALE; // Starting size
 let sizeDirection = 1; // 1 for increasing, -1 for decreasing
 const SIZE_SPEED = 0.25 * GRID_SCALE; // Adjust this to make the pulse faster or slower
@@ -208,7 +209,7 @@ grid.setRegions(smallRegions);
 
 const depot = buildings[depotIndex];
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
-player.angle = randomRoad.angle + Math.PI /2;
+player.angle = randomRoad.angle + Math.PI / 2;
 
 for (let i = 0; i < NUM_ENEMIES; i++) {
     const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
@@ -216,11 +217,12 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
     grid.addToEnemyMap(enemy);
 }
 
+
 // const enemy = new Enemy({x: player.pos.x, y: player.pos.y}, grid, player)
 // enemies.push(enemy);
 // grid.addToEnemyMap(enemy);
 //
-// const enemy2 = new Enemy({x: player.pos.x, y: player.pos.y}, grid, player)
+// const enemy2 = new Enemy({x: player.pos.x-200, y: player.pos.y}, grid, player)
 // enemies.push(enemy2);
 // grid.addToEnemyMap(enemy2);
 
@@ -272,25 +274,60 @@ function tick(t: number) {
     requestAnimationFrame(tick);
 }
 
+const neighborEnemies: Enemy[] = new Array(100).fill(null);
+
 function update(t: number) {
     if (UI_STATE.deliveryMenuVisible) return;
     grid.update();
 
     for (let i = 0; i < enemies.length; i++) {
         const enemy = enemies[i];
-        if (!enemy) continue;
+        if (!enemy || !enemy.active) continue;
         grid.addToEnemyMap(enemy);
     }
 
     for (let i = 0; i < enemies.length; i++) {
         const enemy = enemies[i];
-        if (!enemy) continue;
+        if (!enemy || !enemy.active) continue;
         enemy.update(t);
     }
-    // for (const enemy of enemies) { enemy.update(t); }
 
     player.update(t);
     BulletPool.update(t);
+
+    // for (let i = 0; i < BulletPool.available.length; i++) {
+    //     const bullet = BulletPool.available[i];
+    //     if (!bullet.active) continue;
+    //     for (let j = 0; j < enemies.length; j++) {
+    //         if (!enemies[j] || !enemies[j].active) continue;
+    //         const enemy = enemies[j];
+    //         if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
+    //             console.log("hit");
+    //             BulletPool.release(bullet);
+    //             enemy.active = false;
+    //             updateCash(10);
+    //             break;
+    //         }
+    //     }
+    // }
+
+    // Bullet collide with enemies
+    for (let i = 0; i < BulletPool.available.length; i++) {
+        const bullet = BulletPool.available[i];
+        if (!bullet.active) continue;
+        grid.getNeighborEnemies(bullet.pos, neighborEnemies);
+        for (let j = 0; j < neighborEnemies.length; j++) {
+            if (!neighborEnemies[j] || !neighborEnemies[j].active) continue;
+            const enemy = neighborEnemies[j];
+            if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
+                BulletPool.release(bullet);
+                enemy.active = false;
+                updateCash(10);
+                break;
+            }
+        }
+    }
+
     numRegionCollisions = findCollisions(player.vertices, regionVertices, regionCollisions);
 
     // go through the cells and print out the number of enemies in total
@@ -298,10 +335,9 @@ function update(t: number) {
     for (let i = 0; i < grid.cells.length; i++) {
         const cell = grid.cells[i];
         num += cell.enemies.filter(e => !!e).length;
-        // console.log(cell.numEnemies);
     }
-    // console.log(num);
 
+    // wall collisions
     for (let i = 0; i < numRegionCollisions; i++) {
         const collision = regionCollisions[i];
 
@@ -319,9 +355,9 @@ function update(t: number) {
     }
 
     if (deliveryIndices.length > 0) {
-        const { x: x1, y: y1 } = player.center;
-        const { radius: r1 } = player;
-        const { x: x2, y: y2 } = buildings[deliveryIndices[0]].dropOffPoint;
+        const {x: x1, y: y1} = player.center;
+        const {radius: r1} = player;
+        const {x: x2, y: y2} = buildings[deliveryIndices[0]].dropOffPoint;
         const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
         if (inDropOffRadius && player.speed < 1) {
             buildings[deliveryIndices[0]].type = "empty";
@@ -341,9 +377,9 @@ function update(t: number) {
         buildings[depotIndex].color = "#fff";
         grid.drawBuilding(buildingsCtx, buildings[depotIndex], GRID_SCALE, "#fff");
     } else {
-        const { x: x1, y: y1 } = player.center;
-        const { radius: r1 } = player;
-        const { x: x2, y: y2 } = buildings[depotIndex].dropOffPoint;
+        const {x: x1, y: y1} = player.center;
+        const {radius: r1} = player;
+        const {x: x2, y: y2} = buildings[depotIndex].dropOffPoint;
         const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
         if (inDropOffRadius && player.speed < 1) {
             if (!UI_STATE.deliveryMenuVisible) showMenu();
@@ -367,7 +403,7 @@ function draw(t: number) {
     airCtx.imageSmoothingEnabled = false;
 
     const sourceX = camera.pos.x * GRID_SCALE;
-    const sourceY = camera.pos.y * GRID_SCALE ;
+    const sourceY = camera.pos.y * GRID_SCALE;
     const sourceWidth = camera.canvasSize.x * GRID_SCALE / camera.currentZoom
     const sourceHeight = camera.canvasSize.y * GRID_SCALE / camera.currentZoom;
 
@@ -399,7 +435,9 @@ function draw(t: number) {
     ctx.drawImage(groundCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
     ctx.drawImage(buildingsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
 
-    for (const enemy of enemies) { enemy.draw(airCtx, GRID_SCALE, t); }
+    for (const enemy of enemies) {
+        enemy.draw(airCtx, GRID_SCALE, t);
+    }
 
     BulletPool.draw(airCtx, GRID_SCALE);
 
@@ -415,6 +453,7 @@ function draw(t: number) {
     joystick.draw(ctx);
 
 }
+
 function updateCash(amount: number) {
     cash += amount;
     const cashElement = document.querySelector('#cash');
@@ -428,14 +467,15 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
     const TRIANGLE_SIZE = 10;
     const RADIUS_AROUND_PLAYER = player.radius + TRIANGLE_SIZE * 2.5;
 
-    const cos = getCos(angle - Math.PI/2);
-    const sin = getSin(angle - Math.PI/2);
+    const cos = getCos(angle - Math.PI / 2);
+    const sin = getSin(angle - Math.PI / 2);
 
     const circleX = player.center.x + cos * RADIUS_AROUND_PLAYER;
     const circleY = player.center.y + sin * RADIUS_AROUND_PLAYER;
     const color = building.type === "depot" ? "green" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
 }
+
 function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, angle: number, color: CanvasColor) {
     ctx.save();
     ctx.translate(x, y);
@@ -503,7 +543,7 @@ function resizeCanvas() {
 
     canvas.width = width;
     canvas.height = height;
-    camera.canvasSize.x = canvas.width ;
+    camera.canvasSize.x = canvas.width;
     camera.canvasSize.y = canvas.height;
     joystick.resize();
 }
@@ -519,21 +559,6 @@ function closestRegionToPos(pos: IPoint, regions: IPolygon[]): IPolygon {
         }
     }
     return closestRegion;
-}
-
-function findRegionIndexesWithinDistances(pos: IPoint, regions: IPolygon[], numRegions: number, maxDistance: number, minDistance: number): number[] {
-    const closeRegions: number[] = [];
-    // for (const region of regions) {
-    for (let i = 0; i < regions.length; i++) {
-        const region = regions[i];
-        const dist = distanceBetweenPoints(pos, region.center);
-        if (dist < maxDistance && dist > minDistance && i !== depotIndex && !deliveryIndices.includes(i)) {
-            closeRegions.push(i);
-        }
-    }
-
-    const toReturn = closeRegions.slice(0, numRegions);
-    return toReturn;
 }
 
 function showMenu() {

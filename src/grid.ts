@@ -3,7 +3,8 @@ import Enemy from "./enemy";
 import Road from "./road";
 
 import { DEBUG } from "./debug";
-import {getCos, getSin, squaredDistance} from "./math";
+import { getCos, getSin, squaredDistance} from "./math";
+import {centerOfVertices} from "./level_generation";
 
 export const GRID_CELL_SIZE = 300;
 export const GRID_SIZE_X = 10;
@@ -93,91 +94,87 @@ export default class Grid {
         this.subregionPolygons = subregionPolygons;
     }
 
-    getEnemiesFromNeighborsLoopingNTimes(pos: IPoint, n: number, enemies: Enemy[]): Enemy[] {
-        neighbors.length = 0; // TODO: make this a fixed length array
-        // TODO: don't allocate memory
+
+    getNeighborEnemies(pos: IPoint, enemies: Enemy[]): Enemy[] {
+        neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
-        const visited: { [index: number]: boolean } = {};
-        const queue: number[] = [startCellIndex];
+        const visited: Set<number> = new Set();
+        const queue: IQueueItem[] = [{ cellIndex: startCellIndex, depth: 0 }];
 
-        while (queue.length > 0 && n > 0) {
-            const currentCellIndex = queue.shift()!;
-            visited[currentCellIndex] = true;
+        let minDistance = Number.MAX_VALUE;
+        let minEnemy: Enemy | null = null;
+        let count = 0;
 
+        while (queue.length > 0) {
+            const { cellIndex: currentCellIndex, depth } = queue.shift()!;
+
+            if (depth > 5) break;
+
+            visited.add(currentCellIndex);
             const currentCell = this.cells[currentCellIndex];
 
-            // Check if there's an enemy in this cell.
             for (let i = 0; i < currentCell.numEnemies; i++) {
                 const enemy = currentCell.enemies[i];
-                if (enemy && i < enemies.length - 1) {
-                    enemies[i] = enemy;
-                    // enemies.push(enemy);
+                if (enemy && enemy.active) {
+                    enemies[count] = enemy;
+                    count++;
+                    if (count >= enemies.length) return enemies;
                 }
+
+
             }
 
+            // TODO: don't allocate memory
             this.setNeighborGridCells(currentCellIndex, neighbors);
             for (const neighbor of neighbors) {
-                if (neighbor && !visited[neighbor.index]) {
-                    queue.push(neighbor.index);
+                if (neighbor && !visited.has(neighbor.index)) {
+                    queue.push({ cellIndex: neighbor.index, depth: depth + 1 });
                 }
             }
-            n--;
-
         }
 
         return enemies;
     }
 
-    getNearestEnemy(pos: IPoint): Enemy | null {
-        neighbors.length = 0;
-        // TODO: don't allocate memory
-        const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
-        const visited: { [index: number]: boolean } = {};
-        const queue: number[] = [startCellIndex];
+getNearestEnemy(pos: IPoint): Enemy | null {
+    neighbors.length = 0;
+    const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
+    const visited: Set<number> = new Set();
+    const queue: IQueueItem[] = [{ cellIndex: startCellIndex, depth: 0 }];
 
-        let tries = 0;
-        let minDistance = Number.MAX_VALUE;
-        let minEnemy: Enemy | null = null;
+    let minDistance = Number.MAX_VALUE;
+    let minEnemy: Enemy | null = null;
 
-        // TODOL consolidate this while loop with getEnemiesFromNeighborsLoopingNTimes
-        while (queue.length > 0 && tries < 3) {
-            const currentCellIndex = queue.shift()!;
-            visited[currentCellIndex] = true;
+    while (queue.length > 0) {
+        const { cellIndex: currentCellIndex, depth } = queue.shift()!;
 
-            const currentCell = this.cells[currentCellIndex];
+        if (depth > 5) break;
 
+        visited.add(currentCellIndex);
+        const currentCell = this.cells[currentCellIndex];
 
-            // Check if there's an enemy in this cell.
-            for (let i = 0; i < currentCell.numEnemies; i++) {
-                const enemy = currentCell.enemies[i];
-                if (enemy) {
-                    // const distance = Math.hypot((pos.x - enemy.center.x), (pos.y - enemy.center.y));
-                    const distance = squaredDistance(pos, enemy.center);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        minEnemy = enemy;
-                        // return enemy;
-                    }
-                }
-                // if (enemy) {
-                //     return enemy; // Found an enemy, return it.
-                // }
-            }
-            // Add neighboring cells to the queue if they haven't been visited.
-            // TODO: don't allocate memory
-            // const neighbors: IGridCell[] = [];
-            this.setNeighborGridCells(currentCellIndex, neighbors);
-            for (const neighbor of neighbors) {
-                if (neighbor && !visited[neighbor.index]) {
-                    queue.push(neighbor.index);
+        for (let i = 0; i < currentCell.numEnemies; i++) {
+            const enemy = currentCell.enemies[i];
+            if (enemy) {
+                const distance = squaredDistance(pos, enemy.center);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    minEnemy = enemy;
                 }
             }
-
-            tries++;
         }
 
-        return minEnemy;
+        // TODO: don't allocate memory
+        this.setNeighborGridCells(currentCellIndex, neighbors);
+        for (const neighbor of neighbors) {
+            if (neighbor && !visited.has(neighbor.index)) {
+                queue.push({ cellIndex: neighbor.index, depth: depth + 1 });
+            }
+        }
     }
+
+    return minEnemy;
+}
 
 
 
@@ -251,10 +248,85 @@ export default class Grid {
         }
         ctx.closePath();
         ctx.fill();
+
+        const lightDirection = {x: 0, y: .5};
+
+        for (let i = 0; i < building.vertices.length; i++) {
+            const A = building.center;
+            const B = building.vertices[i];
+            const C = building.vertices[(i+1)%building.vertices.length];
+
+            const edge1 = {x: B.x - A.x, y: B.y - A.y};
+            const edge2 = {x: C.x - A.x, y: C.y - A.y};
+
+            const normal = {
+                x: edge1.y - edge2.y,
+                y: edge2.x - edge1.x
+            };
+
+            const dotProduct = (normal.x * lightDirection.x + normal.y * lightDirection.y) / (Math.sqrt(normal.x * normal.x + normal.y * normal.y) * Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
+
+            ctx.beginPath();
+            ctx.moveTo(A.x*scale, A.y*scale);
+            ctx.lineTo(B.x*scale, B.y*scale);
+            ctx.lineTo(C.x*scale, C.y*scale);
+            ctx.closePath();
+
+            ctx.globalAlpha = .2
+            ctx.fillStyle = mapDotProductToShade(dotProduct);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+        }
         // ctx.stroke();
     }
+
+    // drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
+    //     ctx.imageSmoothingEnabled = false;
+    //     ctx.lineWidth = 5;
+    //     ctx.fillStyle = "#654321";
+    //     ctx.strokeStyle = color;
+    //     ctx.lineWidth = 3;
+    //     ctx.beginPath();
+    //     ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
+    //     for (let i = 1; i < building.vertices.length; i++) {
+    //         const vertex = building.vertices[i];
+    //         ctx.lineTo(vertex.x*scale, vertex.y*scale);
+    //     }
+    //     ctx.closePath();
+    //     ctx.fill();
+    //
+    //     // construct polygons from the center of the building to two vertices
+    //     // and then fill the polygon where the polygons on the buttom are shaded
+    //     // and the polygons on the top are not shaded
+    //     ctx.fillStyle = "#000";
+    //     for (let i = 0; i < building.vertices.length; i++) {
+    //         const vertex = building.vertices[i];
+    //         const vertex2 = building.vertices[(i+1)%building.vertices.length];
+    //         ctx.beginPath();
+    //         ctx.moveTo(building.center.x*scale, building.center.y*scale);
+    //         ctx.lineTo(vertex.x*scale, vertex.y*scale);
+    //         ctx.lineTo(vertex2.x*scale, vertex2.y*scale);
+    //         ctx.closePath();
+    //         const polygon = {vertices: [building.center, vertex, vertex2]};
+    //         const center = centerOfVertices(polygon.vertices);
+    //         if (center.y > building.center.y) {
+    //             ctx.fillStyle = "#000";
+    //         } else {
+    //             ctx.fillStyle = "#fff";
+    //         }
+    //         ctx.fill();
+    //     }
+    //
+    //
+    //     // ctx.stroke();
+    // }
     setNeighborGridCells(currentIndex: number, neighborGridCells: IGridCell[]): Array<IGridCell> {
         // const neighbors: Array<IGridCell> = [];
+        for(let i = 0; i < neighborGridCells.length; i++) {
+            neighborGridCells[i] = null;
+        }
+
         const { cells } = this;
         const width = this.gridSize.x;
         const height = this.gridSize.y;
@@ -365,8 +437,19 @@ export default class Grid {
     }
 }
 
+
+function mapDotProductToShade(dotProduct: number): string {
+    const value = (dotProduct + 1) * 0.5 * 255; // map from [-1, 1] to [0, 255]
+    const grayscale = Math.round(value);
+    return `rgb(${grayscale}, ${grayscale}, ${grayscale})`;
+}
 export function indexForPos(x: number, y: number, gridSizeX: number): number {
     const x2 =  Math.floor(x / GRID_CELL_SIZE);
     const y2 =  Math.floor(y / GRID_CELL_SIZE);
     return x2 + y2 * gridSizeX;
+}
+
+interface IQueueItem {
+    cellIndex: number;
+    depth: number;
 }

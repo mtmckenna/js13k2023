@@ -11,6 +11,7 @@ const HtmlMinimizerPlugin = require("html-minimizer-webpack-plugin");
 module.exports = merge(common, {
   mode: "production",
   optimization: {
+    usedExports: true,
     minimizer: [
       new TerserJSPlugin({
         terserOptions: { compress: true, mangle: { properties: true } },

@@ -8,7 +8,7 @@ export class Bullet implements IPositionable, ICircle, IPoolable {
     numOccupiedCells: number = 0;
     occupiedCells: IGridCell[] = [];
     pos: IPoint = {x: 0, y: 0};
-    radius: number;
+    radius: number = 5;
     size: IPoint = {x: 10, y: 10};
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     vel: IPoint = {x: 0, y: 0};

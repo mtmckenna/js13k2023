@@ -5,7 +5,6 @@ import Grid from "./grid";
 
 export const ROAD_WIDTH = 200;
 export default class Road implements IPositionable {
-    originalRoadColor = "#474747";
     edge: IEdge;
     color: string;
     angle: number;
@@ -19,8 +18,7 @@ export default class Road implements IPositionable {
     grid: Grid;
 
     constructor(edge: IEdge, boundingBox: IPoint) {
-        this.originalRoadColor = "#3469bf";
-        this.color = this.originalRoadColor;
+        this.color = "#76552b";
         this.edge = edge;
         this.size = {x: ROAD_WIDTH, y: 0};
         this.angle = Math.atan2(edge.v1.y - edge.v0.y, edge.v1.x - edge.v0.x) + Math.PI / 2;

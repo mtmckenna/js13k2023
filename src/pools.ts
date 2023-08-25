@@ -40,7 +40,7 @@ export class PointPool {
 PointPool.initialize(1000);
 
 export class BulletPool {
-    private static available: Bullet[] = [];
+    public static available: Bullet[] = [];
     public static gameSize: IPoint = {x: 0, y: 0};
     public static grid: Grid;
 
@@ -95,7 +95,6 @@ export class BulletPool {
                 // draw bullet which is a square that rotates based on the bullets angle
                 ctx.fillStyle = "#ff00ff";
                 ctx.fillRect(-bullet.size.x/2*scale, -bullet.size.y/2*scale, bullet.size.x*scale, bullet.size.y*scale);
-
 
                 ctx.restore();
             }

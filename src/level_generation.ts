@@ -505,7 +505,7 @@ function perpendicularBisector(start: IPoint, end: IPoint): IEdge {
 }
 
 function circleFromPoints(points: IPoint[]): ICircle {
-    const center = points.reduce((sum, point) => ({x: sum.x + point.x, y: sum.y + point.y}), {x: 0, y: 0});
+    const center = centerOfVertices(points);
     center.x /= points.length;
     center.y /= points.length;
 
@@ -555,7 +555,14 @@ export function subdivideRegions(regions: IPolygon[], boundingBox: IPoint): IPol
 
             return false;
         });
-        newRegions.push(...onlyEdgeRegions);
+
+        // filter out regions that are bigger than max
+        const onlySmallRegions = onlyEdgeRegions.filter(smallRegion => {
+            const area = areaOfVertices(sortVertices(smallRegion.vertices, smallRegion.center));
+            return area < MAX_SUBDIVISION_AREA;
+        });
+
+        newRegions.push(...onlySmallRegions);
     }
 
     return newRegions;
@@ -588,7 +595,7 @@ function isPointOnEdge(point: IPoint, edge: IEdge): boolean {
     return false;
 }
 
-const MAX_SUBDIVISION_AREA = 20000;
+const MAX_SUBDIVISION_AREA = 10000;
 
 function subdivideRegion(originalRegion: IPolygon, boundingBox: IPoint): IPolygon[] {
     const area = areaOfVertices(sortVertices(originalRegion.vertices, originalRegion.center));
@@ -859,7 +866,7 @@ function areaOfBoundingBox(aabb: IBoundingBox): number {
 }
 
 
-function centerOfVertices(vertices: IPoint[]): IPoint {
+export function centerOfVertices(vertices: IPoint[]): IPoint {
     let point = vertices.reduce((sum, point) => ({x: sum.x + point.x, y: sum.y + point.y}), {x: 0, y: 0});
     point.x /= vertices.length;
     point.y /= vertices.length;

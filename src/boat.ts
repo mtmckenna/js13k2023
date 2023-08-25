@@ -53,11 +53,11 @@ export default class Boat implements IPositionable, ICircle {
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     upgrades: string[] = [];
-    gunFiringSpeed: number = .5;
+    gunFiringSpeed: number = .2;
     lastFiredTime: number = 0;
     currentTime: number = 0;
     bulletDirection: IPoint = {x: 0, y: 0};
-    bulletSpeed: number = 1.5;
+    bulletSpeed: number = 3;
     index: number = 0;
 
     constructor(grid: Grid, inputState: IVehicleInputState) {
