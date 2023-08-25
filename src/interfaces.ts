@@ -28,7 +28,6 @@ export interface ITriangle extends IPolygon {
 export interface IPolygon {
     vertices: IPoint[];
     center: IPoint;
-    color?: CanvasColor;
 }
 
 export type CanvasColor = string | CanvasGradient | CanvasPattern;

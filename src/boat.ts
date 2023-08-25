@@ -1,7 +1,8 @@
 import {ICircle, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
 import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
 import {clamp, getCos, getSin, normalizeVector, subtractVectors} from "./math";
-import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
+import {drawPixels, updatePos} from "./game_objects";
+import { PIXEL_SIZE} from "./constants";
 import {BulletPool} from "./pools";
 
 const TURNING_SPEED_THRESHOLD = 0.1;
@@ -71,7 +72,7 @@ export default class Boat implements IPositionable, ICircle {
         this.occupiedCells = new Array(MAX_CELLS).fill(null);
 
         updatePos(grid.gameSize.x / 2, grid.gameSize.y / 2, this);
-        drawPixels(boatCanvas, boatCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
+        drawPixels(boatCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
     }
 
     get speed(): number {

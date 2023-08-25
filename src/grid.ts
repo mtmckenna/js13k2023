@@ -1,10 +1,13 @@
+import { PIXEL_SIZE } from "./constants";
+
 import {CanvasColor, IEdge, IGridCell, IPoint, IPolygon, IPositionable, IRegion} from "./interfaces";
 import Enemy from "./enemy";
 import Road from "./road";
 
 import { DEBUG } from "./debug";
 import { getCos, getSin, squaredDistance} from "./math";
-import {centerOfVertices} from "./level_generation";
+import {drawPixels} from "./game_objects";
+
 
 export const GRID_CELL_SIZE = 300;
 export const GRID_SIZE_X = 10;
@@ -12,12 +15,9 @@ const GRID_SIZE_Y = 10;
 export const GAME_WIDTH = GRID_CELL_SIZE * GRID_SIZE_X;
 export const GAME_HEIGHT = GRID_CELL_SIZE * GRID_SIZE_Y;
 
-
 const MAX_ROADS_PER_CELL = 10;
 const MAX_ENEMIES_PER_CELL = 10;
-
 const neighbors: IGridCell[] = [];
-
 
 const OFFSETS = [
     { x: -1, y: 0 }, // Left
@@ -26,6 +26,40 @@ const OFFSETS = [
     { x: 0, y: 1 }   // Bottom
 ];
 
+const X_PIXELS =  [
+    [1,1,0,0,0,0,1,1],
+    [1,1,1,0,0,1,1,1],
+    [0,1,1,1,1,1,1,0],
+    [0,0,1,1,1,1,0,0],
+    [0,0,1,1,1,1,0,0],
+    [0,1,1,1,1,1,1,0],
+    [1,1,1,0,0,1,1,1],
+    [1,1,0,0,0,0,1,1],
+    ];
+
+const CHEST_PIXELS =  [
+    [1,1,0,0,0,0,1,1],
+    [1,1,1,0,0,1,1,1],
+    [0,1,1,1,1,1,1,0],
+    [0,0,1,1,1,1,0,0],
+    [0,0,1,1,1,1,0,0],
+    [0,1,1,1,1,1,1,0],
+    [1,1,1,0,0,1,1,1],
+    [1,1,0,0,0,0,1,1],
+];
+
+const X_PIXELS_COLOR_MAP = [null, "red"];
+
+const CHEST_PIXELS_COLOR_MAP = [null, "red"];
+
+const xCanvas = document.createElement("canvas");
+const xCtx = xCanvas.getContext("2d");
+drawPixels(xCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE);
+
+const chestCanvas = document.createElement("canvas");
+const chestCtx = chestCanvas.getContext("2d");
+drawPixels(chestCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE);
+
 export default class Grid {
     cells: Array<IGridCell> = [];
     cellSize: IPoint = {x: GRID_CELL_SIZE, y: GRID_CELL_SIZE};
@@ -33,8 +67,6 @@ export default class Grid {
     gridSize: IPoint = {x: GRID_SIZE_X, y: GRID_SIZE_Y};
     roads: Road[] = [];
     edges: IEdge[] = [];
-    subregionPolygons: IPolygon[] = [];
-    buildings: IPolygon[] = [];
     regions: IRegion[] = [];
 
     constructor() {
@@ -81,19 +113,6 @@ export default class Grid {
             this.edges.push(road.edge);
         }
     }
-
-    setBuildings(buildings: IPolygon[]) {
-        this.buildings = buildings;
-    }
-
-    setRegions(regions: IRegion[]) {
-        this.regions = regions;
-    }
-
-    setSubregionPolygons(subregionPolygons: IPolygon[]) {
-        this.subregionPolygons = subregionPolygons;
-    }
-
 
     getNeighborEnemies(pos: IPoint, enemies: Enemy[]): Enemy[] {
         neighbors.length = 0;
@@ -176,8 +195,6 @@ getNearestEnemy(pos: IPoint): Enemy | null {
     return minEnemy;
 }
 
-
-
     draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
         ctx.imageSmoothingEnabled = false;
 
@@ -209,6 +226,14 @@ getNearestEnemy(pos: IPoint): Enemy | null {
         }
     }
 
+    drawX(ctx: CanvasRenderingContext2D, region: IRegion, scale: number = 1) {
+        // ctx.drawImage(xCanvas, region.center.x * scale, region.center.y * scale);
+        const height =X_PIXELS.length * PIXEL_SIZE;
+        const width = X_PIXELS[0].length * PIXEL_SIZE;
+        console.log(width,height);
+        ctx.translate(region.center.x * scale, region.center.y * scale);
+        ctx.drawImage(xCanvas, 0, 0, width, height, -width/2*scale, -height/2*scale, width * scale, height * scale);
+    }
 
     // #699169
     drawRegions(ctx: CanvasRenderingContext2D, scale: number = 1) {
@@ -232,75 +257,8 @@ getNearestEnemy(pos: IPoint): Enemy | null {
         ctx.closePath();
     }
 
-    // drawBuildings(ctx: CanvasRenderingContext2D, scale: number = 1) {
-    //     for (const b of this.buildings) {
-    //         this.drawBuilding(ctx, b, scale);
-    //     }
-    // }
-
-    // drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
-    //     ctx.imageSmoothingEnabled = false;
-    //     ctx.lineWidth = 5;
-    //     ctx.fillStyle = "#654321";
-    //     ctx.strokeStyle = color;
-    //     ctx.lineWidth = 3;
-    //     ctx.beginPath();
-    //     ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
-    //     for (let i = 1; i < building.vertices.length; i++) {
-    //         const vertex = building.vertices[i];
-    //         ctx.lineTo(vertex.x*scale, vertex.y*scale);
-    //     }
-    //     ctx.closePath();
-    //     ctx.fill();
-    //
-    //     const lightDirection = {x: 0, y: .5};
-    //
-    //     for (let i = 0; i < building.vertices.length; i++) {
-    //         const A = building.center;
-    //         const B = building.vertices[i];
-    //         const C = building.vertices[(i+1)%building.vertices.length];
-    //
-    //         const edge1 = {x: B.x - A.x, y: B.y - A.y};
-    //         const edge2 = {x: C.x - A.x, y: C.y - A.y};
-    //
-    //         const normal = {
-    //             x: edge1.y - edge2.y,
-    //             y: edge2.x - edge1.x
-    //         };
-    //
-    //         const dotProduct = (normal.x * lightDirection.x + normal.y * lightDirection.y) / (Math.sqrt(normal.x * normal.x + normal.y * normal.y) * Math.sqrt(lightDirection.x * lightDirection.x + lightDirection.y * lightDirection.y));
-    //
-    //         ctx.beginPath();
-    //         ctx.moveTo(A.x*scale, A.y*scale);
-    //         ctx.lineTo(B.x*scale, B.y*scale);
-    //         ctx.lineTo(C.x*scale, C.y*scale);
-    //         ctx.closePath();
-    //
-    //         ctx.globalAlpha = .2
-    //         ctx.fillStyle = mapDotProductToShade(dotProduct);
-    //         ctx.fill();
-    //         ctx.globalAlpha = 1;
-    //
-    //     }
-    //     // ctx.stroke();
-    // }
-
     drawBuilding(ctx: CanvasRenderingContext2D, building: IRegion, scale: number = 1, color: CanvasColor = "#fff") {
         if (building.type === "empty") return;
-        // ctx.imageSmoothingEnabled = false;
-        // ctx.lineWidth = 5;
-        // ctx.fillStyle = "#654321";
-        // ctx.strokeStyle = color;
-        // ctx.lineWidth = 3;
-        // ctx.beginPath();
-        // ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
-        // for (let i = 1; i < building.vertices.length; i++) {
-        //     const vertex = building.vertices[i];
-        //     ctx.lineTo(vertex.x*scale, vertex.y*scale);
-        // }
-        // ctx.closePath();
-        // ctx.fill();
-        // ctx.stroke();
 
         ctx.imageSmoothingEnabled = false;
         ctx.fillStyle = "#654321";

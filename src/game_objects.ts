@@ -2,8 +2,7 @@ import {IPositionable} from "./interfaces";
 import {getSin, getCos} from "./math";
 import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
 
-export const PIXEL_SIZE = 5;
-export function drawPixels(offscreenCanvas: HTMLCanvasElement, offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, xOffset: number = 0, yOffset: number = 0) {
+export function drawPixels(offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, xOffset: number = 0, yOffset: number = 0) {
     offscreenCtx.imageSmoothingEnabled = false;  // Ensure no smoothing
     //clear the canvas
     // offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);

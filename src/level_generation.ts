@@ -119,7 +119,6 @@ function voronoiPolygonsOfDelaunayTriangles(triangles: ITriangleInTriangulation[
             if (!pointMap.has(key)) {
                 const region: IPolygon = {
                     vertices: [],
-                    color: "#" + Math.floor(Math.random() * 16777215).toString(16),
                     center: point
                 };
                 pointMap.set(key, region); // Add the region to the map.
@@ -176,7 +175,6 @@ function regionFromPolygon(polygon: IPolygon, boundingBox): IRegion | null {
     const smallerPolygon = polygonFromEdges(insideEdges);
     return {
         vertices: smallerPolygon.vertices,
-        color: smallerPolygon.color,
         center: smallerPolygon.center,
         edges: internalEdges,
         insideEdges: insideEdges,
@@ -194,7 +192,6 @@ export function polygonFromEdges(edges: IEdge[]): IPolygon {
     }
     return {
         vertices: vertices,
-        color: randomColor(),
         center: centerOfVertices(vertices)
     }
 }
@@ -680,7 +677,6 @@ function boxVerticesForSize(size: IPoint): IPolygon {
             {x: 0, y: size.y},
         ],
 
-        color: "#" + Math.floor(Math.random() * 16777215).toString(16),
 
         center: {x: size.x / 2, y: size.y / 2},
     }

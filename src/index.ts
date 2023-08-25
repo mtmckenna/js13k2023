@@ -43,7 +43,6 @@ const NUM_ENEMIES = 100;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
-
 export const MAX_COLLISIONS = 25
 const FIXED_TIMESTEP = 1 / 60;  // fixed timestep of 60 FPS
 let accumulator = 0;  // accumulates elapsed time
@@ -184,7 +183,6 @@ function generateDeliveryIndices() {
                     }
                 }
                 region.type = "delivery";
-                region.color = "red";
                 deliveryIndices.push(index);
                 break;
             }
@@ -270,6 +268,12 @@ function update(t: number) {
         break;
     }
 
+
+    for (let i = 0; i < deliveryIndices.length; i++) {
+        const region = regions[deliveryIndices[i]];
+        grid.drawX(buildingsCtx, region, GRID_SCALE);
+    }
+
     if (deliveryIndices.length > 0) {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -279,8 +283,6 @@ function update(t: number) {
 
         if (inDropOffRadius && player.speed < 1) {
             region.type = "empty";
-            region.color = "#fff";
-            // grid.drawBuilding(buildingsCtx, region, GRID_SCALE, "#fff");
             grid.drawRegion(buildingsCtx, region, GRID_SCALE);
             updateCash(100);
             deliveryIndices.shift();
@@ -296,7 +298,7 @@ function update(t: number) {
             if (!UI_STATE.deliveryMenuVisible) showMenu();
         }
 
-        regions[depotIndex].color = "green";
+        // regions[depotIndex].color = "green";
         grid.drawBuilding(buildingsCtx, regions[depotIndex], GRID_SCALE, "green");
     }
 
@@ -533,7 +535,9 @@ resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, GRID_SCALE);
 generateDeliveryIndices();
-grid.drawBuilding(buildingsCtx, regions[deliveryIndices[0]], GRID_SCALE, "red");
+// grid.drawBuilding(buildingsCtx, regions[deliveryIndices[0]], GRID_SCALE, "red");
+
+// grid.drawX(buildingsCtx, regions[depotIndex], GRID_SCALE);
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector(".menu-btn").addEventListener("click", () => {

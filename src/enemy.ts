@@ -5,14 +5,11 @@ import {
     distanceBetweenPoints,
     getCos,
     getSin,
-    limitVector,
     normalizeAndScaleVector, normalizeVector,
-    squaredDistance,
-    subtractVectors
 } from "./math";
 import {PointPool} from "./pools";
-import {drawPixels, PIXEL_SIZE, updatePos} from "./game_objects";
-import Boat from "./boat";
+import {drawPixels, updatePos} from "./game_objects";
+import { PIXEL_SIZE} from "./constants";
 
 const ENEMY_MOVING_SPEED = 1.5;
 const ENEMY_SEPARATION_FORCE = .9;
@@ -80,7 +77,7 @@ export default class Enemy implements IPositionable {
         this.vel.y = sin * ENEMY_MOVING_SPEED;
         this.rotorRandomOffsets = new Array(4).fill(0).map(() => Math.random() * Math.PI * 2);
         this.sign = Math.random() > .5 ? 1 : -1;
-        drawPixels(offscreenCanvas, offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
+        drawPixels(offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
         this.frameCounter = Math.floor(Math.random() * NUM_FRAMES);
         this.randomStart = Math.random() * 2 * Math.PI;
         updatePos(pos.x, pos.y, this);
@@ -189,7 +186,7 @@ function createSpriteSheet(size: IPoint) {
 
         // Render the ghost's body
         const xOffset = frame * size.x;
-        drawPixels(spriteSheetCanvas, spriteSheetCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE, xOffset);
+        drawPixels(spriteSheetCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE, xOffset);
 
         // Render the ghost's fringe
         const yBase = 7 * PIXEL_SIZE;
