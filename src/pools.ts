@@ -64,7 +64,7 @@ export class BulletPool {
         const bullet = new Bullet();
         updatePos(x, y, bullet);
         BulletPool.available.push(bullet);
-        console.warn("BulletPool ran out of bullets.");
+        console.warn("out of bullets.");
         return bullet;
     }
 
@@ -93,7 +93,7 @@ export class BulletPool {
                 ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
 
                 // draw bullet which is a square that rotates based on the bullets angle
-                ctx.fillStyle = "#ff00ff";
+                ctx.fillStyle = "#000";
                 ctx.fillRect(-bullet.size.x/2*scale, -bullet.size.y/2*scale, bullet.size.x*scale, bullet.size.y*scale);
 
                 ctx.restore();

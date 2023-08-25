@@ -6,7 +6,7 @@ import {
     ICircle,
     IVoronoiResult,
     IPolygon,
-    IBoundingBox, IOrientedBoundingBox, IVertices4, IVertices3, IRegion, CanvasColor
+    IBoundingBox, IOrientedBoundingBox, IVertices4, IVertices3, IRegion, CanvasColor, IBuilding
 } from "./interfaces";
 import Road, {ROAD_WIDTH} from "./road";
 import {
@@ -21,7 +21,7 @@ import {
     isPointOnLineSegment,
     isPointAlongLine,
     edgesAreEqual,
-    calculateCrossProduct
+    calculateCrossProduct, perpendicularDistanceFromPointToEdge, normalFromVector
 } from "./math";
 import {PointPool} from "./pools";
 
@@ -41,7 +41,37 @@ export function roadsAndRegionsFromPoints(points: IPoint[], boundingBox: IPoint)
         const road = roadFromEdge(edge, boundingBox);
         if (road) roads.push(road);
     }
+
+    addDropOffPoints(regions, roads, boundingBox);
+
     return {roads, regions, edges: edgesWithDuplicatesRemoved(edges), polygons};
+}
+
+function addDropOffPoints(regions: IRegion[], roads: Road[], boundingBox: IPoint) {
+    for (let i = 0; i < regions.length; i++) {
+        const region = regions[i];
+        const regionEdges = edgesFromPolygon(region);
+
+        let minDist = Number.MAX_VALUE;
+        let dropOffPoint: IPoint = {x: 0, y: 0};
+
+        for (const edge of regionEdges) {
+            for (const road of roads) {
+                const midpoint = midpointOfEdge(edge);
+                const dist = perpendicularDistanceFromPointToEdge(midpoint, road.edge);
+                if (dist && dist < minDist) {
+                    minDist = dist;
+                    const normal = {x: 0, y: 0};
+                    normalFromVector(vectorFromEdge(edge, normal), normal);
+                    // I think negative because maybe the normal is pointing in the wrong direction?
+                    dropOffPoint.x = midpoint.x + normal.x * -ROAD_WIDTH/2;
+                    dropOffPoint.y = midpoint.y + normal.y * -ROAD_WIDTH/2;
+                }
+            }
+        }
+
+        region.dropOffPoint = dropOffPoint;
+    }
 }
 
 function edgesWithDuplicatesRemoved(edges: IEdge[]): IEdge[] {
@@ -151,7 +181,9 @@ function regionFromPolygon(polygon: IPolygon, boundingBox): IRegion | null {
         edges: internalEdges,
         insideEdges: insideEdges,
         unclippedEdges,
-        polygonEdges
+        polygonEdges,
+        dropOffPoint: {x: 0, y: 0},
+        type: "empty",
     }
 }
 

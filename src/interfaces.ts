@@ -37,6 +37,11 @@ export interface IBuilding extends IPolygon {
     type: "empty" | "depot" | "delivery";
     dropOffPoint: IPoint;
 }
+
+export interface IDropOff extends IPolygon {
+    type: "empty" | "depot" | "delivery";
+    dropOffPoint: IPoint;
+}
 export interface IVoronoiResult {
     edges: IEdge[];
     polygons: IPolygon[];
@@ -125,7 +130,7 @@ export interface IBoundingBox {
     center: IPoint;
 }
 
-export interface IRegion extends IPolygon {
+export interface IRegion extends IPolygon, IDropOff {
     edges: IEdge[];
     insideEdges: IEdge[];
     unclippedEdges: IEdge[];

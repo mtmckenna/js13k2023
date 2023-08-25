@@ -1,4 +1,4 @@
-import {CanvasColor, IEdge, IGridCell, IPoint, IPolygon, IPositionable} from "./interfaces";
+import {CanvasColor, IEdge, IGridCell, IPoint, IPolygon, IPositionable, IRegion} from "./interfaces";
 import Enemy from "./enemy";
 import Road from "./road";
 
@@ -35,7 +35,7 @@ export default class Grid {
     edges: IEdge[] = [];
     subregionPolygons: IPolygon[] = [];
     buildings: IPolygon[] = [];
-    regions: IPolygon[] = [];
+    regions: IRegion[] = [];
 
     constructor() {
         // have to fill with undefined to chain with map
@@ -86,7 +86,7 @@ export default class Grid {
         this.buildings = buildings;
     }
 
-    setRegions(regions: IPolygon[]) {
+    setRegions(regions: IRegion[]) {
         this.regions = regions;
     }
 
@@ -215,24 +215,28 @@ getNearestEnemy(pos: IPoint): Enemy | null {
         ctx.imageSmoothingEnabled = false;
 
         for (const region of this.regions) {
-            ctx.fillStyle = "#699169";
-            ctx.beginPath();
-            ctx.moveTo(region.vertices[0].x*scale, region.vertices[0].y*scale);
-            for (let i = 1; i < region.vertices.length; i++) {
-                const vertex = region.vertices[i];
-                ctx.lineTo(vertex.x*scale, vertex.y*scale);
-            }
-
-            ctx.fill();
-            ctx.closePath();
+            this.drawRegion(ctx, region, scale);
         }
     }
 
-    drawBuildings(ctx: CanvasRenderingContext2D, scale: number = 1) {
-        for (const b of this.buildings) {
-            this.drawBuilding(ctx, b, scale);
+    drawRegion(ctx: CanvasRenderingContext2D, region: IRegion, scale: number = 1) {
+        ctx.fillStyle = "#699169";
+        ctx.beginPath();
+        ctx.moveTo(region.vertices[0].x*scale, region.vertices[0].y*scale);
+        for (let i = 1; i < region.vertices.length; i++) {
+            const vertex = region.vertices[i];
+            ctx.lineTo(vertex.x*scale, vertex.y*scale);
         }
+
+        ctx.fill();
+        ctx.closePath();
     }
+
+    // drawBuildings(ctx: CanvasRenderingContext2D, scale: number = 1) {
+    //     for (const b of this.buildings) {
+    //         this.drawBuilding(ctx, b, scale);
+    //     }
+    // }
 
     // drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
     //     ctx.imageSmoothingEnabled = false;
@@ -281,21 +285,30 @@ getNearestEnemy(pos: IPoint): Enemy | null {
     //     // ctx.stroke();
     // }
 
-    drawBuilding(ctx: CanvasRenderingContext2D, building: IPolygon, scale: number = 1, color: CanvasColor = "#fff") {
+    drawBuilding(ctx: CanvasRenderingContext2D, building: IRegion, scale: number = 1, color: CanvasColor = "#fff") {
+        if (building.type === "empty") return;
+        // ctx.imageSmoothingEnabled = false;
+        // ctx.lineWidth = 5;
+        // ctx.fillStyle = "#654321";
+        // ctx.strokeStyle = color;
+        // ctx.lineWidth = 3;
+        // ctx.beginPath();
+        // ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
+        // for (let i = 1; i < building.vertices.length; i++) {
+        //     const vertex = building.vertices[i];
+        //     ctx.lineTo(vertex.x*scale, vertex.y*scale);
+        // }
+        // ctx.closePath();
+        // ctx.fill();
+        // ctx.stroke();
+
         ctx.imageSmoothingEnabled = false;
-        ctx.lineWidth = 5;
         ctx.fillStyle = "#654321";
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(building.vertices[0].x*scale, building.vertices[0].y*scale);
-        for (let i = 1; i < building.vertices.length; i++) {
-            const vertex = building.vertices[i];
-            ctx.lineTo(vertex.x*scale, vertex.y*scale);
-        }
-        ctx.closePath();
-        ctx.fill();
-        // ctx.stroke();
+        // draw a 16x16 square in the center of the region using fillrect
+        ctx.fillRect(building.center.x*scale - 8*scale, building.center.y*scale - 8*scale, 16*scale, 16*scale);
+        ctx.strokeRect(building.center.x*scale - 8*scale, building.center.y*scale - 8*scale, 16*scale, 16*scale);
     }
     setNeighborGridCells(currentIndex: number, neighborGridCells: IGridCell[]): Array<IGridCell> {
         // const neighbors: Array<IGridCell> = [];
