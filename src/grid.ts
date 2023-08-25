@@ -230,21 +230,24 @@ getNearestEnemy(pos: IPoint): Enemy | null {
         // ctx.drawImage(xCanvas, region.center.x * scale, region.center.y * scale);
         const height =X_PIXELS.length * PIXEL_SIZE;
         const width = X_PIXELS[0].length * PIXEL_SIZE;
-        console.log(width,height);
+        ctx.save();
         ctx.translate(region.center.x * scale, region.center.y * scale);
         ctx.drawImage(xCanvas, 0, 0, width, height, -width/2*scale, -height/2*scale, width * scale, height * scale);
+        ctx.restore();
     }
 
     // #699169
-    drawRegions(ctx: CanvasRenderingContext2D, scale: number = 1) {
-        ctx.imageSmoothingEnabled = false;
-
-        for (const region of this.regions) {
+    drawRegions(ctx: CanvasRenderingContext2D, regions: IRegion[], scale: number = 1) {
+        ctx.globalAlpha = 1.0
+        for (const region of regions) {
             this.drawRegion(ctx, region, scale);
         }
     }
 
     drawRegion(ctx: CanvasRenderingContext2D, region: IRegion, scale: number = 1) {
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.globalAlpha = 1.0
         ctx.fillStyle = "#699169";
         ctx.beginPath();
         ctx.moveTo(region.vertices[0].x*scale, region.vertices[0].y*scale);
@@ -253,21 +256,11 @@ getNearestEnemy(pos: IPoint): Enemy | null {
             ctx.lineTo(vertex.x*scale, vertex.y*scale);
         }
 
-        ctx.fill();
         ctx.closePath();
+        ctx.fill();
+        ctx.restore();
     }
 
-    drawBuilding(ctx: CanvasRenderingContext2D, building: IRegion, scale: number = 1, color: CanvasColor = "#fff") {
-        if (building.type === "empty") return;
-
-        ctx.imageSmoothingEnabled = false;
-        ctx.fillStyle = "#654321";
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        // draw a 16x16 square in the center of the region using fillrect
-        ctx.fillRect(building.center.x*scale - 8*scale, building.center.y*scale - 8*scale, 16*scale, 16*scale);
-        ctx.strokeRect(building.center.x*scale - 8*scale, building.center.y*scale - 8*scale, 16*scale, 16*scale);
-    }
     setNeighborGridCells(currentIndex: number, neighborGridCells: IGridCell[]): Array<IGridCell> {
         // const neighbors: Array<IGridCell> = [];
         for(let i = 0; i < neighborGridCells.length; i++) {

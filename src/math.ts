@@ -125,8 +125,6 @@ export function perpendicularDistanceFromPointToEdge(point: IPoint, edge: IEdge)
     const t = ((point.x - edge.v0.x) * (edge.v1.x - edge.v0.x) +
         (point.y - edge.v0.y) * (edge.v1.y - edge.v0.y)) / l2;
 
-
-
     // If t is outside the [0, 1] range, there's no perpendicular intersection
     if (t < 0 || t > 1) return null;
 

@@ -97,6 +97,7 @@ const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
+let lastDeliveryRegion: IRegion = null;
 const UI_STATE = {
     deliveryMenuVisible: false
 }
@@ -268,12 +269,6 @@ function update(t: number) {
         break;
     }
 
-
-    for (let i = 0; i < deliveryIndices.length; i++) {
-        const region = regions[deliveryIndices[i]];
-        grid.drawX(buildingsCtx, region, GRID_SCALE);
-    }
-
     if (deliveryIndices.length > 0) {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -283,12 +278,10 @@ function update(t: number) {
 
         if (inDropOffRadius && player.speed < 1) {
             region.type = "empty";
-            grid.drawRegion(buildingsCtx, region, GRID_SCALE);
             updateCash(100);
-            deliveryIndices.shift();
+            lastDeliveryRegion =  regions[deliveryIndices.shift()];
         }
 
-        grid.drawBuilding(buildingsCtx, regions[depotIndex], GRID_SCALE, "#fff");
     } else {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -297,9 +290,6 @@ function update(t: number) {
         if (inDropOffRadius && player.speed < 1) {
             if (!UI_STATE.deliveryMenuVisible) showMenu();
         }
-
-        // regions[depotIndex].color = "green";
-        grid.drawBuilding(buildingsCtx, regions[depotIndex], GRID_SCALE, "green");
     }
 
     camera.centerOn(player, FIXED_TIMESTEP);
@@ -331,13 +321,20 @@ function draw(t: number) {
 
     groundCtx.globalAlpha = .5; // Apply alpha transparency
     groundCtx.fillStyle = "green";
-    let building = regions[depotIndex];
+    let region = regions[depotIndex];
     if (deliveryIndices.length > 0) {
         groundCtx.fillStyle = "red";
-        building = regions[deliveryIndices[0]];
+        region = regions[deliveryIndices[0]];
+        grid.drawX(buildingsCtx, region, GRID_SCALE);
     }
+
+    if (lastDeliveryRegion) {
+        grid.drawRegion(buildingsCtx, lastDeliveryRegion, GRID_SCALE);
+    }
+
+
     groundCtx.beginPath();
-    groundCtx.arc(building.dropOffPoint.x * GRID_SCALE, building.dropOffPoint.y * GRID_SCALE, circleSize, 0, 2 * Math.PI);
+    groundCtx.arc(region.dropOffPoint.x * GRID_SCALE, region.dropOffPoint.y * GRID_SCALE, circleSize, 0, 2 * Math.PI);
     groundCtx.fill();
     groundCtx.globalAlpha = 1; // Reset alpha
 
@@ -533,11 +530,8 @@ function handleMenuItemClick(e: Event) {
 
 resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
-grid.drawRegions(buildingsCtx, GRID_SCALE);
+grid.drawRegions(buildingsCtx, regions, GRID_SCALE);
 generateDeliveryIndices();
-// grid.drawBuilding(buildingsCtx, regions[deliveryIndices[0]], GRID_SCALE, "red");
-
-// grid.drawX(buildingsCtx, regions[depotIndex], GRID_SCALE);
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector(".menu-btn").addEventListener("click", () => {

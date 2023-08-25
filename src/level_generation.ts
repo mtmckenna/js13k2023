@@ -51,21 +51,30 @@ function addDropOffPoints(regions: IRegion[], roads: Road[], boundingBox: IPoint
     for (let i = 0; i < regions.length; i++) {
         const region = regions[i];
         const regionEdges = edgesFromPolygon(region);
+        const midpointOfPolygon = centerOfVertices(region.vertices);
 
         let minDist = Number.MAX_VALUE;
         let dropOffPoint: IPoint = {x: 0, y: 0};
 
         for (const edge of regionEdges) {
+            const midpoint = midpointOfEdge(edge);
             for (const road of roads) {
-                const midpoint = midpointOfEdge(edge);
-                const dist = perpendicularDistanceFromPointToEdge(midpoint, road.edge);
+                // const dist = perpendicularDistanceFromPointToEdge(midpoint, road.edge);
+                const dist = perpendicularDistanceFromPointToEdge(midpointOfPolygon, road.edge);
                 if (dist && dist < minDist) {
-                    minDist = dist;
                     const normal = {x: 0, y: 0};
                     normalFromVector(vectorFromEdge(edge, normal), normal);
+                    const x = midpoint.x + normal.x * -ROAD_WIDTH/2
+                    const y = midpoint.y + normal.y * -ROAD_WIDTH/2;
+
+                    // check if x and y are in bounds
+                    if (x < 0 || x > boundingBox.x || y < 0 || y > boundingBox.y) continue;
+
+                    minDist = dist;
+
                     // I think negative because maybe the normal is pointing in the wrong direction?
-                    dropOffPoint.x = midpoint.x + normal.x * -ROAD_WIDTH/2;
-                    dropOffPoint.y = midpoint.y + normal.y * -ROAD_WIDTH/2;
+                    dropOffPoint.x = x;
+                    dropOffPoint.y = y;
                 }
             }
         }
