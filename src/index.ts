@@ -14,10 +14,7 @@ import {
     IEdge, ICollision, IBuilding, CanvasColor, IPolygon, IRegion,
 } from "./interfaces";
 import {
-    edgesFromPolygon, polygonFromEdges,
     roadsAndRegionsFromPoints,
-    shrinkPolygon,
-    subdivideRegions,
 } from "./level_generation";
 import Grid, {indexForPos} from "./grid";
 import Enemy from "./enemy";
@@ -136,7 +133,6 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 }
 
 let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
-const subdividedRegions = subdivideRegions(regions, grid.gameSize);
 const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoadPoint = randomRoad.center;
 const upgrades: { [key: string]: number } = {
