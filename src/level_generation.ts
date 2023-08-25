@@ -595,7 +595,7 @@ function isPointOnEdge(point: IPoint, edge: IEdge): boolean {
     return false;
 }
 
-const MAX_SUBDIVISION_AREA = 10000;
+const MAX_SUBDIVISION_AREA = 50000;
 
 function subdivideRegion(originalRegion: IPolygon, boundingBox: IPoint): IPolygon[] {
     const area = areaOfVertices(sortVertices(originalRegion.vertices, originalRegion.center));
@@ -603,10 +603,12 @@ function subdivideRegion(originalRegion: IPolygon, boundingBox: IPoint): IPolygo
 
     const obb = generateObbFromPolygon(originalRegion);
     const edge = generateEdgeThatSplitTheObb(obb);
-    const subdividedRegions = splitPolygon(originalRegion, edge);
+    let subdividedRegions = splitPolygon(originalRegion, edge);
+    subdividedRegions.filter(r => r.vertices.length === 4 && !edgesFromPolygon(r).find(e => distanceBetweenPoints(e.v0, e.v1) < 10));
 
     // If no subdivision occurred, return original region
-    if (subdividedRegions.length === 1) return [originalRegion];
+    // if (subdividedRegions.length === 1) return [originalRegion];
+    if (subdividedRegions.length <= 1) return [originalRegion];
 
     return subdivideRegions(subdividedRegions, boundingBox);
 }
