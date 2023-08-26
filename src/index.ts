@@ -25,6 +25,7 @@ import Camera from "./camera";
 import {BulletPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
+import {GLOBAL} from "./constants";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -135,11 +136,6 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
 const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoadPoint = randomRoad.center;
-// const upgrades: { [key: string]: number } = {
-//     "Fast Sails": 100,
-//     "Armored Hull": 100,
-//     "Gun": 100,
-// }
 
 const upgrades: {name: string, cost: number}[] = [
     { name: "Super Sails", cost: 100 },
@@ -172,29 +168,25 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
     grid.addToEnemyMap(enemy);
 }
 
-const NUM_INTIAL_DELIVERIES = 1;
 
-function generateDeliveryIndices() {
-    // find not overlapping delivery buildings
-    for (let i = 0; i < NUM_INTIAL_DELIVERIES; i++) {
-        let index = randomIndex(regions);
-        let tries = 0;
-        while (tries < 100) {
-            const region = regions[index];
-            if (region.type === "empty") {
-                for (const deliveryIndex of deliveryIndices) {
-                    if (distanceBetweenPoints(region.center, regions[deliveryIndex].center) < ROAD_WIDTH * 2) {
-                        // index = randomIndex(buildings);
-                        tries++;
-                        continue;
-                    }
+function generateInitialX() {
+    let index = randomIndex(regions);
+    let tries = 0;
+    while (tries < 100) {
+        const region = regions[index];
+        if (region.type === "empty") {
+            for (const deliveryIndex of deliveryIndices) {
+                if (distanceBetweenPoints(region.center, regions[deliveryIndex].center) < ROAD_WIDTH * 2) {
+                    // index = randomIndex(buildings);
+                    tries++;
+                    continue;
                 }
-                region.type = "delivery";
-                deliveryIndices.push(index);
-                break;
             }
-            tries++;
+            region.type = "delivery";
+            deliveryIndices.push(index);
+            break;
         }
+        tries++;
     }
 }
 
@@ -222,6 +214,7 @@ function tick(t: number) {
 
 function update(t: number) {
     if (UI_STATE.deliveryMenuVisible) return;
+    GLOBAL.time +=t;
     grid.update();
 
     for (let i = 0; i < enemies.length; i++) {
@@ -249,9 +242,25 @@ function update(t: number) {
             const enemy = neighborEnemies[j];
             if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
                 BulletPool.release(bullet);
-                enemy.active = false;
+                enemy.deactivate();
                 updateCash(10);
                 break;
+            }
+        }
+    }
+
+    // Enemy collide with player
+    for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        if (!enemy || !enemy.active) continue;
+        // continue if enemy last hit player within wait time
+        if (enemy.lastHitPlayerTime && (GLOBAL.time - enemy.lastHitPlayerTime) < enemy.hitWaitTime) continue;
+        if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
+            player.life -= 1;
+            enemy.lastHitPlayerTime = GLOBAL.time;
+            if (player.life <= 0) {
+                player.life = 0;
+                console.log("dead");
             }
         }
     }
@@ -338,11 +347,11 @@ function draw(t: number) {
         grid.drawRegion(buildingsCtx, lastDeliveryRegion, GRID_SCALE);
     }
 
-
     groundCtx.beginPath();
     groundCtx.arc(region.dropOffPoint.x * GRID_SCALE, region.dropOffPoint.y * GRID_SCALE, circleSize, 0, 2 * Math.PI);
     groundCtx.fill();
     groundCtx.globalAlpha = 1; // Reset alpha
+
 
     player.draw(groundCtx, GRID_SCALE); // Assuming player's draw method uses the passed context.
 
@@ -362,9 +371,12 @@ function draw(t: number) {
     }
 
     airCtx.fillStyle = "#000";
+
     ctx.drawImage(airCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
 
     joystick.draw(ctx);
+
+    drawLifeBar(ctx, canvas, player.life, 100);
 
 }
 
@@ -387,6 +399,24 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
     const circleY = player.center.y + sin * RADIUS_AROUND_PLAYER;
     const color = building.type === "depot" ? "#F0E68C" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
+}
+
+// draw life bar at top of screen the empty part of the life bar is white and the full part is red
+// it stretches across the top of the screen and is 25 px tall
+function drawLifeBar(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, life: number, maxLife: number) {
+    ctx.save();
+    ctx.translate(0, 5);
+    ctx.beginPath();
+    ctx.rect(10, 5, canvas.width - 20, 20);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.closePath();
+    ctx.beginPath();
+    ctx.rect(15, 10, (canvas.width - 30) * life / maxLife, 10);
+    ctx.fillStyle = "#f00";
+    ctx.fill();
+    ctx.closePath();
+    ctx.restore();
 }
 
 function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, angle: number, color: CanvasColor) {
@@ -528,10 +558,10 @@ resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, regions, GRID_SCALE);
 grid.drawChest(buildingsCtx, depot, GRID_SCALE);
-generateDeliveryIndices();
+generateInitialX();
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector(".menu-btn").addEventListener("click", () => {
     hideMenu();
-    generateDeliveryIndices();
+    generateInitialX();
 });

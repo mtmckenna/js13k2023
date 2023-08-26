@@ -9,7 +9,7 @@ import {
 } from "./math";
 import {PointPool} from "./pools";
 import {drawPixels, updatePos} from "./game_objects";
-import { PIXEL_SIZE} from "./constants";
+import {GLOBAL, PIXEL_SIZE} from "./constants";
 
 const ENEMY_MOVING_SPEED = 1.5;
 const ENEMY_SEPARATION_FORCE = .9;
@@ -49,7 +49,7 @@ export default class Enemy implements IPositionable {
     alignment: IPoint = {x: 0, y: 0};
     returning: boolean = false;
     rotorRandomOffsets: number[] = [];
-    time: number = 0;
+    // time: number = 0;
     sign: number = 1;
     pos: IPoint = {x: 0, y: 0};
     center: IPoint = {x: 0, y: 0};
@@ -63,6 +63,8 @@ export default class Enemy implements IPositionable {
     randomStart: number = 0;
     active: boolean = true;
     radius: number = 8 * PIXEL_SIZE/2;
+    lastHitPlayerTime: number = 0;
+    hitWaitTime: number = .25;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -81,6 +83,11 @@ export default class Enemy implements IPositionable {
         this.frameCounter = Math.floor(Math.random() * NUM_FRAMES);
         this.randomStart = Math.random() * 2 * Math.PI;
         updatePos(pos.x, pos.y, this);
+    }
+
+    deactivate() {
+        this.active = false;
+        this.lastHitPlayerTime = 0;
     }
 
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
@@ -110,7 +117,6 @@ export default class Enemy implements IPositionable {
 
     update(t: number) {
         if (!this.grid || !this.player || !this.active) return;
-        this.time += t;
 
         const dirToPlayer = PointPool.get();
         const separation = PointPool.get();
@@ -160,7 +166,7 @@ export default class Enemy implements IPositionable {
             }
         } else {
             // move sinusoidally
-            const t = this.time *1000;
+            const t = GLOBAL.time *1000;
             const cos = getCos(t / 1000 + this.randomStart)/2;
             const sin = getSin(t / 1000 + this.randomStart)/2;
             this.vel.x = cos * ENEMY_MOVING_SPEED;

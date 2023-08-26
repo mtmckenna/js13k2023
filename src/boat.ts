@@ -55,6 +55,7 @@ export default class Boat implements IPositionable, ICircle {
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     upgrades: string[] = [];
     direction: IPoint = {x: 1, y: 0};
+    life: number = 100;
 
     currentTime: number = 0;
     bulletDirection: IPoint = {x: 0, y: 0};
