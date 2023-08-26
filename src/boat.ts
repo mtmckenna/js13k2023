@@ -56,6 +56,7 @@ export default class Boat implements IPositionable, ICircle {
     upgrades: string[] = [];
     direction: IPoint = {x: 1, y: 0};
     life: number = 100;
+    active: boolean = true;
 
     currentTime: number = 0;
     bulletDirection: IPoint = {x: 0, y: 0};
@@ -164,7 +165,7 @@ export default class Boat implements IPositionable, ICircle {
             this.bulletDirection.y += this.vel.y;
             normalizeVector(this.bulletDirection, this.bulletDirection); // Re-normalize after adjustments
             const dotProduct = dot(this.bulletDirection, this.direction);
-            shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);
+            // shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);
         }
 
         if (this.forwardGun && (this.currentTime - this.forwardGunLastFiredTime) > this.forwardGunSpeed) {

@@ -145,17 +145,16 @@
   </head>
   <body>
 
-  <div class="menu-container" style="pointer-events: none">
+  <div id="upgrade-menu" class="menu-container" style="pointer-events: none">
     <h2>Select Upgrade</h2>
     <ul class="menu-list">
-<!--      <li class="menu-item" data-selected="false">-->
-<!--        <span>Gun</span>-->
-<!--      </li>-->
-<!--      <li class="menu-item" data-selected="false">-->
-<!--        <span>Armor</span>-->
-<!--      </li>-->
     </ul>
-    <button type="button" class="menu-btn">Add Upgrades</button>
+    <button type="button" class="menu-btn" id="add-upgrade-btn">Add Upgrades</button>
+  </div>
+
+  <div id="restart-menu" class="menu-container" style="pointer-events: none">
+    <h2>Try Again, Matey</h2>
+    <button type="button" class="menu-btn" id="try-again-btn">Yarrrr</button>
   </div>
   <div id="cash">$0</div>
   </body>

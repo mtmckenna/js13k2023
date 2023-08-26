@@ -30,7 +30,8 @@ import {GLOBAL} from "./constants";
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
-const menu: HTMLElement = document.querySelector(".menu-container");
+const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
+const restartMenu: HTMLElement = document.querySelector("#restart-menu");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -99,8 +100,10 @@ const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
 let lastDeliveryRegion: IRegion = null;
+let selectedUpgrade: string = null;
 const UI_STATE = {
-    deliveryMenuVisible: false
+    deliveryMenuVisible: false,
+    restartMenuVisible: false,
 }
 
 for (let i = 0; i < NUM_POINTS; i++) {
@@ -229,7 +232,7 @@ function update(t: number) {
         enemy.update(t);
     }
 
-    player.update(t);
+    if (player.active) player.update(t);
     BulletPool.update(t);
 
     // Bullet collide with enemies
@@ -260,7 +263,8 @@ function update(t: number) {
             enemy.lastHitPlayerTime = GLOBAL.time;
             if (player.life <= 0) {
                 player.life = 0;
-                console.log("dead");
+                player.active = false;
+                if (!UI_STATE.restartMenuVisible) showRestartMenu();
             }
         }
     }
@@ -303,7 +307,7 @@ function update(t: number) {
         const {x: x2, y: y2} = regions[depotIndex].dropOffPoint;
         const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
         if (inDropOffRadius && player.speed < 1) {
-            if (!UI_STATE.deliveryMenuVisible) showMenu();
+            if (!UI_STATE.deliveryMenuVisible) showUpgradeMenu();
         }
     }
 
@@ -353,7 +357,7 @@ function draw(t: number) {
     groundCtx.globalAlpha = 1; // Reset alpha
 
 
-    player.draw(groundCtx, GRID_SCALE); // Assuming player's draw method uses the passed context.
+    if (player.active) player.draw(groundCtx, GRID_SCALE); // Assuming player's draw method uses the passed context.
 
     ctx.drawImage(groundCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
     ctx.drawImage(buildingsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
@@ -485,12 +489,25 @@ function closestRegionToPos(pos: IPoint, regions: IRegion[]): IRegion {
     return closestRegion;
 }
 
-function showMenu() {
-    menu.classList.remove("hide");
-    menu.classList.add("show");
-    menu.style.pointerEvents = "auto";
-    menu.style.removeProperty("opacity");
+function showRestartMenu() {
+    restartMenu.classList.remove("hide");
+    restartMenu.classList.add("show");
+    restartMenu.style.pointerEvents = "auto";
+    restartMenu.style.removeProperty("opacity");
+    UI_STATE.restartMenuVisible = true;
+}
+
+function showUpgradeMenu() {
+    upgradeMenu.classList.remove("hide");
+    upgradeMenu.classList.add("show");
+    upgradeMenu.style.pointerEvents = "auto";
+    upgradeMenu.style.removeProperty("opacity");
     UI_STATE.deliveryMenuVisible = true;
+
+    const currentMenuItems = document.querySelectorAll('.menu-item');
+    currentMenuItems.forEach(item => {
+        item.removeEventListener('click', handleMenuItemClick);
+    });
 
     // remove existing menu items from DOM and add upgrades
     const list = document.querySelector('.menu-list');
@@ -517,9 +534,9 @@ function showMenu() {
 }
 
 function hideMenu() {
-    menu.classList.remove("show");
-    menu.style.pointerEvents = "none";
-    menu.classList.add("hide");
+    upgradeMenu.classList.remove("show");
+    upgradeMenu.style.pointerEvents = "none";
+    upgradeMenu.classList.add("hide");
     UI_STATE.deliveryMenuVisible = false;
 
     const menuItems = document.querySelectorAll('.menu-item');
@@ -544,8 +561,7 @@ function handleMenuItemClick(e: Event) {
     element.style.backgroundColor = isSelected ? '' : '#F0E68C';
     element.style.color = isSelected ? '' : '#000';
     const upgrade = element.getAttribute('data-upgrade');
-
-    addUpgrade(upgrade);
+    selectedUpgrade = upgrade;
 }
 
 function addUpgrade(upgrade: string) {
@@ -561,7 +577,13 @@ grid.drawChest(buildingsCtx, depot, GRID_SCALE);
 generateInitialX();
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
-document.querySelector(".menu-btn").addEventListener("click", () => {
+document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
     hideMenu();
     generateInitialX();
+    addUpgrade(selectedUpgrade);
+    selectedUpgrade = null;
+});
+
+document.querySelector("#try-again-btn").addEventListener("click", () => {
+    window.location.reload();
 });
