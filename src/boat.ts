@@ -165,7 +165,7 @@ export default class Boat implements IPositionable, ICircle {
             this.bulletDirection.y += this.vel.y;
             normalizeVector(this.bulletDirection, this.bulletDirection); // Re-normalize after adjustments
             const dotProduct = dot(this.bulletDirection, this.direction);
-            // shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);
+            shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);
         }
 
         if (this.forwardGun && (this.currentTime - this.forwardGunLastFiredTime) > this.forwardGunSpeed) {
