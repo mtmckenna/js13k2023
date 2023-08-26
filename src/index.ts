@@ -135,11 +135,17 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
 const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoadPoint = randomRoad.center;
-const upgrades: { [key: string]: number } = {
-    "Fast Sails": 100,
-    "Armored Hull": 100,
-    "Gun": 100,
-}
+// const upgrades: { [key: string]: number } = {
+//     "Fast Sails": 100,
+//     "Armored Hull": 100,
+//     "Gun": 100,
+// }
+
+const upgrades: {name: string, cost: number}[] = [
+    { name: "Super Sails", cost: 100 },
+    { name: "Armor", cost: 100 },
+    { name: "Forward Cannon", cost: 100 },
+];
 
 const depotIndex = regions.indexOf(closestRegionToPos(randomRoadPoint, regions));
 const deliveryIndices: number [] = [];
@@ -320,7 +326,7 @@ function draw(t: number) {
     if (circleSize > SIZE_MAX || circleSize < SIZE_MIN) sizeDirection *= -1; // Reverse direction
 
     groundCtx.globalAlpha = .5; // Apply alpha transparency
-    groundCtx.fillStyle = "green";
+    groundCtx.fillStyle = "#F0E68C";
     let region = regions[depotIndex];
     if (deliveryIndices.length > 0) {
         groundCtx.fillStyle = "red";
@@ -379,7 +385,7 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
 
     const circleX = player.center.x + cos * RADIUS_AROUND_PLAYER;
     const circleY = player.center.y + sin * RADIUS_AROUND_PLAYER;
-    const color = building.type === "depot" ? "green" : "red";
+    const color = building.type === "depot" ? "#F0E68C" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
 }
 
@@ -479,15 +485,15 @@ function showMenu() {
     const list = document.querySelector('.menu-list');
     list.innerHTML = '';
 
-    for (const upgrade in upgrades) {
+    for (const upgrade of upgrades) {
         const li = document.createElement('li');
         li.classList.add('menu-item');
         li.setAttribute('data-selected', 'false');
         // set cash amount in data attribute
-        li.setAttribute('data-cash', upgrades[upgrade].toString());
+        li.setAttribute('data-cash', upgrade.cost.toString());
         // set upgrade name in data attribute
-        li.setAttribute('data-upgrade', upgrade);
-        li.innerHTML = `${upgrade} - $${upgrades[upgrade]}`;
+        li.setAttribute('data-upgrade', upgrade.name);
+        li.innerHTML = `${upgrade.name} - $${upgrade.cost}`;
         list.appendChild(li);
     }
 
@@ -531,6 +537,7 @@ function handleMenuItemClick(e: Event) {
 resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, regions, GRID_SCALE);
+grid.drawChest(buildingsCtx, depot, GRID_SCALE);
 generateDeliveryIndices();
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
