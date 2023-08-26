@@ -1,6 +1,6 @@
 import {ICircle, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
-import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
-import {clamp, getCos, getSin, normalizeVector, subtractVectors} from "./math";
+import Grid from "./grid";
+import {clamp, dot, getCos, getSin, normalizeVector, subtractVectors} from "./math";
 import {drawPixels, updatePos} from "./game_objects";
 import { PIXEL_SIZE} from "./constants";
 import {BulletPool} from "./pools";
@@ -54,12 +54,20 @@ export default class Boat implements IPositionable, ICircle {
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
     upgrades: string[] = [];
-    gunFiringSpeed: number = .2;
-    lastFiredTime: number = 0;
+    direction: IPoint = {x: 1, y: 0};
+
     currentTime: number = 0;
     bulletDirection: IPoint = {x: 0, y: 0};
     bulletSpeed: number = 3;
     index: number = 0;
+
+    // Weapons
+    trackingGunSpeed: number = .2;
+    trackingGunLastFiredTime: number = 0;
+
+    forwardGun: boolean = false;
+    forwardGunSpeed: number = .01;
+    forwardGunLastFiredTime: number = 0;
 
     constructor(grid: Grid, inputState: IVehicleInputState) {
         this.inputState = inputState;
@@ -126,7 +134,8 @@ export default class Boat implements IPositionable, ICircle {
         this.vel.y *= FRICTION;
 
         this.movingBackwards = this.inputState.mode === "kb" && this.inputState.pos.y < 0;
-
+        this.direction.x = getCos(this.angle - Math.PI/2);
+        this.direction.y = getSin(this.angle - Math.PI/2);
     }
 
     update(t: number): void {
@@ -145,12 +154,21 @@ export default class Boat implements IPositionable, ICircle {
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.size.y);
         updatePos(x, y, this);
 
-        if ((this.currentTime - this.lastFiredTime) > this.gunFiringSpeed) {
-            this.lastFiredTime = this.currentTime;
+        if ((this.currentTime - this.trackingGunLastFiredTime) > this.trackingGunSpeed) {
+            this.trackingGunLastFiredTime = this.currentTime;
             const enemy = this.grid.getNearestEnemy(this.center)
             if (!enemy) return;
             normalizeVector(subtractVectors(enemy.center, this.center, this.bulletDirection), this.bulletDirection);
-            shootGun(this.center, this.bulletDirection, this.bulletSpeed);
+            this.bulletDirection.x += this.vel.x;
+            this.bulletDirection.y += this.vel.y;
+            normalizeVector(this.bulletDirection, this.bulletDirection); // Re-normalize after adjustments
+            const dotProduct = dot(this.bulletDirection, this.direction);
+            shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);
+        }
+
+        if (this.forwardGun && (this.currentTime - this.forwardGunLastFiredTime) > this.forwardGunSpeed) {
+            this.forwardGunLastFiredTime = this.currentTime;
+            shootGun(this.center, this.direction, this.bulletSpeed + this.speed);
         }
     }
 

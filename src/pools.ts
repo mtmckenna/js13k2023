@@ -94,7 +94,7 @@ export class BulletPool {
 
                 // draw bullet which is a square that rotates based on the bullets angle
                 ctx.fillStyle = "#000";
-                ctx.fillRect(-bullet.size.x/2*scale, -bullet.size.y/2*scale, bullet.size.x*scale, bullet.size.y*scale);
+                ctx.fillRect(-bullet.size.x*scale, -bullet.size.y*scale, bullet.size.x*scale, bullet.size.y*scale);
 
                 ctx.restore();
             }

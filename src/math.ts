@@ -271,6 +271,7 @@ export function getCos(angle: number): number {
 
 function setTrigCache(lookup: number): void {
     if (!trigCache[lookup]) {
+        // console.log("setting trig cache for", lookup);
         const angle = lookup / 100;
         trigCache[lookup] = {
             cos: Math.cos(angle),

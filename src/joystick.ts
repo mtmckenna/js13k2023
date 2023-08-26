@@ -9,17 +9,14 @@ export class Joystick {
     innerPos: IPoint = { x: 0, y: 0 };
     normalizedPos: IPoint = { x: 0, y: 0 };
     pressed: boolean = false;
-    doubleTapped: boolean = false;
     lastTapTime: number = 0;
     boundingRect: DOMRect;
 
     callback: () => void;
-    doubleTapCallback: () => void;
 
-    constructor(gameCanvas: HTMLCanvasElement, callback: () => void, doubleTapCallback: () => void) {
+    constructor(gameCanvas: HTMLCanvasElement, callback: () => void) {
         this.canvas = gameCanvas;
         this.callback = callback;
-        this.doubleTapCallback = doubleTapCallback;
 
         this.addEventListeners(this.canvas);
         this.boundingRect = this.canvas.getBoundingClientRect();
@@ -98,14 +95,6 @@ export class Joystick {
         this.innerPos.y = y;
 
         const currentTime = Date.now();
-        const timeSinceLastTap = currentTime - this.lastTapTime;
-
-        if (timeSinceLastTap <= DOUBLE_TAP_THRESHOLD) {
-            this.doubleTapped = true;
-            this.doubleTapCallback()
-        } else {
-            this.doubleTapped = false;
-        }
 
         this.lastTapTime = currentTime;
 
@@ -140,7 +129,6 @@ export class Joystick {
         e.stopPropagation();
 
         this.pressed = false;
-        this.doubleTapped = false;
         this.outerPos.x = 0;
         this.outerPos.y = 0;
         this.innerPos.x = 0;

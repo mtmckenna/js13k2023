@@ -2,8 +2,8 @@ import {Joystick} from "./joystick";
 import {KeyboardInput} from "./keyboard_input";
 import {
     calculateAngle,
-    distanceBetweenPoints, getCos, getSin, midpointOfEdge, normalFromVector,
-    normalizeVector, perpendicularDistanceFromPointToEdge,
+    distanceBetweenPoints, getCos, getSin,
+    normalizeVector,
     randomFloat, randomIndex,
     vectorFromEdge
 } from "./math";
@@ -92,7 +92,7 @@ BulletPool.initialize(1000);
 let fpsDisplay = null;
 if (DEBUG) fpsDisplay = new FpsDisplay();
 
-const joystick = new Joystick(canvas, joystickMoveCallback, doubleTapCallback);
+const joystick = new Joystick(canvas, joystickMoveCallback);
 const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
@@ -406,20 +406,7 @@ function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, size:
     ctx.restore();
 }
 
-// function drawCollisions(ctx: CanvasRenderingContext2D, collisions: ICollision[]) {
-//     for (let i = 0; i < numRegionCollisions; i++) {
-//         const collision = collisions[i];
-//         ctx.strokeStyle = "#f00";
-//         ctx.lineWidth = 5;
-//         ctx.beginPath();
-//         ctx.moveTo(collision.edge.v0.x, collision.edge.v0.y);
-//         ctx.lineTo(collision.edge.v1.x, collision.edge.v1.y);
-//         ctx.stroke();
-//     }
-// }
-
 // INPUT METHODS AND CALLBACKS
-
 function keyCallback() {
     playerInputState.pos.x = keyboard.normalizedPos.x;
     playerInputState.pos.y = keyboard.normalizedPos.y;
@@ -430,12 +417,6 @@ function joystickMoveCallback() {
     playerInputState.pos.x = joystick.normalizedPos.x;
     playerInputState.pos.y = joystick.normalizedPos.y;
     playerInputState.mode = "js";
-}
-
-// TODO: Delete
-function doubleTapCallback() {
-    // console.log(state);
-    console.log("double tap");
 }
 
 // resize canvas to take up the whole screen (i.e. it takes 100% height and 100% width) but make sure the resolution doesn't exceed 1m pixels. CSS will stretch the canvas if it's too small.
@@ -532,6 +513,15 @@ function handleMenuItemClick(e: Event) {
     element.setAttribute('data-selected', (!isSelected).toString());
     element.style.backgroundColor = isSelected ? '' : '#F0E68C';
     element.style.color = isSelected ? '' : '#000';
+    const upgrade = element.getAttribute('data-upgrade');
+
+    addUpgrade(upgrade);
+}
+
+function addUpgrade(upgrade: string) {
+    if (upgrade === "Forward Cannon") {
+        player.forwardGun = true;
+    }
 }
 
 resizeCanvas()
