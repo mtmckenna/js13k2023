@@ -26,6 +26,7 @@ import {BulletPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
 import {GLOBAL} from "./constants";
+import {playCannonballHitEnemySound, playHitPlayerSound} from "./sound";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -41,7 +42,7 @@ const GRID_SCALE = 1 / 2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 100;
+const NUM_ENEMIES = 200;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -245,6 +246,7 @@ function update(t: number) {
             const enemy = neighborEnemies[j];
             if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
                 BulletPool.release(bullet);
+                playCannonballHitEnemySound();
                 enemy.deactivate();
                 updateCash(10);
                 break;
@@ -261,6 +263,7 @@ function update(t: number) {
         if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
             player.life -= 1;
             enemy.lastHitPlayerTime = GLOBAL.time;
+            playHitPlayerSound();
             if (player.life <= 0) {
                 player.life = 0;
                 player.active = false;

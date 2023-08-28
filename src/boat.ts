@@ -4,6 +4,7 @@ import {clamp, dot, getCos, getSin, normalizeVector, subtractVectors} from "./ma
 import {drawPixels, updatePos} from "./game_objects";
 import { PIXEL_SIZE} from "./constants";
 import {BulletPool} from "./pools";
+import { playCannonSound} from "./sound";
 
 const TURNING_SPEED_THRESHOLD = 0.1;
 const VEL_BOOST_ROAD = .25;
@@ -64,7 +65,7 @@ export default class Boat implements IPositionable, ICircle {
     index: number = 0;
 
     // Weapons
-    trackingGunSpeed: number = .2;
+    trackingGunSpeed: number =1;
     trackingGunLastFiredTime: number = 0;
 
     forwardGun: boolean = false;
@@ -189,5 +190,6 @@ function shootGun(pos: IPoint, direction: IPoint, speed: number = 1.5) {
     const bullet = BulletPool.get(pos.x, pos.y);
     bullet.vel.x = direction.x * speed;
     bullet.vel.y = direction.y * speed;
+    playCannonSound();
     return bullet;
 }
