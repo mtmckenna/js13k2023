@@ -16,11 +16,11 @@ import {
 import {
     roadsAndRegionsFromPoints,
 } from "./level_generation";
-import Grid, {indexForPos} from "./grid";
+import Grid, {GAME_WIDTH} from "./grid";
 import Enemy from "./enemy";
 
 import {FpsDisplay, DEBUG} from "./debug";
-import {ROAD_WIDTH} from "./road";
+import Road, {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
 import {BulletPool, GoldPool, PointPool} from "./pools";
 import Boat from "./boat";
@@ -102,6 +102,8 @@ let points: IPoint[] = [];
 let enemies: Enemy[] = [];
 let lastDeliveryRegion: IRegion = null;
 let selectedUpgrade: string = null;
+let desiredDeliveryDistance = 0;
+const MAX_DELIVERY_DISTANCE = GAME_WIDTH / 2;
 const UI_STATE = {
     deliveryMenuVisible: false,
     restartMenuVisible: false,
@@ -138,7 +140,8 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 }
 
 let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
-const randomRoad = roads[Math.floor(Math.random() * roads.length)];
+// const randomRoad = roads[Math.floor(Math.random() * roads.length)];
+const randomRoad = findRoadCenterClosestToCenterOfGame();
 const randomRoadPoint = randomRoad.center;
 
 const upgrades: {name: string, cost: number}[] = [
@@ -184,13 +187,12 @@ for (const region of regions) {
     region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 10);
 }
 
-function generateInitialX() {
-    const options = regions.filter(r => r.type === "empty");
-    let minIndex = regions.indexOf(options[0]);
-
+function generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
+    let minIndex = regions.indexOf(regions[0]);
     for (let i = 0; i < regions.length; i++) {
         // continue if the region is too close to the depot dropoff point
         if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < ROAD_WIDTH * 2) continue;
+        if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < desiredDistance) continue;
         // set minIndex to the current index if it's closer to the depot dropoff point than the current minIndex
         if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < distanceBetweenPoints(regions[minIndex].center, depot.dropOffPoint)) {
             minIndex = i;
@@ -199,6 +201,20 @@ function generateInitialX() {
 
     regions[minIndex].type = "delivery";
     deliveryIndices.push(minIndex);
+    return minIndex;
+}
+
+function findRoadCenterClosestToCenterOfGame(): Road {
+    let minDist = Number.MAX_VALUE;
+    let closestRoad = null;
+    for (const road of roads) {
+        const dist = distanceBetweenPoints(road.center, {x: GAME_WIDTH / 2, y: GAME_WIDTH / 2});
+        if (dist < minDist) {
+            minDist = dist;
+            closestRoad = road;
+        }
+    }
+    return closestRoad;
 }
 
 function tick(t: number) {
@@ -220,8 +236,8 @@ function tick(t: number) {
     draw(t)
 
     requestAnimationFrame(tick);
-}
 
+}
 
 function update(t: number) {
     if (UI_STATE.deliveryMenuVisible) return;
@@ -318,6 +334,8 @@ function update(t: number) {
             for (let i = 0; i < region.gold; i++) {
                 GoldPool.get(region.dropOffPoint.x + randomFloat(-ROAD_WIDTH, ROAD_WIDTH), region.dropOffPoint.y + randomFloat(-ROAD_WIDTH, ROAD_WIDTH));
             }
+
+            // deliveryIndices.push(randomIndex(regions.filter(r => r.type === "empty")));
         }
 
     } else {
@@ -587,13 +605,19 @@ function addUpgrade(upgrade: string) {
 resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, regions, GRID_SCALE);
-// grid.drawChest(buildingsCtx, depot, GRID_SCALE);
-generateInitialX();
+generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(0);
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
     hideMenu();
-    generateInitialX();
+
+    // increase the desired delivery distance by 1/4 the difference between current distance and the max distance
+    desiredDeliveryDistance += (MAX_DELIVERY_DISTANCE - desiredDeliveryDistance) / 4;
+
+    generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDeliveryDistance);
+
+
+
     addUpgrade(selectedUpgrade);
     selectedUpgrade = null;
 });
