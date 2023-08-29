@@ -65,7 +65,7 @@ export default class Boat implements IPositionable, ICircle {
     index: number = 0;
 
     // Weapons
-    trackingGunSpeed: number =1;
+    trackingGunSpeed: number = .5;
     trackingGunLastFiredTime: number = 0;
 
     forwardGun: boolean = false;
