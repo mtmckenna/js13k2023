@@ -53,7 +53,7 @@ let lastTime = performance.now();
 const roadCollisions: IEdge[] = []
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
-let cash = 0;
+let gold = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
@@ -166,32 +166,33 @@ depot.type = "depot";
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI / 2;
 
+// Generate enemies
 for (let i = 0; i < NUM_ENEMIES; i++) {
     const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
     enemies.push(enemy);
     grid.addToEnemyMap(enemy);
 }
 
+// Generate gold for each region based on how far away it is from the depot (further away is more gold)
+for (const region of regions) {
+    region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 10);
+}
 
 function generateInitialX() {
-    let index = randomIndex(regions);
-    let tries = 0;
-    while (tries < 100) {
-        const region = regions[index];
-        if (region.type === "empty") {
-            for (const deliveryIndex of deliveryIndices) {
-                if (distanceBetweenPoints(region.center, regions[deliveryIndex].center) < ROAD_WIDTH * 2) {
-                    // index = randomIndex(buildings);
-                    tries++;
-                    continue;
-                }
-            }
-            region.type = "delivery";
-            deliveryIndices.push(index);
-            break;
+    const options = regions.filter(r => r.type === "empty");
+    let minIndex = regions.indexOf(options[0]);
+
+    for (let i = 0; i < regions.length; i++) {
+        // continue if the region is too close to the depot dropoff point
+        if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < ROAD_WIDTH * 2) continue;
+        // set minIndex to the current index if it's closer to the depot dropoff point than the current minIndex
+        if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < distanceBetweenPoints(regions[minIndex].center, depot.dropOffPoint)) {
+            minIndex = i;
         }
-        tries++;
     }
+
+    regions[minIndex].type = "delivery";
+    deliveryIndices.push(minIndex);
 }
 
 function tick(t: number) {
@@ -248,7 +249,6 @@ function update(t: number) {
                 BulletPool.release(bullet);
                 playCannonballHitEnemySound();
                 enemy.deactivate();
-                updateCash(10);
                 break;
             }
         }
@@ -300,8 +300,8 @@ function update(t: number) {
 
         if (inDropOffRadius && player.speed < 1) {
             region.type = "empty";
-            updateCash(100);
             lastDeliveryRegion =  regions[deliveryIndices.shift()];
+            gold += region.gold;
         }
 
     } else {
@@ -385,12 +385,6 @@ function draw(t: number) {
 
     drawLifeBar(ctx, canvas, player.life, 100);
 
-}
-
-function updateCash(amount: number) {
-    cash += amount;
-    const cashElement = document.querySelector('#cash');
-    cashElement.innerHTML = `$${cash}`;
 }
 
 function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IBuilding) {
@@ -550,7 +544,6 @@ function hideMenu() {
             const upgrade = item.getAttribute('data-upgrade');
             const cash = parseInt(item.getAttribute('data-cash'));
             player.upgrades.push(upgrade);
-            updateCash(-cash);
         }
 
         item.removeEventListener('click', handleMenuItemClick);

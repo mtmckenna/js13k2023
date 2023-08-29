@@ -134,6 +134,7 @@ export interface IRegion extends IPolygon, IDropOff {
     insideEdges: IEdge[];
     polygonEdges: IEdge[];
     shrunkPolygon: IPolygon;
+    gold: number;
 }
 
 export type IVector = IPoint;

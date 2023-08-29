@@ -195,7 +195,8 @@ function regionFromPolygon(polygon: IPolygon, boundingBox): IRegion | null {
         polygonEdges,
         dropOffPoint: {x: 0, y: 0},
         type: "empty",
-        shrunkPolygon: evenSmallerPolygon
+        shrunkPolygon: evenSmallerPolygon,
+        gold: 0
     }
 }
 
