@@ -129,6 +129,15 @@ export interface IBoundingBox {
     center: IPoint;
 }
 
+// export type IGold = IPositionable & ICircle & IPoolable & IUpdateable;
+
+export interface IGold extends IPositionable, ICircle, IPoolable, IUpdateable {
+}
+
+export interface IUpdateable {
+    update(t: number): void;
+}
+
 export interface IRegion extends IPolygon, IDropOff {
     edges: IEdge[];
     insideEdges: IEdge[];

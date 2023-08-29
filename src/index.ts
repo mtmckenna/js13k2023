@@ -11,7 +11,7 @@ import {circlesCollide, findCollisions} from "./collision";
 import {
     IPoint,
     IVehicleInputState,
-    IEdge, ICollision, IBuilding, CanvasColor, IPolygon, IRegion,
+    IEdge, ICollision, IBuilding, CanvasColor, IPolygon, IRegion, IGold,
 } from "./interfaces";
 import {
     roadsAndRegionsFromPoints,
@@ -22,7 +22,7 @@ import Enemy from "./enemy";
 import {FpsDisplay, DEBUG} from "./debug";
 import {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
-import {BulletPool, PointPool} from "./pools";
+import {BulletPool, GoldPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
 import {GLOBAL} from "./constants";
@@ -53,7 +53,7 @@ let lastTime = performance.now();
 const roadCollisions: IEdge[] = []
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
-let gold = 0;
+let goldCount = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
@@ -166,6 +166,12 @@ depot.type = "depot";
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI / 2;
 
+// Create gold at and near the center of the depot region
+for (let i = 0; i < 100; i++) {
+    GoldPool.get(depot.center.x + randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2), depot.center.y + randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2));
+}
+
+
 // Generate enemies
 for (let i = 0; i < NUM_ENEMIES; i++) {
     const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
@@ -220,7 +226,7 @@ function tick(t: number) {
 function update(t: number) {
     if (UI_STATE.deliveryMenuVisible) return;
     GLOBAL.time +=t;
-    grid.update();
+    grid.clearEnemyMap();
 
     for (let i = 0; i < enemies.length; i++) {
         const enemy = enemies[i];
@@ -252,6 +258,13 @@ function update(t: number) {
                 break;
             }
         }
+    }
+
+    // Update gold
+    for (let i = 0; i < GoldPool.available.length; i++) {
+        const gold = GoldPool.available[i];
+        if (!gold.active) continue;
+        gold.update(t);
     }
 
     // Enemy collide with player
@@ -301,7 +314,10 @@ function update(t: number) {
         if (inDropOffRadius && player.speed < 1) {
             region.type = "empty";
             lastDeliveryRegion =  regions[deliveryIndices.shift()];
-            gold += region.gold;
+            goldCount += region.gold;
+            for (let i = 0; i < region.gold; i++) {
+                GoldPool.get(region.dropOffPoint.x + randomFloat(-ROAD_WIDTH, ROAD_WIDTH), region.dropOffPoint.y + randomFloat(-ROAD_WIDTH, ROAD_WIDTH));
+            }
         }
 
     } else {
@@ -359,7 +375,6 @@ function draw(t: number) {
     groundCtx.fill();
     groundCtx.globalAlpha = 1; // Reset alpha
 
-
     if (player.active) player.draw(groundCtx, GRID_SCALE); // Assuming player's draw method uses the passed context.
 
     ctx.drawImage(groundCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
@@ -369,7 +384,10 @@ function draw(t: number) {
         enemy.draw(airCtx, GRID_SCALE, t);
     }
 
+
     BulletPool.draw(airCtx, GRID_SCALE);
+    GoldPool.draw(airCtx, GRID_SCALE);
+    grid.drawChest(airCtx, depot, GRID_SCALE);
 
     if (deliveryIndices.length > 0) {
         drawArrowToBuilding(airCtx, player.center, regions[deliveryIndices[0]]);
@@ -569,7 +587,7 @@ function addUpgrade(upgrade: string) {
 resizeCanvas()
 grid.draw(gridCtx, GRID_SCALE);
 grid.drawRegions(buildingsCtx, regions, GRID_SCALE);
-grid.drawChest(buildingsCtx, depot, GRID_SCALE);
+// grid.drawChest(buildingsCtx, depot, GRID_SCALE);
 generateInitialX();
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);

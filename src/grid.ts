@@ -53,10 +53,15 @@ const X_PIXELS_COLOR_MAP = [null, "red"];
 const CHEST_PIXELS_COLOR_MAP = ["#FFD700", "#8B4513"];
 
 const xCanvas = document.createElement("canvas");
+xCanvas.width = X_PIXELS[0].length * PIXEL_SIZE;
+xCanvas.height = X_PIXELS.length * PIXEL_SIZE;
 const xCtx = xCanvas.getContext("2d");
 drawPixels(xCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE);
 
 const chestCanvas = document.createElement("canvas");
+chestCanvas.width = CHEST_PIXELS[0].length * PIXEL_SIZE;
+chestCanvas.height = CHEST_PIXELS.length * PIXEL_SIZE;
+
 const chestCtx = chestCanvas.getContext("2d");
 drawPixels(chestCtx, CHEST_PIXELS, CHEST_PIXELS_COLOR_MAP, PIXEL_SIZE);
 
@@ -82,10 +87,6 @@ export default class Grid {
                 }
             );
         }
-    }
-
-    update() {
-        this.clearEnemyMap();
     }
 
     setRoads(roads: Road[]) {

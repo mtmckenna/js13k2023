@@ -1,7 +1,8 @@
-import {IPoint, IPoolPoint} from "./interfaces";
+import {IGold, IPoint, IPoolPoint} from "./interfaces";
 import {Bullet} from "./bullet";
-import {updatePos} from "./game_objects";
+import {drawPixels, updatePos} from "./game_objects";
 import Grid from "./grid";
+import {PIXEL_SIZE} from "./constants";
 
 
 export class PointPool {
@@ -106,3 +107,95 @@ export class BulletPool {
         bullet.lifeTime = 0;
     }
 }
+
+
+const GOLD_PIXELS = [
+    [0, 1, 1, 0],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [0, 1, 1, 0],
+];
+
+const GOLD_PIXELS_COLOR_MAP = [null, "#FFD700"];
+
+const goldCanvas = document.createElement("canvas");
+const goldCtx = goldCanvas.getContext("2d");
+goldCanvas.width = GOLD_PIXELS[0].length * PIXEL_SIZE;
+goldCanvas.height = GOLD_PIXELS.length * PIXEL_SIZE;
+drawPixels(goldCtx, GOLD_PIXELS, GOLD_PIXELS_COLOR_MAP, PIXEL_SIZE);
+export class GoldPool {
+    public static available: IGold[] = [];
+
+    static initialize(count: number): void {
+        for (let i = 0; i < count; i++) {
+            GoldPool.available.push(createGold());
+        }
+    }
+
+    static get(x: number, y: number): IGold | null {
+        for (let i = 0; i < GoldPool.available.length; i++) {
+            const gold = GoldPool.available[i];
+            if (!gold.active) {
+                gold.active = true;
+                updatePos(x, y, gold);
+                return gold;
+            }
+        }
+
+        const gold = createGold();
+        updatePos(x, y, gold);
+        GoldPool.available.push(gold);
+        console.warn("out of gold.");
+        return gold;
+    }
+
+    static update(t: number) {
+        // update gold and deactivate them if they are out of bounds and reset their lifeTime and set them to inactive
+        for (let i = 0; i < GoldPool.available.length; i++) {
+            const gold = GoldPool.available[i];
+            if (gold.active) gold.update(t);
+
+            if (gold.pos.x < 0 || gold.pos.x > BulletPool.gameSize.x|| gold.pos.y < 0 || gold.pos.y > BulletPool.gameSize.y) {
+                GoldPool.release(gold);
+            }
+
+        }
+    }
+
+    static draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
+        for (let i = 0; i < GoldPool.available.length; i++) {
+            const gold = GoldPool.available[i];
+            if (!gold.active) continue;
+            const height = GOLD_PIXELS.length * PIXEL_SIZE;
+            const width = GOLD_PIXELS[0].length * PIXEL_SIZE;
+            ctx.save();
+            ctx.translate(gold.center.x * scale, gold.center.y * scale);
+            ctx.rotate(gold.angle);
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(goldCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
+            ctx.restore();
+        }
+    }
+
+    static release(gold: IGold) {
+        gold.active = false;
+    }
+}
+
+function updateGold(t: number) {
+    this.lifeTime += t;
+    if (this.lifeTime > this.maxLifeTime) this.active = false;
+
+    const posX = this.pos.x + this.vel.x;
+    const posY = this.pos.y + this.vel.y;
+    this.angle += .01 % 2* Math.PI;
+
+    updatePos(posX, posY, this);
+}
+
+function createGold(): IGold {
+    const gold = {active: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, vel: {x:0,y:0}, angle: 0, update: () => updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0};
+    return gold;
+}
+
+GoldPool.initialize(5000);
