@@ -68,25 +68,18 @@ const div = document.createElement("div");
 div.appendChild(canvas);
 document.body.prepend(canvas);
 
-const gridCanvas = document.createElement('canvas');
-const gridCtx = gridCanvas.getContext('2d');
-const buildingsCanvas = document.createElement('canvas');
-const buildingsCtx = buildingsCanvas.getContext('2d');
+const roadCanvas = document.createElement('canvas');
+const roadsCtx = roadCanvas.getContext('2d');
 const regionsCanvas = document.createElement('canvas');
-const groundCanvas: HTMLCanvasElement = document.createElement("canvas");
-const groundCtx: CanvasRenderingContext2D = groundCanvas.getContext("2d");
-const airCanvas: HTMLCanvasElement = document.createElement("canvas");
-const airCtx: CanvasRenderingContext2D = airCanvas.getContext("2d");
-gridCanvas.width = grid.gameSize.x * GRID_SCALE;
-gridCanvas.height = grid.gameSize.y * GRID_SCALE;
-buildingsCanvas.width = grid.gameSize.x * GRID_SCALE;
-buildingsCanvas.height = grid.gameSize.y * GRID_SCALE;
+const regionsCtx = regionsCanvas.getContext('2d');
+const offscreenCanvas: HTMLCanvasElement = document.createElement("canvas");
+const offscreenBufferCtx: CanvasRenderingContext2D = offscreenCanvas.getContext("2d");
+roadCanvas.width = grid.gameSize.x * GRID_SCALE;
+roadCanvas.height = grid.gameSize.y * GRID_SCALE;
 regionsCanvas.width = grid.gameSize.x * GRID_SCALE;
 regionsCanvas.height = grid.gameSize.y * GRID_SCALE;
-groundCanvas.width = grid.gameSize.x * GRID_SCALE;
-groundCanvas.height = grid.gameSize.y * GRID_SCALE;
-airCanvas.width = grid.gameSize.x * GRID_SCALE;
-airCanvas.height = grid.gameSize.y * GRID_SCALE;
+offscreenCanvas.width = grid.gameSize.x;
+offscreenCanvas.height = grid.gameSize.y;
 
 BulletPool.gameSize = grid.gameSize;
 BulletPool.grid = grid;
@@ -171,7 +164,9 @@ player.angle = randomRoad.angle + Math.PI / 2;
 
 // Create gold at and near the center of the depot region
 for (let i = 0; i < 100; i++) {
-    GoldPool.get(depot.center.x + randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2), depot.center.y + randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2));
+    const offsetX = randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2);
+    const offsetY = randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2);
+    GoldPool.get(depot.center.x + offsetX, depot.center.y + offsetY, depot, -1, offsetX,offsetY);
 }
 
 
@@ -184,7 +179,7 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
 
 // Generate gold for each region based on how far away it is from the depot (further away is more gold)
 for (const region of regions) {
-    region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 10);
+    region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 50);
 }
 
 function generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
@@ -277,11 +272,7 @@ function update(t: number) {
     }
 
     // Update gold
-    for (let i = 0; i < GoldPool.available.length; i++) {
-        const gold = GoldPool.available[i];
-        if (!gold.active) continue;
-        gold.update(t);
-    }
+    GoldPool.update(t);
 
     // Enemy collide with player
     for (let i = 0; i < enemies.length; i++) {
@@ -320,6 +311,12 @@ function update(t: number) {
         break;
     }
 
+    handleDelivery();
+
+    camera.centerOn(player, FIXED_TIMESTEP);
+}
+
+function handleDelivery() {
     if (deliveryIndices.length > 0) {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -331,13 +328,12 @@ function update(t: number) {
             region.type = "empty";
             lastDeliveryRegion =  regions[deliveryIndices.shift()];
             goldCount += region.gold;
+            player.gold.length = 0;
             for (let i = 0; i < region.gold; i++) {
-                GoldPool.get(region.dropOffPoint.x + randomFloat(-ROAD_WIDTH, ROAD_WIDTH), region.dropOffPoint.y + randomFloat(-ROAD_WIDTH, ROAD_WIDTH));
+                const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
+                player.gold.push(gold);
             }
-
-            // deliveryIndices.push(randomIndex(regions.filter(r => r.type === "empty")));
         }
-
     } else {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -347,17 +343,27 @@ function update(t: number) {
             if (!UI_STATE.deliveryMenuVisible) showUpgradeMenu();
         }
     }
-
-    camera.centerOn(player, FIXED_TIMESTEP);
 }
+
+// function sleep(ms: number): Promise<void> {
+//     return new Promise(resolve => setTimeout(resolve, ms));
+// }
+
+// async function getGoldWithDelay(region, player) {
+//     for (let i = 0; i < region.gold; i++) {
+//         GoldPool.get(region.center.x, region.center.y, player);
+//         await sleep(100); // Sleep for 0.1 seconds
+//     }
+// }
+
 
 function draw(t: number) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = false;
-    groundCtx.clearRect(0, 0, groundCanvas.width, groundCanvas.height);
-    groundCtx.imageSmoothingEnabled = false;
-    airCtx.clearRect(0, 0, airCanvas.width, airCanvas.height);
-    airCtx.imageSmoothingEnabled = false;
+    offscreenBufferCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+    offscreenBufferCtx.imageSmoothingEnabled = false;
+
+    if (lastDeliveryRegion) grid.drawRegion(regionsCtx, lastDeliveryRegion, GRID_SCALE);
 
     const sourceX = camera.pos.x * GRID_SCALE;
     const sourceY = camera.pos.y * GRID_SCALE;
@@ -369,58 +375,45 @@ function draw(t: number) {
     const destWidth = camera.canvasSize.x;
     const destHeight = camera.canvasSize.y;
 
-    ctx.drawImage(gridCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-
     // Logic to pulse circle size
     circleSize += SIZE_SPEED * sizeDirection;
     if (circleSize > SIZE_MAX || circleSize < SIZE_MIN) sizeDirection *= -1; // Reverse direction
 
-    groundCtx.globalAlpha = .5; // Apply alpha transparency
-    groundCtx.fillStyle = "#F0E68C";
+    offscreenBufferCtx.fillStyle = "#F0E68C";
     let region = regions[depotIndex];
     if (deliveryIndices.length > 0) {
-        groundCtx.fillStyle = "red";
+        offscreenBufferCtx.fillStyle = "red";
         region = regions[deliveryIndices[0]];
-        grid.drawX(buildingsCtx, region, GRID_SCALE);
+        grid.drawX(offscreenBufferCtx, region, GRID_SCALE);
     }
 
-    if (lastDeliveryRegion) {
-        grid.drawRegion(buildingsCtx, lastDeliveryRegion, GRID_SCALE);
-    }
+    offscreenBufferCtx.globalAlpha = .5; // Apply alpha transparency
+    offscreenBufferCtx.beginPath();
+    offscreenBufferCtx.arc(region.dropOffPoint.x * GRID_SCALE, region.dropOffPoint.y * GRID_SCALE, circleSize, 0, 2 * Math.PI);
+    offscreenBufferCtx.fill();
+    offscreenBufferCtx.globalAlpha = 1; // Reset alpha
 
-    groundCtx.beginPath();
-    groundCtx.arc(region.dropOffPoint.x * GRID_SCALE, region.dropOffPoint.y * GRID_SCALE, circleSize, 0, 2 * Math.PI);
-    groundCtx.fill();
-    groundCtx.globalAlpha = 1; // Reset alpha
+    if (player.active) player.draw(offscreenBufferCtx, GRID_SCALE);
 
-    if (player.active) player.draw(groundCtx, GRID_SCALE); // Assuming player's draw method uses the passed context.
+    BulletPool.draw(offscreenBufferCtx, GRID_SCALE);
+    GoldPool.draw(offscreenBufferCtx, GRID_SCALE);
+    grid.drawChest(offscreenBufferCtx, depot, GRID_SCALE);
 
-    ctx.drawImage(groundCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-    ctx.drawImage(buildingsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-
-    for (const enemy of enemies) {
-        enemy.draw(airCtx, GRID_SCALE, t);
-    }
-
-
-    BulletPool.draw(airCtx, GRID_SCALE);
-    GoldPool.draw(airCtx, GRID_SCALE);
-    grid.drawChest(airCtx, depot, GRID_SCALE);
+    for (const enemy of enemies) enemy.draw(offscreenBufferCtx, GRID_SCALE, t);
 
     if (deliveryIndices.length > 0) {
-        drawArrowToBuilding(airCtx, player.center, regions[deliveryIndices[0]]);
+        drawArrowToBuilding(offscreenBufferCtx, player.center, regions[deliveryIndices[0]]);
     } else {
-        drawArrowToBuilding(airCtx, player.center, regions[depotIndex]);
+        drawArrowToBuilding(offscreenBufferCtx, player.center, regions[depotIndex]);
     }
 
-    airCtx.fillStyle = "#000";
-
-    ctx.drawImage(airCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+    ctx.drawImage(roadCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+    ctx.drawImage(regionsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+    ctx.drawImage(offscreenCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
 
     joystick.draw(ctx);
 
     drawLifeBar(ctx, canvas, player.life, 100);
-
 }
 
 function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IBuilding) {
@@ -603,9 +596,9 @@ function addUpgrade(upgrade: string) {
 }
 
 resizeCanvas()
-grid.draw(gridCtx, GRID_SCALE);
-grid.drawRegions(buildingsCtx, regions, GRID_SCALE);
-generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(0);
+grid.drawRoads(roadsCtx, GRID_SCALE);
+grid.drawRegions(regionsCtx, regions, GRID_SCALE);
+generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(ROAD_WIDTH*3);
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector("#add-upgrade-btn").addEventListener("click", () => {

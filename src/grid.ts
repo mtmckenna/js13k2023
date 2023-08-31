@@ -195,7 +195,7 @@ export default class Grid {
         return minEnemy;
     }
 
-    draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
+    drawRoads(ctx: CanvasRenderingContext2D, scale: number = 1) {
         ctx.imageSmoothingEnabled = false;
 
         // draw cells

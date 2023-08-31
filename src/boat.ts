@@ -1,4 +1,4 @@
-import {ICircle, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
+import {ICircle, IGold, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
 import Grid from "./grid";
 import {clamp, dot, getCos, getSin, normalizeVector, subtractVectors} from "./math";
 import {drawPixels, updatePos} from "./game_objects";
@@ -58,6 +58,7 @@ export default class Boat implements IPositionable, ICircle {
     direction: IPoint = {x: 1, y: 0};
     life: number = 100;
     active: boolean = true;
+    gold: IGold[] = [];
 
     currentTime: number = 0;
     bulletDirection: IPoint = {x: 0, y: 0};

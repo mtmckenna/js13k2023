@@ -1,8 +1,9 @@
-import {IGold, IPoint, IPoolPoint} from "./interfaces";
+import {ICenter, IGold, IPoint, IPoolPoint, IPositionable} from "./interfaces";
 import {Bullet} from "./bullet";
 import {drawPixels, updatePos} from "./game_objects";
 import Grid from "./grid";
 import {PIXEL_SIZE} from "./constants";
+import {addVectors, normalizeVector, subtractVectors} from "./math";
 
 
 export class PointPool {
@@ -132,18 +133,26 @@ export class GoldPool {
         }
     }
 
-    static get(x: number, y: number): IGold | null {
+    static get(x: number, y: number, target: ICenter, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
         for (let i = 0; i < GoldPool.available.length; i++) {
             const gold = GoldPool.available[i];
             if (!gold.active) {
                 gold.active = true;
                 updatePos(x, y, gold);
+                gold.target = target;
+                gold.offset.x = offsetX;
+                gold.offset.y = offsetY;
+                gold.updateDelay = updateDelay;
                 return gold;
             }
         }
 
         const gold = createGold();
         updatePos(x, y, gold);
+        gold.target = target;
+        gold.offset.x = offsetX;
+        gold.offset.y = offsetY;
+        gold.updateDelay = updateDelay;
         GoldPool.available.push(gold);
         console.warn("out of gold.");
         return gold;
@@ -153,12 +162,9 @@ export class GoldPool {
         // update gold and deactivate them if they are out of bounds and reset their lifeTime and set them to inactive
         for (let i = 0; i < GoldPool.available.length; i++) {
             const gold = GoldPool.available[i];
-            if (gold.active) gold.update(t);
-
-            if (gold.pos.x < 0 || gold.pos.x > BulletPool.gameSize.x|| gold.pos.y < 0 || gold.pos.y > BulletPool.gameSize.y) {
-                GoldPool.release(gold);
+            if (gold.active) {
+                gold.update(t);
             }
-
         }
     }
 
@@ -179,22 +185,41 @@ export class GoldPool {
 
     static release(gold: IGold) {
         gold.active = false;
+        gold.target = null;
+        gold.offset.x = 0;
+        gold.offset.y = 0;
+        gold.time = 0;
+        gold.updateDelay = -1;
     }
 }
 
 function updateGold(t: number) {
-    this.lifeTime += t;
-    if (this.lifeTime > this.maxLifeTime) this.active = false;
+    this.time += t;
+    if (!this.target) return;
+    if (this.updateDelay === -1 || this.time < this.updateDelay) return;
+    const direction = PointPool.get();
 
-    const posX = this.pos.x + this.vel.x;
-    const posY = this.pos.y + this.vel.y;
+    subtractVectors(addVectors(this.target.center, this.offset, direction), this.center, direction)
+
+    if (Math.abs(direction.x) < Number.EPSILON && Math.abs(direction.y) < Number.EPSILON) {
+        PointPool.release(direction);
+        return;
+    }
+
+    normalizeVector(direction, direction);
+
+    const SPEED = 3;
+    const posX = this.pos.x + direction.x * SPEED;
+    const posY = this.pos.y + direction.y * SPEED;
+
     this.angle += .01 % 2* Math.PI;
 
     updatePos(posX, posY, this);
+    PointPool.release(direction);
 }
 
 function createGold(): IGold {
-    const gold = {active: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, vel: {x:0,y:0}, angle: 0, update: () => updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0};
+    const gold = {active: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, vel: {x:0,y:0}, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, time: 0, updateDelay: -1};
     return gold;
 }
 

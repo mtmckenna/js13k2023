@@ -25,12 +25,15 @@ export interface ITriangle extends IPolygon {
     vertices: IVertices3;
 }
 
-export interface IPolygon {
+export interface IPolygon extends ICenter {
     vertices: IPoint[];
-    center: IPoint;
 }
 
 export type CanvasColor = string | CanvasGradient | CanvasPattern;
+
+export interface ICenter {
+    center: IPoint;
+}
 
 export interface IBuilding extends IPolygon {
     type: "empty" | "depot" | "delivery";
@@ -50,9 +53,8 @@ export interface ITriangleInTriangulation extends ITriangle {
     neighbors: ITriangleInTriangulation[];
 }
 
-export interface IPositionable {
+export interface IPositionable extends ICenter {
     pos: IPoint;
-    center: IPoint;
     angle: number;
     size: IPoint;
     vertices: IPoint[];
@@ -132,6 +134,10 @@ export interface IBoundingBox {
 // export type IGold = IPositionable & ICircle & IPoolable & IUpdateable;
 
 export interface IGold extends IPositionable, ICircle, IPoolable, IUpdateable {
+    target: ICenter;
+    offset: IPoint;
+    time: number;
+    updateDelay: number;
 }
 
 export interface IUpdateable {
