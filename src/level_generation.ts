@@ -142,7 +142,7 @@ function voronoiPolygonsOfDelaunayTriangles(triangles: ITriangleInTriangulation[
     for (let region of voronoiRegions) {
         const centroid = centerOfVertices(region.vertices)
         region.vertices = sortVertices(region.vertices, centroid);
-        region = clipPolygonToBoundingBox(region, boundingBox);
+        // region = clipPolygonToBoundingBox(region, boundingBox);
         clippedRegions.push(region);
     }
 
@@ -312,8 +312,6 @@ function calculateNewEdges(edges: IEdge[]): IEdge[] {
 
 }
 
-
-
 function reconstructEdges(edges: IEdge[]): IEdge[] {
     const intersections: IPoint[] = [];
     for (let i = 0; i < edges.length; i++) {
@@ -443,40 +441,40 @@ export function intersectionOfPoints(p1: IPoint, p2: IPoint, q1: IPoint, q2: IPo
     return intersection;
 }
 
-// Sutherland–Hodgman algorithm
-function clipPolygonToBoundingBox(polygon: IPolygon, boundingBox: IPoint): IPolygon {
-    let vertices = polygon.vertices;
-
-    // Define the bounding box edges
-    const box = [
-        {start: {x: 0, y: 0}, end: {x: boundingBox.x, y: 0}},             // Top edge
-        {start: {x: boundingBox.x, y: 0}, end: {x: boundingBox.x, y: boundingBox.y}}, // Right edge
-        {start: {x: boundingBox.x, y: boundingBox.y}, end: {x: 0, y: boundingBox.y}}, // Bottom edge
-        {start: {x: 0, y: boundingBox.y}, end: {x: 0, y: 0}}             // Left edge
-    ];
-
-    for (const {start, end} of box) {
-        const newVertices = [];
-        for (let i = 0; i < vertices.length; i++) {
-            const j = (i + 1) % vertices.length; // Next vertex index
-            const p1 = vertices[i], p2 = vertices[j];
-
-            const inside1 = (p1.x - start.x) * (end.y - start.y) < (p1.y - start.y) * (end.x - start.x);
-            const inside2 = (p2.x - start.x) * (end.y - start.y) < (p2.y - start.y) * (end.x - start.x);
-
-            if (inside1 !== inside2) { // If vertices straddle the edge
-                const intersection = intersectionOfPoints(start, end, p1, p2);
-                if (intersection) newVertices.push(intersection); // Add intersection point
-            }
-            if (inside2) {
-                newVertices.push(p2); // Keep vertices on the inside
-            }
-        }
-        vertices = newVertices;
-    }
-
-    return {...polygon, vertices};
-}
+// // Sutherland–Hodgman algorithm
+// function clipPolygonToBoundingBox(polygon: IPolygon, boundingBox: IPoint): IPolygon {
+//     let vertices = polygon.vertices;
+//
+//     // Define the bounding box edges
+//     const box = [
+//         {start: {x: 0, y: 0}, end: {x: boundingBox.x, y: 0}},             // Top edge
+//         {start: {x: boundingBox.x, y: 0}, end: {x: boundingBox.x, y: boundingBox.y}}, // Right edge
+//         {start: {x: boundingBox.x, y: boundingBox.y}, end: {x: 0, y: boundingBox.y}}, // Bottom edge
+//         {start: {x: 0, y: boundingBox.y}, end: {x: 0, y: 0}}             // Left edge
+//     ];
+//
+//     for (const {start, end} of box) {
+//         const newVertices = [];
+//         for (let i = 0; i < vertices.length; i++) {
+//             const j = (i + 1) % vertices.length; // Next vertex index
+//             const p1 = vertices[i], p2 = vertices[j];
+//
+//             const inside1 = (p1.x - start.x) * (end.y - start.y) < (p1.y - start.y) * (end.x - start.x);
+//             const inside2 = (p2.x - start.x) * (end.y - start.y) < (p2.y - start.y) * (end.x - start.x);
+//
+//             if (inside1 !== inside2) { // If vertices straddle the edge
+//                 const intersection = intersectionOfPoints(start, end, p1, p2);
+//                 if (intersection) newVertices.push(intersection); // Add intersection point
+//             }
+//             if (inside2) {
+//                 newVertices.push(p2); // Keep vertices on the inside
+//             }
+//         }
+//         vertices = newVertices;
+//     }
+//
+//     return {...polygon, vertices};
+// }
 
 function perpendicularBisector(start: IPoint, end: IPoint): IEdge {
     const midX = (start.x + end.x) / 2;
@@ -542,54 +540,54 @@ function angleOfPoint(point: IPoint, center: IPoint): number {
     return Math.atan2(y, x);
 }
 
-function generateEdgeThatSplitTheObb(obb: IOrientedBoundingBox): IEdge {
-    return edgeFromVertices(generateVerticesThatSplitTheObb(obb));
-}
+// function generateEdgeThatSplitTheObb(obb: IOrientedBoundingBox): IEdge {
+//     return edgeFromVertices(generateVerticesThatSplitTheObb(obb));
+// }
+//
+// function generateVerticesThatSplitTheObb(obb: IOrientedBoundingBox): IPoint[] {
+//     // generate vertices that split the polygon along the longest edge of the obb
+//     // use the width and height of OBB to determine which direction the split should go
+//     // then use the center of the OBB to determine where the split should go
+//     const {width, height} = obb;
+//
+//     const edges = edgesFromVertices(obb.vertices);
+//
+//     const longestTwoEdges = edges.sort((a, b) => {
+//         const aLength = distanceBetweenPoints(a.v0, a.v1);
+//         const bLength = distanceBetweenPoints(b.v0, b.v1);
+//         return bLength - aLength;
+//     }).slice(0, 2);
+//
+//     const edge1 = longestTwoEdges[0];
+//     const edge2 = longestTwoEdges[1];
+//     const edge1Midpoint = midpointOfEdge(edge1);
+//     const edge2Midpoint = midpointOfEdge(edge2);
+//
+//     return [edge1Midpoint, edge2Midpoint];
+// }
 
-function generateVerticesThatSplitTheObb(obb: IOrientedBoundingBox): IPoint[] {
-    // generate vertices that split the polygon along the longest edge of the obb
-    // use the width and height of OBB to determine which direction the split should go
-    // then use the center of the OBB to determine where the split should go
-    const {width, height} = obb;
+// function edgesFromVertices(vertices: IPoint[]): IEdge[] {
+//     const edges: IEdge[] = [];
+//     for (let i = 0; i < vertices.length; i++) {
+//         // const v0 = vertices[i];
+//         // const v1 = vertices[(i + 1) % vertices.length];
+//         edges.push(edgeFromVertices([vertices[i], vertices[(i + 1) % vertices.length]]));
+//     }
+//
+//     // TODO: consolidate this with the voronoi sort
+//     return edges.sort((a, b) => {
+//         const aAngle = Math.atan2(a.v1.y - a.v0.y, a.v1.x - a.v0.x);
+//         const bAngle = Math.atan2(b.v1.y - b.v0.y, b.v1.x - b.v0.x);
+//         return aAngle - bAngle;
+//     });
+// }
 
-    const edges = edgesFromVertices(obb.vertices);
-
-    const longestTwoEdges = edges.sort((a, b) => {
-        const aLength = distanceBetweenPoints(a.v0, a.v1);
-        const bLength = distanceBetweenPoints(b.v0, b.v1);
-        return bLength - aLength;
-    }).slice(0, 2);
-
-    const edge1 = longestTwoEdges[0];
-    const edge2 = longestTwoEdges[1];
-    const edge1Midpoint = midpointOfEdge(edge1);
-    const edge2Midpoint = midpointOfEdge(edge2);
-
-    return [edge1Midpoint, edge2Midpoint];
-}
-
-function edgesFromVertices(vertices: IPoint[]): IEdge[] {
-    const edges: IEdge[] = [];
-    for (let i = 0; i < vertices.length; i++) {
-        // const v0 = vertices[i];
-        // const v1 = vertices[(i + 1) % vertices.length];
-        edges.push(edgeFromVertices([vertices[i], vertices[(i + 1) % vertices.length]]));
-    }
-
-    // TODO: consolidate this with the voronoi sort
-    return edges.sort((a, b) => {
-        const aAngle = Math.atan2(a.v1.y - a.v0.y, a.v1.x - a.v0.x);
-        const bAngle = Math.atan2(b.v1.y - b.v0.y, b.v1.x - b.v0.x);
-        return aAngle - bAngle;
-    });
-}
-
-function edgeFromVertices(vertices: IPoint[]): IEdge {
-    return {
-        v0: vertices[0],
-        v1: vertices[1],
-    };
-}
+// function edgeFromVertices(vertices: IPoint[]): IEdge {
+//     return {
+//         v0: vertices[0],
+//         v1: vertices[1],
+//     };
+// }
 export function centerOfVertices(vertices: IPoint[]): IPoint {
     let point = vertices.reduce((sum, point) => ({x: sum.x + point.x, y: sum.y + point.y}), {x: 0, y: 0});
     point.x /= vertices.length;
