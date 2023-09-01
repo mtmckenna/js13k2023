@@ -220,10 +220,13 @@ function updateGold(t: number) {
     updatePos(posX, posY, this);
 
     const distanceIncludingOffsets = Math.hypot(this.target.center.x - this.center.x + this.offset.x, this.target.center.y - this.center.y + this.offset.y);
-    if (!this.arrived && distanceIncludingOffsets < 5) {
-        this.arrived = true;
+    if (distanceIncludingOffsets < 5) {
+        if (!this.arrived)  {
+            this.arrived = true;
+            this.arrivalCallback(this);
+        }
+
         updatePos(this.target.center.x + this.offset.x, this.target.center.y + this.offset.y, this);
-        this.arrivalCallback(this);
     }
 
     PointPool.release(direction);

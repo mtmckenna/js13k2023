@@ -100,6 +100,7 @@ const MAX_DELIVERY_DISTANCE = GAME_WIDTH / 2;
 const UI_STATE = {
     deliveryMenuVisible: false,
     restartMenuVisible: false,
+    transferringCoins: false,
 }
 
 for (let i = 0; i < NUM_POINTS; i++) {
@@ -245,6 +246,9 @@ function tick(t: number) {
 }
 
 function update(t: number) {
+    GoldPool.update(t);
+
+    if (UI_STATE.transferringCoins) return;
     if (UI_STATE.deliveryMenuVisible) return;
     GLOBAL.time +=t;
     grid.clearEnemyMap();
@@ -280,9 +284,9 @@ function update(t: number) {
             }
         }
     }
-
-    // Update gold
-    GoldPool.update(t);
+    //
+    // // Update gold
+    // GoldPool.update(t);
 
     // Enemy collide with player
     for (let i = 0; i < enemies.length; i++) {
@@ -367,6 +371,7 @@ function handleCollectingGold() {
                 player.gold.push(gold);
             }
 
+            UI_STATE.transferringCoins = true;
             region.gold.length = 0;
         }
     } else {
@@ -392,8 +397,7 @@ function handleCollectingGold() {
             }
 
             player.gold.length = 0;
-
-            if (!UI_STATE.deliveryMenuVisible) showUpgradeMenu();
+            UI_STATE.transferringCoins = true;
         }
     }
 }
@@ -557,12 +561,16 @@ function closestRegionToPos(pos: IPoint, regions: IRegion[]): IRegion {
 }
 
 function goldArrivedAtBoat(gold: IGold) {
-    gold.angle = 0;
+    if (player.gold.every(g => g.arrived)) {
+        UI_STATE.transferringCoins = false;
+    }
 }
 
 function goldArrivedAtDepot(gold: IGold) {
-    console.log("at depot");
-
+    if (depot.gold.every(g => g.arrived)) {
+        UI_STATE.transferringCoins = false;
+        showUpgradeMenu();
+    }
 }
 
 function showRestartMenu() {
@@ -609,7 +617,7 @@ function showUpgradeMenu() {
 
 }
 
-function hideMenu() {
+function hideUpgradeMenu() {
     upgradeMenu.classList.remove("show");
     upgradeMenu.style.pointerEvents = "none";
     upgradeMenu.classList.add("hide");
@@ -652,7 +660,7 @@ generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(ROAD_WIDTH*3);
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
-    hideMenu();
+    hideUpgradeMenu();
 
     // increase the desired delivery distance by 1/4 the difference between current distance and the max distance
     desiredDeliveryDistance += (MAX_DELIVERY_DISTANCE - desiredDeliveryDistance) / 4;
