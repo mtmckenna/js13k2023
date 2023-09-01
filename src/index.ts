@@ -301,6 +301,10 @@ function update(t: number) {
                 player.active = false;
                 if (!UI_STATE.restartMenuVisible) showRestartMenu();
             }
+
+            camera.screenShake.active = true;
+            camera.screenShake.elapsed = 0;
+            camera.screenShake.magnitude = 5;   // Adjust based on desired intensity
         }
     }
 
@@ -326,6 +330,20 @@ function update(t: number) {
     handleCollectingGold();
 
     camera.centerOn(player, FIXED_TIMESTEP);
+
+    // Update screen shake
+    if (camera.screenShake.active) {
+        camera.screenShake.elapsed += t;
+
+        if (camera.screenShake.elapsed >= camera.screenShake.duration) {
+            camera.screenShake.active = false;
+            camera.resetOffset(); // Reset any camera offset caused by the shake.
+        } else {
+            const x = (Math.random() - 0.5) * 2 * camera.screenShake.magnitude;
+            const y = (Math.random() - 0.5) * 2 * camera.screenShake.magnitude;
+            camera.setOffset(x, y);
+        }
+    }
 }
 
 function handleCollectingGold() {

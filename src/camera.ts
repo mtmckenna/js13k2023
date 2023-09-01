@@ -9,6 +9,13 @@ export default class Camera {
     canvasSize: IPoint;
     worldSize: IPoint;
     scale: number;
+    screenShake: {
+        duration: number;
+        magnitude: number;
+        elapsed: number;
+        active: boolean;
+    }
+    offset: IPoint = {x: 0, y: 0};
 
     constructor(pos: IPoint, maxZoom: number, minZoom: number, canvasSize: IPoint, worldSize: IPoint, scale:number) {
         this.pos = pos;
@@ -18,6 +25,22 @@ export default class Camera {
         this.canvasSize = canvasSize;
         this.worldSize = worldSize;
         this.scale = scale;
+        this.screenShake = {
+            duration: .1,
+            magnitude: 0,
+            elapsed: 0,
+            active: false,
+        }
+    }
+
+    setOffset(x: number, y: number) {
+        this.offset.x = x;
+        this.offset.y = y;
+    }
+
+    resetOffset() {
+        this.offset.x = 0;
+        this.offset.y = 0;
     }
 
     // Clamp the value between the min and max.
@@ -36,7 +59,7 @@ export default class Camera {
         targetX = this.clamp(targetX, 0, this.worldSize.x - this.canvasSize.x / this.currentZoom);
         targetY = this.clamp(targetY, 0, this.worldSize.y - this.canvasSize.y / this.currentZoom);
 
-        this.pos.x = targetX;
-        this.pos.y = targetY;
+        this.pos.x = targetX + this.offset.x;
+        this.pos.y = targetY + this.offset.y;
     }
 }
