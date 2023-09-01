@@ -77,10 +77,6 @@ export function dot(a: IPoint, b: IPoint): number {
     return a.x * b.x + a.y * b.y;
 }
 
-export function distanceBetweenPoints(p1: IPoint, p2: IPoint): number {
-    return Math.hypot((p1.x - p2.x), (p1.y - p2.y));
-}
-
 export function rotatePoint(p: IPoint, angle: number, center: IPoint = {x: 0, y: 0}): IPoint {
     const s = getSin(angle);
     const c = getCos(angle);
@@ -136,19 +132,6 @@ export function perpendicularDistanceFromPointToEdge(point: IPoint, edge: IEdge)
     return distance(point, projection);
 }
 
-
-
-// export function perpendicularVector(vector: IVector, out: IVector): IVector {
-//     // return {
-//     //     x: -vector.y,
-//     //     y: vector.x,
-//     // };
-//
-//     out.x = -vector.y;
-//     out.y = vector.x;
-//     return out;
-// }
-
 export function midpointOfEdge(edge: IEdge): IPoint {
     return {
         x: (edge.v0.x + edge.v1.x) / 2,
@@ -160,17 +143,6 @@ export function calculateCrossProduct(a: IPoint, b: IPoint): number {
     return a.x * b.y - a.y * b.x;
 }
 
-export function calculateCrossProductOfEdges(edge1: IEdge, edge2: IEdge): number {
-    let a = PointPool.get();
-    let b = PointPool.get();
-    subtractVectors(edge1.v1, edge1.v0, a);
-    subtractVectors(edge2.v1, edge2.v0, b);
-    const crossProduct = calculateCrossProduct(a, b);
-    PointPool.release(a);
-    PointPool.release(b);
-    return crossProduct;
-}
-
 export function squaredDistance(point1: IPoint, point2: IPoint): number {
     const { x: x1, y: y1 } = point1;
     const { x: x2, y: y2 } = point2;
@@ -178,7 +150,7 @@ export function squaredDistance(point1: IPoint, point2: IPoint): number {
     const dy = y2 - y1;
     return dx * dx + dy * dy;
 }
-function distance(p1: IPoint, p2: IPoint): number {
+export function distance(p1: IPoint, p2: IPoint): number {
     return Math.sqrt(squaredDistance(p1, p2));
 }
 
@@ -233,25 +205,11 @@ export function areaOfVertices(vertices: IPoint[]): number {
     return area;
 }
 
-// generate a random color that isn't too dark or too light or transparent
-export function randomColor(): string {
-    const r = Math.floor(Math.random() * 255);
-    const g = Math.floor(Math.random() * 255);
-    const b  = Math.floor(Math.random() * 255);
-    return `rgb(${r},${g},${b})`;
-}
-
-export function randomIndex(array: any[]): number {
-    return Math.floor(Math.random() * array.length);
-}
-
 export function edgesAreEqual(e1: IEdge, e2: IEdge, slop: number = 0): boolean {
     return (pointsAreEqual(e1.v0, e2.v0, slop) && pointsAreEqual(e1.v1, e2.v1, slop)) || (pointsAreEqual(e1.v0, e2.v1, slop) && pointsAreEqual(e1.v1, e2.v0, slop));
 }
 
 const trigCache = {};
-
-
 
 // building up trig cache
 for (let i = 0; i < 2*Math.PI; i+=.001) {

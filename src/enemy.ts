@@ -1,8 +1,7 @@
-import {IGridCell, IPoint, IPoolPoint, IPositionable} from "./interfaces";
-import Grid, {GRID_CELL_SIZE, GRID_SIZE_X, indexForPos} from "./grid";
+import {IGridCell, IPoint, IPositionable} from "./interfaces";
+import Grid from "./grid";
 import {
-    clamp,
-    distanceBetweenPoints,
+    clamp, distance,
     getCos,
     getSin,
     normalizeAndScaleVector, normalizeVector,
@@ -149,7 +148,7 @@ export default class Enemy implements IPositionable {
         dirToPlayer.x += separation.x;
         dirToPlayer.y += separation.y;
 
-        const distanceToPlayer = distanceBetweenPoints(this.center, this.player.center);
+        const distanceToPlayer = distance(this.center, this.player.center);
 
         if (distanceToPlayer < 200) {
             const DECAY = 0.05;

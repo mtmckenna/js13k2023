@@ -1,10 +1,10 @@
 import {Joystick} from "./joystick";
 import {KeyboardInput} from "./keyboard_input";
 import {
-    calculateAngle,
-    distanceBetweenPoints, getCos, getSin,
+    calculateAngle, distance,
+    getCos, getSin,
     normalizeVector,
-    randomFloat, randomIndex,
+    randomFloat,
     vectorFromEdge
 } from "./math";
 import {circlesCollide, findCollisions} from "./collision";
@@ -108,7 +108,7 @@ for (let i = 0; i < NUM_POINTS; i++) {
         const p = randomPointWithinBounds(grid.gameSize);
         let tooClose = false;
         for (const point of points) {
-            if (distanceBetweenPoints(p, point) < MIN_POINT_DIST) {
+            if (distance(p, point) < MIN_POINT_DIST) {
                 tooClose = true;
                 break;
             }
@@ -183,25 +183,23 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
 // Generate gold for each region based on how far away it is from the depot (further away is more gold)
 for (const region of regions) {
     if (region.type === "depot") continue;
-    const amount = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 50)
+    const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
     for (let i = 0; i < amount; i++) {
         const gold = GoldPool.get(region.center.x, region.center.y, depot, i * .1)
         gold.arrivalCallback = goldArrivedAtBoat;
         gold.arrived = false;
         region.gold.push(gold);
     }
-    // region.
-    // region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 50);
 }
 
 function generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
     let minIndex = regions.indexOf(regions[0]);
     for (let i = 0; i < regions.length; i++) {
         // continue if the region is too close to the depot dropoff point
-        if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < ROAD_WIDTH * 2) continue;
-        if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < desiredDistance) continue;
+        if (distance(regions[i].center, depot.dropOffPoint) < ROAD_WIDTH * 2) continue;
+        if (distance(regions[i].center, depot.dropOffPoint) < desiredDistance) continue;
         // set minIndex to the current index if it's closer to the depot dropoff point than the current minIndex
-        if (distanceBetweenPoints(regions[i].center, depot.dropOffPoint) < distanceBetweenPoints(regions[minIndex].center, depot.dropOffPoint)) {
+        if (distance(regions[i].center, depot.dropOffPoint) < distance(regions[minIndex].center, depot.dropOffPoint)) {
             minIndex = i;
         }
     }
@@ -215,7 +213,7 @@ function findRoadCenterClosestToCenterOfGame(): Road {
     let minDist = Number.MAX_VALUE;
     let closestRoad = null;
     for (const road of roads) {
-        const dist = distanceBetweenPoints(road.center, {x: GAME_WIDTH / 2, y: GAME_WIDTH / 2});
+        const dist = distance(road.center, {x: GAME_WIDTH / 2, y: GAME_WIDTH / 2});
         if (dist < minDist) {
             minDist = dist;
             closestRoad = road;
@@ -304,7 +302,7 @@ function update(t: number) {
 
             camera.screenShake.active = true;
             camera.screenShake.elapsed = 0;
-            camera.screenShake.magnitude = 5;   // Adjust based on desired intensity
+            camera.screenShake.magnitude = 3;   // Adjust based on desired intensity
         }
     }
 
@@ -549,7 +547,7 @@ function closestRegionToPos(pos: IPoint, regions: IRegion[]): IRegion {
     let minDist = Number.MAX_VALUE;
     let closestRegion = null;
     for (const region of regions) {
-        const dist = distanceBetweenPoints(pos, region.center);
+        const dist = distance(pos, region.center);
         if (dist < minDist) {
             minDist = dist;
             closestRegion = region;
