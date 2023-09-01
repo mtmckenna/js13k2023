@@ -56,7 +56,7 @@ const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
 let goldCount = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
-const MAX_TIME = 60 * 10 // 10 minutes
+const MAX_TIME = 60 * 5;
 GLOBAL.time = 0;
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
