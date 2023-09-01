@@ -1,4 +1,4 @@
-import {ICenter, IGold, IPoint, IPoolPoint, IPositionable} from "./interfaces";
+import {ICenterable, IGold, IPoint, IPoolPoint, IPositionable} from "./interfaces";
 import {Bullet} from "./bullet";
 import {drawPixels, updatePos} from "./game_objects";
 import Grid from "./grid";
@@ -118,12 +118,16 @@ const GOLD_PIXELS = [
 ];
 
 const GOLD_PIXELS_COLOR_MAP = [null, "#FFD700"];
+const GOLD_PIXELS_COLOR_MAP2 = [null, "#ffe55e"];
 
 const goldCanvas = document.createElement("canvas");
 const goldCtx = goldCanvas.getContext("2d");
+const goldCanvas2 = document.createElement("canvas");
+const goldCtx2 = goldCanvas2.getContext("2d");
 goldCanvas.width = GOLD_PIXELS[0].length * PIXEL_SIZE;
 goldCanvas.height = GOLD_PIXELS.length * PIXEL_SIZE;
 drawPixels(goldCtx, GOLD_PIXELS, GOLD_PIXELS_COLOR_MAP, PIXEL_SIZE);
+drawPixels(goldCtx2, GOLD_PIXELS, GOLD_PIXELS_COLOR_MAP2, PIXEL_SIZE);
 export class GoldPool {
     public static available: IGold[] = [];
 
@@ -133,7 +137,7 @@ export class GoldPool {
         }
     }
 
-    static get(x: number, y: number, target: ICenter, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
+    static get(x: number, y: number, target: ICenterable, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
         for (let i = 0; i < GoldPool.available.length; i++) {
             const gold = GoldPool.available[i];
             if (!gold.active) {
@@ -172,13 +176,14 @@ export class GoldPool {
         for (let i = 0; i < GoldPool.available.length; i++) {
             const gold = GoldPool.available[i];
             if (!gold.active) continue;
+            if (!gold.drawable) continue;
             const height = GOLD_PIXELS.length * PIXEL_SIZE;
             const width = GOLD_PIXELS[0].length * PIXEL_SIZE;
             ctx.save();
             ctx.translate(gold.center.x * scale, gold.center.y * scale);
             ctx.rotate(gold.angle);
             ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(goldCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
+            ctx.drawImage(gold.pixelCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
             ctx.restore();
         }
     }
@@ -194,6 +199,9 @@ export class GoldPool {
 }
 
 function updateGold(t: number) {
+    if (!this.active) return;
+    if (!this.updateable) return;
+
     this.time += t;
     if (!this.target) return;
     if (this.updateDelay === -1 || this.time < this.updateDelay) return;
@@ -201,25 +209,29 @@ function updateGold(t: number) {
 
     subtractVectors(addVectors(this.target.center, this.offset, direction), this.center, direction)
 
-    if (Math.abs(direction.x) < Number.EPSILON && Math.abs(direction.y) < Number.EPSILON) {
-        PointPool.release(direction);
-        return;
-    }
-
     normalizeVector(direction, direction);
 
-    const SPEED = 3;
+    const SPEED = 4;
     const posX = this.pos.x + direction.x * SPEED;
     const posY = this.pos.y + direction.y * SPEED;
 
-    this.angle += .01 % 2* Math.PI;
+    if (!this.arrived) this.angle += .01 % 2* Math.PI;
 
     updatePos(posX, posY, this);
+
+    const distanceIncludingOffsets = Math.hypot(this.target.center.x - this.center.x + this.offset.x, this.target.center.y - this.center.y + this.offset.y);
+    if (!this.arrived && distanceIncludingOffsets < 5) {
+        this.arrived = true;
+        updatePos(this.target.center.x + this.offset.x, this.target.center.y + this.offset.y, this);
+        this.arrivalCallback(this);
+    }
+
     PointPool.release(direction);
 }
 
 function createGold(): IGold {
-    const gold = {active: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, vel: {x:0,y:0}, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, time: 0, updateDelay: -1};
+    const canvas = Math.random() > .5 ? goldCanvas : goldCanvas2;
+    const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, time: 0, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
     return gold;
 }
 

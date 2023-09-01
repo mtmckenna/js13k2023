@@ -196,7 +196,8 @@ function regionFromPolygon(polygon: IPolygon, boundingBox): IRegion | null {
         dropOffPoint: {x: 0, y: 0},
         type: "empty",
         shrunkPolygon: evenSmallerPolygon,
-        gold: 0
+        gold: [],
+        speed: 0,
     }
 }
 

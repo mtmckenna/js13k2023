@@ -1,4 +1,4 @@
-import {ICircle, IGold, IGridCell, IPoint, IPositionable, IVehicleInputState} from "./interfaces";
+import {ICircle, IGold, IGridCell, IPoint, IPositionable, ISpeedable, IVehicleInputState} from "./interfaces";
 import Grid from "./grid";
 import {clamp, dot, getCos, getSin, normalizeVector, subtractVectors} from "./math";
 import {drawPixels, updatePos} from "./game_objects";
@@ -37,7 +37,7 @@ const boatWidth = PIXELS[0].length * PIXEL_SIZE
 const boatHeight = PIXELS.length * PIXEL_SIZE
 boatCanvas.width = boatWidth;
 boatCanvas.height = boatHeight;
-export default class Boat implements IPositionable, ICircle {
+export default class Boat implements IPositionable, ICircle, ISpeedable {
     inputState: IVehicleInputState;
     grid: Grid;
     turnSpeed: number = .05;

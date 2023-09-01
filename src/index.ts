@@ -162,13 +162,16 @@ depot.type = "depot";
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI / 2;
 
-// Create gold at and near the center of the depot region
-for (let i = 0; i < 100; i++) {
-    const offsetX = randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2);
-    const offsetY = randomFloat(-ROAD_WIDTH/2, ROAD_WIDTH/2);
-    GoldPool.get(depot.center.x + offsetX, depot.center.y + offsetY, depot, -1, offsetX,offsetY);
-}
-
+// // Create gold at and near the center of the depot region
+// for (let i = 0; i < 100; i++) {
+//     const offsetX = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
+//     const offsetY = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
+//     const gold = GoldPool.get(depot.center.x + offsetX, depot.center.y + offsetY, depot, -1, offsetX,offsetY);
+//     gold.drawable = true;
+//     gold.updateable = false;
+//     gold.arrived = true;
+// }
+//
 
 // Generate enemies
 for (let i = 0; i < NUM_ENEMIES; i++) {
@@ -179,7 +182,16 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
 
 // Generate gold for each region based on how far away it is from the depot (further away is more gold)
 for (const region of regions) {
-    region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 50);
+    if (region.type === "depot") continue;
+    const amount = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 50)
+    for (let i = 0; i < amount; i++) {
+        const gold = GoldPool.get(region.center.x, region.center.y, depot, i * .1)
+        gold.arrivalCallback = goldArrivedAtBoat;
+        gold.arrived = false;
+        region.gold.push(gold);
+    }
+    // region.
+    // region.gold = Math.floor(distanceBetweenPoints(region.center, depot.dropOffPoint) / 50);
 }
 
 function generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
@@ -311,12 +323,12 @@ function update(t: number) {
         break;
     }
 
-    handleDelivery();
+    handleCollectingGold();
 
     camera.centerOn(player, FIXED_TIMESTEP);
 }
 
-function handleDelivery() {
+function handleCollectingGold() {
     if (deliveryIndices.length > 0) {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -327,35 +339,48 @@ function handleDelivery() {
         if (inDropOffRadius && player.speed < 1) {
             region.type = "empty";
             lastDeliveryRegion =  regions[deliveryIndices.shift()];
-            goldCount += region.gold;
+            goldCount += region.gold.length;
             player.gold.length = 0;
-            for (let i = 0; i < region.gold; i++) {
-                const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
+            for (let i = 0; i < region.gold.length; i++) {
+                // const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
+                const gold = region.gold[i];
+                gold.updateable = true;
+                gold.drawable = true;
+                gold.target = player;
+
                 player.gold.push(gold);
             }
+
+            region.gold.length = 0;
         }
     } else {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
         const {x: x2, y: y2} = regions[depotIndex].dropOffPoint;
         const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
+
         if (inDropOffRadius && player.speed < 1) {
+
+            for (let i = 0; i < player.gold.length; i++) {
+                const gold = player.gold[i];
+                const offsetX = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
+                const offsetY = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
+                gold.target = depot;
+                gold.offset.x = offsetX;
+                gold.offset.y = offsetY;
+                gold.arrived = false;
+                gold.updateDelay = i * .1;
+                gold.time = 0;
+                gold.arrivalCallback = goldArrivedAtDepot;
+                depot.gold.push(gold);
+            }
+
+            player.gold.length = 0;
+
             if (!UI_STATE.deliveryMenuVisible) showUpgradeMenu();
         }
     }
 }
-
-// function sleep(ms: number): Promise<void> {
-//     return new Promise(resolve => setTimeout(resolve, ms));
-// }
-
-// async function getGoldWithDelay(region, player) {
-//     for (let i = 0; i < region.gold; i++) {
-//         GoldPool.get(region.center.x, region.center.y, player);
-//         await sleep(100); // Sleep for 0.1 seconds
-//     }
-// }
-
 
 function draw(t: number) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -513,6 +538,15 @@ function closestRegionToPos(pos: IPoint, regions: IRegion[]): IRegion {
         }
     }
     return closestRegion;
+}
+
+function goldArrivedAtBoat(gold: IGold) {
+    gold.angle = 0;
+}
+
+function goldArrivedAtDepot(gold: IGold) {
+    console.log("at depot");
+
 }
 
 function showRestartMenu() {

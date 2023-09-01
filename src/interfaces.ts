@@ -25,14 +25,18 @@ export interface ITriangle extends IPolygon {
     vertices: IVertices3;
 }
 
-export interface IPolygon extends ICenter {
+export interface IPolygon extends ICenterable {
     vertices: IPoint[];
 }
 
 export type CanvasColor = string | CanvasGradient | CanvasPattern;
 
-export interface ICenter {
+export interface ICenterable {
     center: IPoint;
+}
+
+export interface ISpeedable {
+    speed: number;
 }
 
 export interface IBuilding extends IPolygon {
@@ -53,7 +57,7 @@ export interface ITriangleInTriangulation extends ITriangle {
     neighbors: ITriangleInTriangulation[];
 }
 
-export interface IPositionable extends ICenter {
+export interface IPositionable extends ICenterable {
     pos: IPoint;
     angle: number;
     size: IPoint;
@@ -134,22 +138,27 @@ export interface IBoundingBox {
 // export type IGold = IPositionable & ICircle & IPoolable & IUpdateable;
 
 export interface IGold extends IPositionable, ICircle, IPoolable, IUpdateable {
-    target: ICenter;
+    target: ICenterable;
     offset: IPoint;
     time: number;
     updateDelay: number;
+    updateable: boolean;
+    drawable: boolean;
+    arrivalCallback: (gold : IGold) => void;
+    arrived: boolean;
+    pixelCanvas: HTMLCanvasElement;
 }
 
 export interface IUpdateable {
     update(t: number): void;
 }
 
-export interface IRegion extends IPolygon, IDropOff {
+export interface IRegion extends IPolygon, IDropOff, ISpeedable {
     edges: IEdge[];
     insideEdges: IEdge[];
     polygonEdges: IEdge[];
     shrunkPolygon: IPolygon;
-    gold: number;
+    gold: IGold[];
 }
 
 export type IVector = IPoint;

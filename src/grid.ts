@@ -50,13 +50,13 @@ const CHEST_PIXELS = [
 
 const X_PIXELS_COLOR_MAP = [null, "red"];
 
-const CHEST_PIXELS_COLOR_MAP = ["#FFD700", "#8B4513"];
+const CHEST_PIXELS_COLOR_MAP = ["#342d2a", "#8d6744"];
 
 const xCanvas = document.createElement("canvas");
 xCanvas.width = X_PIXELS[0].length * PIXEL_SIZE;
 xCanvas.height = X_PIXELS.length * PIXEL_SIZE;
 const xCtx = xCanvas.getContext("2d");
-drawPixels(xCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE);
+drawPixels(xCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE, 0,0,false);
 
 const chestCanvas = document.createElement("canvas");
 chestCanvas.width = CHEST_PIXELS[0].length * PIXEL_SIZE;
@@ -243,6 +243,8 @@ export default class Grid {
         ctx.save();
         ctx.translate(region.center.x * scale, region.center.y * scale);
         ctx.drawImage(chestCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
+        // ctx.strokeStyle = "#000000";
+        // ctx.strokeRect(-width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
         // ctx.drawImage(chestCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
         ctx.restore();
     }
@@ -399,13 +401,6 @@ export default class Grid {
             rotatedY <= halfHeight
         );
     }
-}
-
-
-function mapDotProductToShade(dotProduct: number): string {
-    const value = (dotProduct + 1) * 0.5 * 255; // map from [-1, 1] to [0, 255]
-    const grayscale = Math.round(value);
-    return `rgb(${grayscale}, ${grayscale}, ${grayscale})`;
 }
 
 export function indexForPos(x: number, y: number, gridSizeX: number): number {
