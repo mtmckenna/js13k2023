@@ -33,6 +33,7 @@ const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
 const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
 const restartMenu: HTMLElement = document.querySelector("#restart-menu");
+const clock = document.querySelector("#clock");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -55,6 +56,8 @@ const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
 let goldCount = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
+const MAX_TIME = 60 * 10 // 10 minutes
+GLOBAL.time = 0;
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
     roadCollisions[i] = {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}};
@@ -251,6 +254,13 @@ function update(t: number) {
     if (UI_STATE.transferringCoins) return;
     if (UI_STATE.deliveryMenuVisible) return;
     GLOBAL.time +=t;
+    GLOBAL.timeLeft = Math.max(MAX_TIME - GLOBAL.time, 0);
+
+    if (GLOBAL.timeLeft <= 0) {
+        showRestartMenu();
+        return;
+    }
+
     grid.clearEnemyMap();
 
     for (let i = 0; i < enemies.length; i++) {
@@ -459,6 +469,11 @@ function draw(t: number) {
     joystick.draw(ctx);
 
     drawLifeBar(ctx, canvas, player.life, 100);
+    const minutes = Math.floor(GLOBAL.timeLeft / 60);
+    const seconds = Math.floor(GLOBAL.timeLeft % 60);
+    const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+    const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+    clock.textContent = `${displayMinutes}:${displaySeconds}`;
 }
 
 function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IBuilding) {
