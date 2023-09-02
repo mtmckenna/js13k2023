@@ -138,11 +138,46 @@ function voronoiPolygonsOfDelaunayTriangles(triangles: ITriangleInTriangulation[
     for (let region of voronoiRegions) {
         const centroid = centerOfVertices(region.vertices)
         region.vertices = sortVertices(region.vertices, centroid);
-        // region = clipPolygonToBoundingBox(region, boundingBox);
+        region = clipPolygonToBoundingBox(region, boundingBox);
         clippedRegions.push(region);
     }
 
     return clippedRegions.filter(region => region.vertices.length > 0);
+}
+
+// Sutherland–Hodgman algorithm
+function clipPolygonToBoundingBox(polygon: IPolygon, boundingBox: IPoint): IPolygon {
+    let vertices = polygon.vertices;
+
+    // Define the bounding box edges
+    const box = [
+        {start: {x: 0, y: 0}, end: {x: boundingBox.x, y: 0}},             // Top edge
+        {start: {x: boundingBox.x, y: 0}, end: {x: boundingBox.x, y: boundingBox.y}}, // Right edge
+        {start: {x: boundingBox.x, y: boundingBox.y}, end: {x: 0, y: boundingBox.y}}, // Bottom edge
+        {start: {x: 0, y: boundingBox.y}, end: {x: 0, y: 0}}             // Left edge
+    ];
+
+    for (const {start, end} of box) {
+        const newVertices = [];
+        for (let i = 0; i < vertices.length; i++) {
+            const j = (i + 1) % vertices.length; // Next vertex index
+            const p1 = vertices[i], p2 = vertices[j];
+
+            const inside1 = (p1.x - start.x) * (end.y - start.y) < (p1.y - start.y) * (end.x - start.x);
+            const inside2 = (p2.x - start.x) * (end.y - start.y) < (p2.y - start.y) * (end.x - start.x);
+
+            if (inside1 !== inside2) { // If vertices straddle the edge
+                const intersection = intersectionOfPoints(start, end, p1, p2);
+                if (intersection) newVertices.push(intersection); // Add intersection point
+            }
+            if (inside2) {
+                newVertices.push(p2); // Keep vertices on the inside
+            }
+        }
+        vertices = newVertices;
+    }
+
+    return {...polygon, vertices};
 }
 
 function isSubsegmentOfBoundary(edge: IEdge, boundaryEdges: IEdge[]): boolean {
