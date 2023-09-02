@@ -1,6 +1,7 @@
 // const audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
 let audioCtx: AudioContext = null;
-let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer;
+let ready = false;
+let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer, coinPickupBuffer: AudioBuffer;
 function createContext() {
     if (ready) return;
     audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
@@ -8,9 +9,9 @@ function createContext() {
     cannonBuffer = generateCannonBallSoundBuffer();
     hitPlayerBuffer = generatePlayerHitSoundBuffer();
     hitEnemyBuffer = generateEnemyHitSoundBuffer();
+    coinPickupBuffer = generateCoinPickupSoundBuffer();
     ready = true;
 }
-
 window.addEventListener('touchstart', createContext);
 window.addEventListener('mousedown', createContext);
 window.addEventListener('keydown', createContext);
@@ -19,14 +20,12 @@ window.addEventListener('keydown', createContext);
 const SOUNDS = {
     CANNON_SHOOT: 0,
     PLAYER_HIT: 1,
-    CANNON_BALL_HIT: 2
+    CANNON_BALL_HIT: 2,
+    COIN_PICKUP: 3,
 };
 
-let ready = false;
-
-const COOLDOWNS = [100, 200, 300];
-const lastPlayed = [0, 0, 0]; // Assuming you have 3 sounds
-
+const COOLDOWNS = [100, 200, 300, 0];
+const lastPlayed = [0, 0, 0, 0];
 
 
 function generateCannonBallSoundBuffer(): AudioBuffer {
@@ -75,6 +74,28 @@ function generatePlayerHitSoundBuffer(): AudioBuffer {
 
     return buffer;
 }
+
+function generateCoinPickupSoundBuffer(): AudioBuffer {
+    const duration = 0.3;
+    const frameCount = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, frameCount, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    const frequencies = [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25, 659.25];
+    const speed = 40; // notes per second
+
+    for (let i = 0; i < frameCount; i++) {
+        const time = i / audioCtx.sampleRate;
+        const amplitude = Math.exp(-0.5 * time);
+        const freq = frequencies[Math.floor(time * speed) % frequencies.length];
+        data[i] = amplitude * Math.sin(freq * Math.PI * 2 * time);
+    }
+
+    return buffer;
+}
+
+
+
 function canPlaySound(soundId) {
     const now = performance.now();
     if (now - lastPlayed[soundId] > COOLDOWNS[soundId]) {
@@ -102,4 +123,8 @@ export function playHitPlayerSound() {
 }
 export function playCannonballHitEnemySound() {
     playBuffer(hitEnemyBuffer, SOUNDS.CANNON_BALL_HIT);
+}
+
+export function playCoinPickupSound() {
+    playBuffer(coinPickupBuffer, SOUNDS.COIN_PICKUP);
 }

@@ -48,7 +48,6 @@ export default class Camera {
         return Math.max(min, Math.min(max, value));
     }
 
-
     centerOn(target: Boat, deltaTime: number) {
         const sign = target.speed > 1 ? -1 : 1;
         this.currentZoom = this.clamp(this.currentZoom + sign * .01, this.minZoom, this.maxZoom);

@@ -25,7 +25,7 @@ import {BulletPool, GoldPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
 import {GLOBAL} from "./constants";
-import {playCannonballHitEnemySound, playHitPlayerSound} from "./sound";
+import {playCannonballHitEnemySound, playCoinPickupSound, playHitPlayerSound} from "./sound";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -571,6 +571,8 @@ function goldArrivedAtBoat(gold: IGold) {
     if (player.gold.every(g => g.arrived)) {
         UI_STATE.transferringCoins = false;
     }
+
+    playCoinPickupSound();
 }
 
 function goldArrivedAtDepot(gold: IGold) {
@@ -578,6 +580,8 @@ function goldArrivedAtDepot(gold: IGold) {
         UI_STATE.transferringCoins = false;
         showUpgradeMenu();
     }
+
+    playCoinPickupSound();
 }
 
 function showRestartMenu() {

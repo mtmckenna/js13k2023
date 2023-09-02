@@ -145,27 +145,3 @@ export function circlesCollide(x1: number, y1: number, radius1: number, x2: numb
     const distance = Math.hypot(dx, dy);
     return distance <= radius1 + radius2;
 }
-
-// function generateVertices(entity: IGameObject, vertices: IPoint[]): IPoint[] {
-//     const { middlePos, size, angle } = entity;
-//     const { x: width, y: height } = size;
-//     const cosAngle = Math.cos(angle);
-//     const sinAngle = Math.sin(angle);
-//
-//     vertices[0].x = -width / 2;
-//     vertices[0].y = -height / 2;
-//     vertices[1].x = width / 2;
-//     vertices[1].y = -height / 2;
-//     vertices[2].x = width / 2;
-//     vertices[2].y = height / 2;
-//     vertices[3].x = -width / 2;
-//     vertices[3].y = height / 2;
-//
-//     for (const vertex of vertices) {
-//         const { x, y } = vertex;
-//         vertex.x = x * cosAngle - y * sinAngle + middlePos.x;
-//         vertex.y = x * sinAngle + y * cosAngle + middlePos.y;
-//     }
-//
-//     return vertices;
-// }
