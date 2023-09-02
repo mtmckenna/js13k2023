@@ -4,7 +4,6 @@ import {CanvasColor, IEdge, IGridCell, IPoint, IPolygon, IPositionable, IRegion}
 import Enemy from "./enemy";
 import Road from "./road";
 
-import {DEBUG} from "./debug";
 import {getCos, getSin, squaredDistance} from "./math";
 import {drawPixels} from "./game_objects";
 
@@ -198,32 +197,11 @@ export default class Grid {
     drawRoads(ctx: CanvasRenderingContext2D, scale: number = 1) {
         ctx.imageSmoothingEnabled = false;
 
-        // draw cells
-        if (DEBUG) {
-            ctx.globalAlpha = .5;
-            let color = "red";
-            for (let i = 0; i < this.cells.length; i++) {
-                const cell = this.cells[i];
-                // make checkboard pattern
-                const row = Math.floor(i / this.gridSize.x) % 2 === 0;
-                if (row) {
-                    color = i % 2 === 0 ? "red" : "blue";
-                } else {
-                    color = i % 2 === 0 ? "blue" : "red";
-                }
-
-                ctx.fillStyle = color;
-                ctx.fillRect(cell.index % this.gridSize.x * this.cellSize.x * scale, Math.floor(cell.index / this.gridSize.x) * this.cellSize.y * scale, this.cellSize.x * scale, this.cellSize.y * scale);
-            }
-        }
 
         for (const road of this.roads) {
             road.draw(ctx, scale);
         }
 
-        if (DEBUG) {
-            ctx.globalAlpha = 1;
-        }
     }
 
     drawX(ctx: CanvasRenderingContext2D, region: IRegion, scale: number = 1) {

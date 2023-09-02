@@ -48,7 +48,6 @@ export default class Enemy implements IPositionable {
     alignment: IPoint = {x: 0, y: 0};
     returning: boolean = false;
     rotorRandomOffsets: number[] = [];
-    // time: number = 0;
     sign: number = 1;
     pos: IPoint = {x: 0, y: 0};
     center: IPoint = {x: 0, y: 0};

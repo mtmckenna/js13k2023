@@ -19,7 +19,6 @@ import {
 import Grid, {GAME_WIDTH} from "./grid";
 import Enemy from "./enemy";
 
-import {FpsDisplay, DEBUG} from "./debug";
 import Road, {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
 import {BulletPool, GoldPool, PointPool} from "./pools";
@@ -89,7 +88,6 @@ BulletPool.grid = grid;
 BulletPool.initialize(1000);
 
 let fpsDisplay = null;
-if (DEBUG) fpsDisplay = new FpsDisplay();
 
 const joystick = new Joystick(canvas, joystickMoveCallback);
 const keyboard = new KeyboardInput(window, keyCallback);
@@ -235,7 +233,6 @@ function tick(t: number) {
     while (accumulator >= FIXED_TIMESTEP) {
         update(FIXED_TIMESTEP);
         accumulator -= FIXED_TIMESTEP;
-        if (DEBUG) fpsDisplay.update(t);
     }
     draw(t)
 
