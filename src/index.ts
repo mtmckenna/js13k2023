@@ -11,7 +11,7 @@ import {circlesCollide, findCollisions} from "./collision";
 import {
     IPoint,
     IVehicleInputState,
-    IEdge, ICollision, IBuilding, CanvasColor, IPolygon, IRegion, IGold,
+    IEdge, ICollision, CanvasColor, IRegion, IGold,
 } from "./interfaces";
 import {
     roadsAndRegionsFromPoints,
@@ -96,12 +96,12 @@ const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
-let lastDeliveryRegion: IRegion = null;
+let lastXMarkRegion: IRegion = null;
 let selectedUpgrade: string = null;
-let desiredDeliveryDistance = 0;
-const MAX_DELIVERY_DISTANCE = GAME_WIDTH / 2;
+let desiredXMarkDistance = 0;
+const MAX_X_MARK_DISTANCE = GAME_WIDTH / 2;
 const UI_STATE = {
-    deliveryMenuVisible: false,
+    upgradeMenuVisible: false,
     restartMenuVisible: false,
     transferringCoins: false,
 }
@@ -147,8 +147,8 @@ const upgrades: {name: string, cost: number}[] = [
     { name: "Forward Cannon", cost: 100 },
 ];
 
-const depotIndex = regions.indexOf(closestRegionToPos(randomRoadPoint, regions));
-const deliveryIndices: number [] = [];
+const depotIndex = Math.floor(regions.length/2);
+const xMarkIndices: number [] = [];
 const DROP_OFF_RADIUS = ROAD_WIDTH / 2;
 let circleSize = DROP_OFF_RADIUS * .9 * GRID_SCALE; // Starting size
 let sizeDirection = 1; // 1 for increasing, -1 for decreasing
@@ -166,17 +166,6 @@ depot.type = "depot";
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 player.angle = randomRoad.angle + Math.PI / 2;
 
-// // Create gold at and near the center of the depot region
-// for (let i = 0; i < 100; i++) {
-//     const offsetX = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
-//     const offsetY = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
-//     const gold = GoldPool.get(depot.center.x + offsetX, depot.center.y + offsetY, depot, -1, offsetX,offsetY);
-//     gold.drawable = true;
-//     gold.updateable = false;
-//     gold.arrived = true;
-// }
-//
-
 // Generate enemies
 for (let i = 0; i < NUM_ENEMIES; i++) {
     const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
@@ -185,8 +174,9 @@ for (let i = 0; i < NUM_ENEMIES; i++) {
 }
 
 // Generate gold for each region based on how far away it is from the depot (further away is more gold)
+// If the dropoff point overlaps with the depot dropoff point, bail
 for (const region of regions) {
-    if (region.type === "depot") continue;
+    if (region.type !== "empty") continue;
     const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
     for (let i = 0; i < amount; i++) {
         const gold = GoldPool.get(region.center.x, region.center.y, depot, i * .1)
@@ -196,20 +186,25 @@ for (const region of regions) {
     }
 }
 
-function generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
-    let minIndex = regions.indexOf(regions[0]);
+function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
+    let minIndex = null;
+
     for (let i = 0; i < regions.length; i++) {
         // continue if the region is too close to the depot dropoff point
-        if (distance(regions[i].center, depot.dropOffPoint) < ROAD_WIDTH * 2) continue;
-        if (distance(regions[i].center, depot.dropOffPoint) < desiredDistance) continue;
+        if (regions[i].type !== "empty") continue;
+        if (circlesCollide(regions[i].dropOffPoint.x, regions[i].dropOffPoint.y, DROP_OFF_RADIUS, depot.dropOffPoint.x, depot.dropOffPoint.y, DROP_OFF_RADIUS)) {
+            continue;
+        }
+        if (distance(regions[i].dropOffPoint, depot.dropOffPoint) < desiredDistance) continue;
+
         // set minIndex to the current index if it's closer to the depot dropoff point than the current minIndex
-        if (distance(regions[i].center, depot.dropOffPoint) < distance(regions[minIndex].center, depot.dropOffPoint)) {
+        if (minIndex === null || distance(regions[i].dropOffPoint, depot.dropOffPoint) < distance(regions[minIndex].dropOffPoint, depot.dropOffPoint)) {
             minIndex = i;
         }
     }
 
-    regions[minIndex].type = "delivery";
-    deliveryIndices.push(minIndex);
+    regions[minIndex].type = "x-mark";
+    xMarkIndices.push(minIndex);
     return minIndex;
 }
 
@@ -252,7 +247,7 @@ function update(t: number) {
     GoldPool.update(t);
 
     if (UI_STATE.transferringCoins) return;
-    if (UI_STATE.deliveryMenuVisible) return;
+    if (UI_STATE.upgradeMenuVisible) return;
     GLOBAL.time +=t;
     GLOBAL.timeLeft = Math.max(MAX_TIME - GLOBAL.time, 0);
 
@@ -359,16 +354,15 @@ function update(t: number) {
 }
 
 function handleCollectingGold() {
-    if (deliveryIndices.length > 0) {
+    if (xMarkIndices.length > 0) {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
-        const region = regions[deliveryIndices[0]];
+        const region = regions[xMarkIndices[0]];
         const {x: x2, y: y2} = region.dropOffPoint;
         const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
 
         if (inDropOffRadius && player.speed < 1) {
-            region.type = "empty";
-            lastDeliveryRegion =  regions[deliveryIndices.shift()];
+            lastXMarkRegion =  regions[xMarkIndices.shift()];
             goldCount += region.gold.length;
             player.gold.length = 0;
             for (let i = 0; i < region.gold.length; i++) {
@@ -383,6 +377,7 @@ function handleCollectingGold() {
 
             UI_STATE.transferringCoins = true;
             region.gold.length = 0;
+            region.type = "plundered";
         }
     } else {
         const {x: x1, y: y1} = player.center;
@@ -418,7 +413,7 @@ function draw(t: number) {
     offscreenBufferCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
     offscreenBufferCtx.imageSmoothingEnabled = false;
 
-    if (lastDeliveryRegion) grid.drawRegion(regionsCtx, lastDeliveryRegion, GRID_SCALE);
+    if (lastXMarkRegion) grid.drawRegion(regionsCtx, lastXMarkRegion, GRID_SCALE);
 
     const sourceX = camera.pos.x * GRID_SCALE;
     const sourceY = camera.pos.y * GRID_SCALE;
@@ -436,9 +431,9 @@ function draw(t: number) {
 
     offscreenBufferCtx.fillStyle = "#F0E68C";
     let region = regions[depotIndex];
-    if (deliveryIndices.length > 0) {
+    if (xMarkIndices.length > 0) {
         offscreenBufferCtx.fillStyle = "red";
-        region = regions[deliveryIndices[0]];
+        region = regions[xMarkIndices[0]];
         grid.drawX(offscreenBufferCtx, region, GRID_SCALE);
     }
 
@@ -456,8 +451,8 @@ function draw(t: number) {
 
     for (const enemy of enemies) enemy.draw(offscreenBufferCtx, GRID_SCALE, t);
 
-    if (deliveryIndices.length > 0) {
-        drawArrowToBuilding(offscreenBufferCtx, player.center, regions[deliveryIndices[0]]);
+    if (xMarkIndices.length > 0) {
+        drawArrowToBuilding(offscreenBufferCtx, player.center, regions[xMarkIndices[0]]);
     } else {
         drawArrowToBuilding(offscreenBufferCtx, player.center, regions[depotIndex]);
     }
@@ -476,7 +471,7 @@ function draw(t: number) {
     clock.textContent = `${displayMinutes}:${displaySeconds}`;
 }
 
-function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IBuilding) {
+function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IRegion) {
     const angle = calculateAngle(center.x, center.y, building.dropOffPoint.x, building.dropOffPoint.y) + Math.PI / 2;
 
     const TRIANGLE_SIZE = 10;
@@ -601,7 +596,7 @@ function showUpgradeMenu() {
     upgradeMenu.classList.add("show");
     upgradeMenu.style.pointerEvents = "auto";
     upgradeMenu.style.removeProperty("opacity");
-    UI_STATE.deliveryMenuVisible = true;
+    UI_STATE.upgradeMenuVisible = true;
 
     const currentMenuItems = document.querySelectorAll('.menu-item');
     currentMenuItems.forEach(item => {
@@ -636,7 +631,7 @@ function hideUpgradeMenu() {
     upgradeMenu.classList.remove("show");
     upgradeMenu.style.pointerEvents = "none";
     upgradeMenu.classList.add("hide");
-    UI_STATE.deliveryMenuVisible = false;
+    UI_STATE.upgradeMenuVisible = false;
 
     const menuItems = document.querySelectorAll('.menu-item');
     // add selected upgrades to player and subtract cash
@@ -671,19 +666,13 @@ function addUpgrade(upgrade: string) {
 resizeCanvas()
 grid.drawRoads(roadsCtx, GRID_SCALE);
 grid.drawRegions(regionsCtx, regions, GRID_SCALE);
-generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(ROAD_WIDTH*3);
+generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(ROAD_WIDTH*3);
 requestAnimationFrame(tick);
 window.addEventListener('resize', resizeCanvas);
 document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
     hideUpgradeMenu();
-
-    // increase the desired delivery distance by 1/4 the difference between current distance and the max distance
-    desiredDeliveryDistance += (MAX_DELIVERY_DISTANCE - desiredDeliveryDistance) / 4;
-
-    generateDeliveryRegionIndexDistanceOrMoreAwayFromDepot(desiredDeliveryDistance);
-
-
-
+    desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
+    generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
     addUpgrade(selectedUpgrade);
     selectedUpgrade = null;
 });

@@ -39,13 +39,8 @@ export interface ISpeedable {
     speed: number;
 }
 
-export interface IBuilding extends IPolygon {
-    type: "empty" | "depot" | "delivery";
-    dropOffPoint: IPoint;
-}
-
 export interface IDropOff extends IPolygon {
-    type: "empty" | "depot" | "delivery";
+    type: "empty" | "depot" | "x-mark" | "plundered";
     dropOffPoint: IPoint;
 }
 export interface IVoronoiResult {

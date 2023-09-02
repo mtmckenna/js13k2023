@@ -1,4 +1,20 @@
-const audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
+// const audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
+let audioCtx: AudioContext = null;
+let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer;
+function createContext() {
+    if (ready) return;
+    audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
+
+    cannonBuffer = generateCannonBallSoundBuffer();
+    hitPlayerBuffer = generatePlayerHitSoundBuffer();
+    hitEnemyBuffer = generateEnemyHitSoundBuffer();
+    ready = true;
+}
+
+window.addEventListener('touchstart', createContext);
+window.addEventListener('mousedown', createContext);
+window.addEventListener('keydown', createContext);
+
 
 const SOUNDS = {
     CANNON_SHOOT: 0,
@@ -6,10 +22,12 @@ const SOUNDS = {
     CANNON_BALL_HIT: 2
 };
 
+let ready = false;
+
 const COOLDOWNS = [100, 200, 300];
 const lastPlayed = [0, 0, 0]; // Assuming you have 3 sounds
 
-let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer;
+
 
 function generateCannonBallSoundBuffer(): AudioBuffer {
     const duration = 0.1;  // Very brief duration.
@@ -57,12 +75,6 @@ function generatePlayerHitSoundBuffer(): AudioBuffer {
 
     return buffer;
 }
-
-cannonBuffer = generateCannonBallSoundBuffer();
-hitPlayerBuffer = generatePlayerHitSoundBuffer();
-hitEnemyBuffer = generateEnemyHitSoundBuffer();
-
-
 function canPlaySound(soundId) {
     const now = performance.now();
     if (now - lastPlayed[soundId] > COOLDOWNS[soundId]) {
@@ -73,6 +85,7 @@ function canPlaySound(soundId) {
 }
 
 function playBuffer(buffer, soundId) {
+    if (!ready) return;
     if (canPlaySound(soundId)) {
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
@@ -82,12 +95,11 @@ function playBuffer(buffer, soundId) {
 }
 export function playCannonSound() {
     playBuffer(cannonBuffer, SOUNDS.CANNON_SHOOT);
-    ;
 }
 
 export function playHitPlayerSound() {
     playBuffer(hitPlayerBuffer, SOUNDS.PLAYER_HIT);
-};
+}
 export function playCannonballHitEnemySound() {
     playBuffer(hitEnemyBuffer, SOUNDS.CANNON_BALL_HIT);
 }
