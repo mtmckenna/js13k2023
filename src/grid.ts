@@ -196,12 +196,9 @@ export default class Grid {
 
     drawRoads(ctx: CanvasRenderingContext2D, scale: number = 1) {
         ctx.imageSmoothingEnabled = false;
-
-
         for (const road of this.roads) {
             road.draw(ctx, scale);
         }
-
     }
 
     drawX(ctx: CanvasRenderingContext2D, region: IRegion, scale: number = 1) {

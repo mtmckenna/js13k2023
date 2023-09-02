@@ -25,20 +25,6 @@ export function scaleVector(a: IPoint, scalar: number, out: IPoint): IPoint {
     out.y = a.y * scalar;
     return out;
 }
-
-export function limitVector(a: IPoint, scalar: number, out: IPoint): IPoint {
-    const length = Math.hypot(a.x, a.y);
-    if (length > scalar) {
-        const ratio = scalar / length;
-        out.x = a.x * ratio;
-        out.y = a.y * ratio;
-    } else {
-        out.x = a.x;
-        out.y = a.y;
-    }
-    return out;
-}
-
 export function normalizeAndScaleVector(a: IPoint, scalar: number, out: IPoint): IPoint {
     return scaleVector(normalizeVector(a, out), scalar, out);
 }
@@ -76,31 +62,8 @@ export function edgeNormal(edge: IEdge, out: IVector): IVector {
 export function dot(a: IPoint, b: IPoint): number {
     return a.x * b.x + a.y * b.y;
 }
-
-export function rotatePoint(p: IPoint, angle: number, center: IPoint = {x: 0, y: 0}): IPoint {
-    const s = getSin(angle);
-    const c = getCos(angle);
-
-    const dx = p.x - center.x;
-    const dy = p.y - center.y;
-
-    // rotate point
-    let xnew = dx * c - dy * s + center.x;
-    let ynew = dx * s + dy * c + center.y;
-
-    return { x: xnew, y: ynew };
-}
-
 export function calculateAngle(px: number, py: number, bx: number, by: number): number {
     return Math.atan2(by - py, bx - px);
-}
-
-export function rotateVertices(vertices: IPoint[], angle: number, center: IPoint): IPoint[] {
-    const rotatedVertices: IPoint[] = [];
-    for (const vertex of vertices) {
-        rotatedVertices.push(rotatePoint(vertex, angle, center));
-    }
-    return rotatedVertices;
 }
 
 export function normalFromVector(vector: IVector, out:IPoint): IPoint {
@@ -152,31 +115,6 @@ export function squaredDistance(point1: IPoint, point2: IPoint): number {
 }
 export function distance(p1: IPoint, p2: IPoint): number {
     return Math.sqrt(squaredDistance(p1, p2));
-}
-
-export function isPointOnLineSegment(point: IPoint, edge: IEdge): boolean {
-    const crossProduct = (point.y - edge.v0.y) * (edge.v1.x - edge.v0.x) - (point.x - edge.v0.x) * (edge.v1.y - edge.v0.y);
-
-    // If crossProduct is not approximately 0, the point is not on the line.
-    if (Math.abs(crossProduct) > 1e-10) {
-        return false;
-    }
-
-    const dotProduct = (point.x - edge.v0.x) * (edge.v1.x - edge.v0.x) + (point.y - edge.v0.y) * (edge.v1.y - edge.v0.y);
-
-    // If dotProduct is negative, the point is not on the line segment.
-    if (dotProduct < 0) {
-        return false;
-    }
-
-    const squaredLength = Math.pow(edge.v1.x - edge.v0.x, 2) + Math.pow(edge.v1.y - edge.v0.y, 2);
-
-    // If dotProduct > squaredLength, the point is not on the line segment.
-    if (dotProduct > squaredLength) {
-        return false;
-    }
-
-    return true;
 }
 
 export function isPointAlongLine(point: IPoint, edge: IEdge): boolean {
