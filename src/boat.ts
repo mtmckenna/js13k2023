@@ -37,11 +37,11 @@ const boatWidth = PIXELS[0].length * PIXEL_SIZE
 const boatHeight = PIXELS.length * PIXEL_SIZE
 boatCanvas.width = boatWidth;
 boatCanvas.height = boatHeight;
+const BASE_MAX_SPEED = 2;
 export default class Boat implements IPositionable, ICircle, ISpeedable {
     inputState: IVehicleInputState;
     grid: Grid;
     turnSpeed: number = .05;
-    maxSpeed: number = 3;
     movingBackwards: boolean = false;
     acc: IPoint = {x: 0, y: 0};
     radius: number = 10
@@ -65,13 +65,18 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     bulletSpeed: number = 3;
     index: number = 0;
 
-    // Weapons
+    // Upgrades
     trackingGunSpeed: number = .5;
     trackingGunLastFiredTime: number = 0;
 
     forwardGun: boolean = false;
-    forwardGunSpeed: number = .01;
+    forwardGunSpeed: number = .5;
     forwardGunLastFiredTime: number = 0;
+
+    speedUpgrade: number = 0;
+    armorUpgrade: number = 0;
+
+    numberOfGuns: number = 1;
 
     constructor(grid: Grid, inputState: IVehicleInputState) {
         this.inputState = inputState;
@@ -89,6 +94,10 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
 
     get speed(): number {
         return Math.hypot(this.vel.x, this.vel.y);
+    }
+
+    get maxSpeed(): number {
+        return BASE_MAX_SPEED + this.speedUpgrade;
     }
     turnKeyboard() {
         if (Math.abs(this.speed) < TURNING_SPEED_THRESHOLD) return;
@@ -109,25 +118,21 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     }
 
     updateVel() {
-        const onRoad = true;
-        const accMagnitude = (onRoad ? VEL_BOOST_ROAD : VEL_BOOST_ROAD*.5);
-        const maxSpeed = onRoad ? this.maxSpeed : this.maxSpeed*.5;
-
         let direction = Math.hypot(this.inputState.pos.x, this.inputState.pos.y); // JS magnitude
         if (this.inputState.mode === "kb") direction = Math.sign(this.inputState.pos.y); // Keyboard magnitude
 
         const cos = getCos(this.angle - Math.PI/2);
         const sin = getSin(this.angle - Math.PI/2);
-        this.acc.x = cos * direction * accMagnitude;
-        this.acc.y = sin * direction * accMagnitude;
+        this.acc.x = cos * direction * (VEL_BOOST_ROAD + this.speedUpgrade);
+        this.acc.y = sin * direction * (VEL_BOOST_ROAD + this.speedUpgrade);
 
         this.vel.x += this.acc.x;
         this.vel.y += this.acc.y;
 
         // Limit the speed to the maximum speed
         const speed = Math.hypot(this.vel.x, this.vel.y);
-        if (speed > maxSpeed) {
-            const scaleFactor = maxSpeed / speed;
+        if (speed > this.maxSpeed) {
+            const scaleFactor = this.maxSpeed / speed;
             this.vel.x *= scaleFactor;
             this.vel.y *= scaleFactor;
         }

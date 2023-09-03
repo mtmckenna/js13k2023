@@ -91,8 +91,6 @@ BulletPool.gameSize = grid.gameSize;
 BulletPool.grid = grid;
 BulletPool.initialize(1000);
 
-let fpsDisplay = null;
-
 const joystick = new Joystick(canvas, joystickMoveCallback);
 const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
@@ -139,12 +137,10 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 }
 
 let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
-// const randomRoad = roads[Math.floor(Math.random() * roads.length)];
 const randomRoad = findRoadCenterClosestToCenterOfGame();
-const randomRoadPoint = randomRoad.center;
 
 const upgrades: {name: string, cost: number}[] = [
-    { name: "Super Sails", cost: 100 },
+    { name: "Sails", cost: 100 },
     { name: "Armor", cost: 100 },
     { name: "Forward Cannon", cost: 100 },
 ];
@@ -303,7 +299,7 @@ function update(t: number) {
         // continue if enemy last hit player within wait time
         if (enemy.lastHitPlayerTime && (GLOBAL.time - enemy.lastHitPlayerTime) < enemy.hitWaitTime) continue;
         if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
-            player.life -= 1;
+            player.life -= 1 * player.armorUpgrade;
             enemy.lastHitPlayerTime = GLOBAL.time;
             playHitPlayerSound();
             if (player.life <= 0) {
@@ -672,6 +668,10 @@ function handleMenuItemClick(e: Event) {
 function addUpgrade(upgrade: string) {
     if (upgrade === "Forward Cannon") {
         player.forwardGun = true;
+    } else if (upgrade === "Armor") {
+        player.armorUpgrade = Math.max(player.armorUpgrade- .1, .5);
+    } else if (upgrade === "Sails") {
+        player.speedUpgrade = Math.min(player.speedUpgrade + .5, 2);
     }
 }
 
