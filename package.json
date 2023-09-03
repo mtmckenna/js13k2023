@@ -9,8 +9,8 @@
     "build": "webpack --config webpack.prod.cjs",
     "check-file-size": "pnpm node ./scripts/check-file-size.js",
     "compress": "pnpm node ./scripts/compress_with_roadroller.js",
-    "build-zipped": "pnpm run build && yarn compress && yarn node ./scripts/zip-file.js",
-    "party": "pnpm run build-zipped && yarn run check-file-size"
+    "build-zipped": "pnpm run build && pnpm compress && pnpm node ./scripts/zip-file.js",
+    "party": "pnpm run build-zipped && pnpm run check-file-size"
   },
   "devDependencies": {
     "archiver": "^5.3.1",
