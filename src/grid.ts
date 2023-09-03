@@ -1,6 +1,6 @@
 import {PIXEL_SIZE} from "./constants";
 
-import {CanvasColor, IEdge, IGridCell, IPoint, IPolygon, IPositionable, IRegion} from "./interfaces";
+import { IEdge, IGridCell, IPoint, IPositionable, IRegion} from "./interfaces";
 import Enemy from "./enemy";
 import Road from "./road";
 
@@ -55,6 +55,8 @@ const xCanvas = document.createElement("canvas");
 xCanvas.width = X_PIXELS[0].length * PIXEL_SIZE;
 xCanvas.height = X_PIXELS.length * PIXEL_SIZE;
 const xCtx = xCanvas.getContext("2d");
+console.log("HI!");
+console.log(drawPixels);
 drawPixels(xCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE, 0,0,false);
 
 const chestCanvas = document.createElement("canvas");
@@ -218,13 +220,9 @@ export default class Grid {
         ctx.save();
         ctx.translate(region.center.x * scale, region.center.y * scale);
         ctx.drawImage(chestCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
-        // ctx.strokeStyle = "#000000";
-        // ctx.strokeRect(-width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
-        // ctx.drawImage(chestCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
         ctx.restore();
     }
 
-    // #699169
     drawRegions(ctx: CanvasRenderingContext2D, regions: IRegion[], scale: number = 1) {
         ctx.globalAlpha = 1.0
         for (const region of regions) {
