@@ -60,6 +60,7 @@ export default class Enemy implements IPositionable {
     active: boolean = true;
     radius: number = 8 * PIXEL_SIZE/2;
     lastHitPlayerTime: number = 0;
+    lastDamagedTime: number = 0;
     hitWaitTime: number = .25;
     life: number = 100;
 
@@ -90,7 +91,7 @@ export default class Enemy implements IPositionable {
     recoil(x: number, y:number) {
         const normalized = PointPool.get(x,y);
         normalizeVector(normalized, normalized);
-        scaleVector(normalized, 4, normalized);
+        scaleVector(normalized, 2, normalized);
         this.vel.x = normalized.x;
         this.vel.y = normalized.y;
         PointPool.release(normalized);

@@ -65,8 +65,8 @@ export class BulletPool {
 
         const bullet = new Bullet();
         updatePos(x, y, bullet);
-        BulletPool.available.push(bullet);
         console.warn("out of bullets.");
+        BulletPool.available.push(bullet);
         return bullet;
     }
 
@@ -95,7 +95,7 @@ export class BulletPool {
                 ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
 
                 // draw bullet which is a square that rotates based on the bullets angle
-                ctx.fillStyle = "#000";
+                ctx.fillStyle = bullet.color
                 ctx.fillRect(-bullet.size.x*scale, -bullet.size.y*scale, bullet.size.x*scale, bullet.size.y*scale);
 
                 ctx.restore();
@@ -104,8 +104,10 @@ export class BulletPool {
     }
 
     static release(bullet: Bullet) {
+        bullet.makeBullet();
         bullet.active = false;
         bullet.lifeTime = 0;
+
     }
 }
 
@@ -186,15 +188,6 @@ export class GoldPool {
             ctx.drawImage(gold.pixelCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
             ctx.restore();
         }
-    }
-
-    static release(gold: IGold) {
-        gold.active = false;
-        gold.target = null;
-        gold.offset.x = 0;
-        gold.offset.y = 0;
-        gold.time = 0;
-        gold.updateDelay = -1;
     }
 }
 

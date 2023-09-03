@@ -345,11 +345,21 @@ function handleBulletsCollidingWithEnemies() {
             if (!neighborEnemies[j] || !neighborEnemies[j].active) continue;
             const enemy = neighborEnemies[j];
             if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
+                if (enemy.lastDamagedTime && (GLOBAL.time - enemy.lastDamagedTime) < enemy.hitWaitTime) continue;
+                enemy.lastDamagedTime = GLOBAL.time;
                 BulletPool.release(bullet);
                 playCannonballHitEnemySound();
                 enemy.life -= 25;
                 enemy.recoil(bullet.vel.x, bullet.vel.y);
-                if (enemy.life <= 0) enemy.deactivate();
+                const b = BulletPool.get(enemy.center.x, enemy.center.y);
+                b.makeParticle();
+                if (enemy.life <= 0) {
+                    enemy.deactivate();
+                    for (let i = 0; i < 10; i++) {
+                        const b = BulletPool.get(enemy.center.x, enemy.center.y);
+                        b.makeParticle();
+                    }
+                }
                 break;
             }
         }
