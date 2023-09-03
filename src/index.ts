@@ -347,7 +347,9 @@ function handleBulletsCollidingWithEnemies() {
             if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
                 BulletPool.release(bullet);
                 playCannonballHitEnemySound();
-                enemy.deactivate();
+                enemy.life -= 25;
+                enemy.recoil(bullet.vel.x, bullet.vel.y);
+                if (enemy.life <= 0) enemy.deactivate();
                 break;
             }
         }

@@ -55,7 +55,6 @@ const xCanvas = document.createElement("canvas");
 xCanvas.width = X_PIXELS[0].length * PIXEL_SIZE;
 xCanvas.height = X_PIXELS.length * PIXEL_SIZE;
 const xCtx = xCanvas.getContext("2d");
-console.log(drawPixels);
 drawPixels(xCtx, X_PIXELS, X_PIXELS_COLOR_MAP, PIXEL_SIZE, 0,0,false);
 
 const chestCanvas = document.createElement("canvas");

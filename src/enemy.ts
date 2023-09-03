@@ -4,7 +4,7 @@ import {
     clamp, distance,
     getCos,
     getSin,
-    normalizeAndScaleVector, normalizeVector,
+    normalizeAndScaleVector, normalizeVector, scaleVector,
 } from "./math";
 import {PointPool} from "./pools";
 import {drawPixels, updatePos} from "./game_objects";
@@ -85,6 +85,15 @@ export default class Enemy implements IPositionable {
     deactivate() {
         this.active = false;
         this.lastHitPlayerTime = 0;
+    }
+
+    recoil(x: number, y:number) {
+        const normalized = PointPool.get(x,y);
+        normalizeVector(normalized, normalized);
+        scaleVector(normalized, 4, normalized);
+        this.vel.x = normalized.x;
+        this.vel.y = normalized.y;
+        PointPool.release(normalized);
     }
 
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
