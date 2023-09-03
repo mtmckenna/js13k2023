@@ -32,6 +32,9 @@ const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
 const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
 const restartMenu: HTMLElement = document.querySelector("#restart-menu");
+const amountGold: HTMLElement = document.querySelector("#amount-gold");
+const surviveElement: HTMLElement = document.querySelector("#survive");
+const tryAgain = document.querySelector("#try-again");
 const clock = document.querySelector("#clock");
 
 canvas.id = "game";
@@ -56,6 +59,7 @@ let numRegionCollisions = 0;
 let goldCount = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 const MAX_TIME = 60 * 5;
+// const MAX_TIME = 5;
 GLOBAL.time = 0;
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
@@ -245,6 +249,8 @@ function update(t: number) {
 
     if (UI_STATE.transferringCoins) return;
     if (UI_STATE.upgradeMenuVisible) return;
+    if (UI_STATE.restartMenuVisible) return;
+
     GLOBAL.time +=t;
     GLOBAL.timeLeft = Math.max(MAX_TIME - GLOBAL.time, 0);
 
@@ -461,11 +467,19 @@ function draw(t: number) {
     joystick.draw(ctx);
 
     drawLifeBar(ctx, canvas, player.life, 100);
-    const minutes = Math.floor(GLOBAL.timeLeft / 60);
-    const seconds = Math.floor(GLOBAL.timeLeft % 60);
+    // const minutes = Math.floor(GLOBAL.timeLeft / 60);
+    // const seconds = Math.floor(GLOBAL.timeLeft % 60);
+    // const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+    // const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+    clock.textContent = formattedTime(GLOBAL.timeLeft);
+}
+
+function formattedTime(time: number): string {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
     const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
     const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
-    clock.textContent = `${displayMinutes}:${displaySeconds}`;
+    return `${displayMinutes}:${displaySeconds}`;
 }
 
 function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, building: IRegion) {
@@ -554,19 +568,6 @@ function resizeCanvas() {
     joystick.resize();
 }
 
-function closestRegionToPos(pos: IPoint, regions: IRegion[]): IRegion {
-    let minDist = Number.MAX_VALUE;
-    let closestRegion = null;
-    for (const region of regions) {
-        const dist = distance(pos, region.center);
-        if (dist < minDist) {
-            minDist = dist;
-            closestRegion = region;
-        }
-    }
-    return closestRegion;
-}
-
 function goldArrivedAtBoat(gold: IGold) {
     if (player.gold.every(g => g.arrived)) {
         UI_STATE.transferringCoins = false;
@@ -589,6 +590,16 @@ function showRestartMenu() {
     restartMenu.classList.add("show");
     restartMenu.style.pointerEvents = "auto";
     restartMenu.style.removeProperty("opacity");
+
+    if (GLOBAL.timeLeft <= 0) {
+        tryAgain.textContent = "You survived, me hearty!";
+    } else {
+        tryAgain.textContent = "You died, me hearty!";
+    }
+
+    surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
+    amountGold.textContent = `You collected ${goldCount.toString()} gold!`;
+
     UI_STATE.restartMenuVisible = true;
 }
 
