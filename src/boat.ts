@@ -74,7 +74,7 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     forwardGunLastFiredTime: number = 0;
 
     speedUpgrade: number = 0;
-    armorUpgrade: number = 0;
+    armorUpgrade: number = 1;
 
     numberOfGuns: number = 1;
 

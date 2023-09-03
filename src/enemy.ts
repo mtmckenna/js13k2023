@@ -45,8 +45,6 @@ export default class Enemy implements IPositionable {
     player: IPositionable | null;
     neighborGridCells: IGridCell[];
     neighborEnemies: Enemy[] = [];
-    alignment: IPoint = {x: 0, y: 0};
-    returning: boolean = false;
     rotorRandomOffsets: number[] = [];
     sign: number = 1;
     pos: IPoint = {x: 0, y: 0};
@@ -63,6 +61,7 @@ export default class Enemy implements IPositionable {
     radius: number = 8 * PIXEL_SIZE/2;
     lastHitPlayerTime: number = 0;
     hitWaitTime: number = .25;
+    life: number = 100;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -163,12 +162,16 @@ export default class Enemy implements IPositionable {
                 this.vel.y = dirToPlayer.y * ENEMY_MOVING_SPEED;
             }
         } else {
-            // move sinusoidally
+            // move sinusoidally and a little bit towards the player
             const t = GLOBAL.time *1000;
             const cos = getCos(t / 1000 + this.randomStart)/2;
             const sin = getSin(t / 1000 + this.randomStart)/2;
             this.vel.x = cos * ENEMY_MOVING_SPEED;
             this.vel.y = sin * ENEMY_MOVING_SPEED;
+            // move slightly towards the player
+            this.vel.x += dirToPlayer.x * ENEMY_MOVING_SPEED/4;
+            this.vel.y += dirToPlayer.y * ENEMY_MOVING_SPEED/4;
+
         }
 
         const x = clamp(this.pos.x + this.vel.x, 0, this.grid.gameSize.x - this.size.x);

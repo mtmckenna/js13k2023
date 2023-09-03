@@ -272,47 +272,8 @@ function update(t: number) {
     if (player.active) player.update(t);
     BulletPool.update(t);
 
-    // Bullet collide with enemies
-    for (let i = 0; i < BulletPool.available.length; i++) {
-        const bullet = BulletPool.available[i];
-        if (!bullet.active) continue;
-        grid.getNeighborEnemies(bullet.pos, neighborEnemies);
-        for (let j = 0; j < neighborEnemies.length; j++) {
-            if (!neighborEnemies[j] || !neighborEnemies[j].active) continue;
-            const enemy = neighborEnemies[j];
-            if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
-                BulletPool.release(bullet);
-                playCannonballHitEnemySound();
-                enemy.deactivate();
-                break;
-            }
-        }
-    }
-    //
-    // // Update gold
-    // GoldPool.update(t);
-
-    // Enemy collide with player
-    for (let i = 0; i < enemies.length; i++) {
-        const enemy = enemies[i];
-        if (!enemy || !enemy.active) continue;
-        // continue if enemy last hit player within wait time
-        if (enemy.lastHitPlayerTime && (GLOBAL.time - enemy.lastHitPlayerTime) < enemy.hitWaitTime) continue;
-        if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
-            player.life -= 1 * player.armorUpgrade;
-            enemy.lastHitPlayerTime = GLOBAL.time;
-            playHitPlayerSound();
-            if (player.life <= 0) {
-                player.life = 0;
-                player.active = false;
-                if (!UI_STATE.restartMenuVisible) showRestartMenu();
-            }
-
-            camera.screenShake.active = true;
-            camera.screenShake.elapsed = 0;
-            camera.screenShake.magnitude = 3;   // Adjust based on desired intensity
-        }
-    }
+    handleBulletsCollidingWithEnemies();
+    handleEnemiesCollidingWithPlayer();
 
     numRegionCollisions = findCollisions(player.vertices, regionVertices, regionCollisions);
 
@@ -348,6 +309,47 @@ function update(t: number) {
             const x = (Math.random() - 0.5) * 2 * camera.screenShake.magnitude;
             const y = (Math.random() - 0.5) * 2 * camera.screenShake.magnitude;
             camera.setOffset(x, y);
+        }
+    }
+}
+
+function handleEnemiesCollidingWithPlayer() {
+    for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        if (!enemy || !enemy.active) continue;
+        // continue if enemy last hit player within wait time
+        if (enemy.lastHitPlayerTime && (GLOBAL.time - enemy.lastHitPlayerTime) < enemy.hitWaitTime) continue;
+        if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
+            player.life -= 1 * player.armorUpgrade;
+            enemy.lastHitPlayerTime = GLOBAL.time;
+            playHitPlayerSound();
+            if (player.life <= 0) {
+                player.life = 0;
+                player.active = false;
+                if (!UI_STATE.restartMenuVisible) showRestartMenu();
+            }
+
+            camera.screenShake.active = true;
+            camera.screenShake.elapsed = 0;
+            camera.screenShake.magnitude = 3;   // Adjust based on desired intensity
+        }
+    }
+}
+
+function handleBulletsCollidingWithEnemies() {
+    for (let i = 0; i < BulletPool.available.length; i++) {
+        const bullet = BulletPool.available[i];
+        if (!bullet.active) continue;
+        grid.getNeighborEnemies(bullet.pos, neighborEnemies);
+        for (let j = 0; j < neighborEnemies.length; j++) {
+            if (!neighborEnemies[j] || !neighborEnemies[j].active) continue;
+            const enemy = neighborEnemies[j];
+            if (circlesCollide(bullet.center.x, bullet.center.y, bullet.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
+                BulletPool.release(bullet);
+                playCannonballHitEnemySound();
+                enemy.deactivate();
+                break;
+            }
         }
     }
 }
