@@ -25,14 +25,14 @@ import {BulletPool, GoldPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
 import {GLOBAL} from "./constants";
-import {playCannonballHitEnemySound, playCoinPickupSound, playHitPlayerSound} from "./sound";
-import {Bullet} from "./bullet";
+import {playCannonballHitEnemySound, playCoinPickupSound, playFanfareSound, playHitPlayerSound} from "./sound";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
 const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
 const restartMenu: HTMLElement = document.querySelector("#restart-menu");
+const startMenu: HTMLElement = document.querySelector("#start-menu");
 const amountGold: HTMLElement = document.querySelector("#amount-gold");
 const surviveElement: HTMLElement = document.querySelector("#survive");
 const tryAgain = document.querySelector("#try-again");
@@ -60,6 +60,7 @@ let numRegionCollisions = 0;
 let goldCount = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 const MAX_TIME = 60 * 5;
+let started = false;
 // const MAX_TIME = 5;
 GLOBAL.time = 0;
 
@@ -268,6 +269,7 @@ function update(t: number) {
     GLOBAL.absoluteTime += t;
     GoldPool.update(t);
 
+    if (!started) return;
     if (UI_STATE.transferringCoins) return;
     if (UI_STATE.upgradeMenuVisible) return;
     if (UI_STATE.restartMenuVisible) return;
@@ -510,17 +512,16 @@ function draw(t: number) {
 
     for (const enemy of enemies) enemy.draw(offscreenBufferCtx, GRID_SCALE, t);
 
+
     if (xMarkIndices.length > 0) {
         drawArrowToBuilding(offscreenBufferCtx, player.center, regions[xMarkIndices[0]]);
     } else {
         drawArrowToBuilding(offscreenBufferCtx, player.center, regions[depotIndex]);
     }
 
-    grid.drawGrid(offscreenBufferCtx, GRID_SCALE);
-
     ctx.drawImage(roadCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
     ctx.drawImage(regionsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-    ctx.drawImage(offscreenCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+    if (started) ctx.drawImage(offscreenCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
 
     joystick.draw(ctx);
 
@@ -699,6 +700,22 @@ function showUpgradeMenu() {
 
 }
 
+function showStartMenu() {
+    startMenu.classList.remove("hide");
+    startMenu.classList.add("show");
+    startMenu.style.pointerEvents = "auto";
+    startMenu.style.removeProperty("opacity");
+}
+
+function hideStartMenu() {
+    startMenu.classList.remove("show");
+    startMenu.style.pointerEvents = "none";
+    startMenu.classList.add("hide");
+    started = true;
+    playFanfareSound();
+}
+
+
 function hideUpgradeMenu() {
     upgradeMenu.classList.remove("show");
     upgradeMenu.style.pointerEvents = "none";
@@ -744,6 +761,7 @@ grid.drawRoads(roadsCtx, GRID_SCALE);
 grid.drawRegions(regionsCtx, regions, GRID_SCALE);
 generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(ROAD_WIDTH*3);
 requestAnimationFrame(tick);
+showStartMenu();
 window.addEventListener('resize', resizeCanvas);
 document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
     hideUpgradeMenu();
@@ -755,4 +773,8 @@ document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
 
 document.querySelector("#try-again-btn").addEventListener("click", () => {
     window.location.reload();
+});
+
+document.querySelector("#start-btn").addEventListener("click", () => {
+    hideStartMenu();
 });

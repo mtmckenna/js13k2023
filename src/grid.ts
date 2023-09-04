@@ -217,20 +217,6 @@ export default class Grid {
         }
     }
 
-    drawGrid(ctx: CanvasRenderingContext2D, scale: number = 1) {
-        ctx.imageSmoothingEnabled = false;
-        for (let i = 0; i < this.cells.length; i++) {
-            const cell = this.cells[i];
-            const x = i % this.gridSize.x;
-            const y = Math.floor(i / this.gridSize.x);
-            ctx.strokeStyle = "black";
-            ctx.strokeRect(x * this.cellSize.x * scale, y * this.cellSize.y * scale, this.cellSize.x * scale, this.cellSize.y * scale);
-            ctx.fillStyle = "black";
-            ctx.font = "20px Arial";
-            ctx.fillText(cell.cost.toString(), x * this.cellSize.x * scale, y * this.cellSize.y * scale);
-        }
-    }
-
     drawX(ctx: CanvasRenderingContext2D, region: IRegion, scale: number = 1) {
         // ctx.drawImage(xCanvas, region.center.x * scale, region.center.y * scale);
         const height = X_PIXELS.length * PIXEL_SIZE;

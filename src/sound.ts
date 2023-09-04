@@ -1,7 +1,6 @@
-// const audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
 let audioCtx: AudioContext = null;
 let ready = false;
-let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer, coinPickupBuffer: AudioBuffer;
+let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer, coinPickupBuffer: AudioBuffer, fanfareBuffer: AudioBuffer;
 function createContext() {
     if (ready) return;
     audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
@@ -10,6 +9,7 @@ function createContext() {
     hitPlayerBuffer = generatePlayerHitSoundBuffer();
     hitEnemyBuffer = generateEnemyHitSoundBuffer();
     coinPickupBuffer = generateCoinPickupSoundBuffer();
+    fanfareBuffer = generateFanfareSoundBuffer();
     ready = true;
 }
 window.addEventListener('touchstart', createContext);
@@ -94,6 +94,33 @@ function generateCoinPickupSoundBuffer(): AudioBuffer {
     return buffer;
 }
 
+function generateFanfareSoundBuffer(): AudioBuffer {
+    const duration = 1.2; // total duration of the sound
+    const frameCount = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, frameCount, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    const frequencies = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77]; // C5, D5, E5, F5, G5, A5, B5
+    const noteDurations = [0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.6]; // durations of each note
+
+    let currentTime = 0;
+    let currentNote = 0;
+
+    for (let i = 0; i < frameCount; i++) {
+        const time = i / audioCtx.sampleRate;
+        if (time > currentTime + noteDurations[currentNote]) {
+            currentTime += noteDurations[currentNote];
+            currentNote = (currentNote + 1) % frequencies.length;
+        }
+
+        const amplitude = Math.exp(-0.5 * (time - currentTime));
+        const freq = frequencies[currentNote];
+        data[i] = amplitude * Math.sin(freq * Math.PI * 2 * (time - currentTime));
+    }
+
+    return buffer;
+}
+
 
 
 function canPlaySound(soundId) {
@@ -127,4 +154,8 @@ export function playCannonballHitEnemySound() {
 
 export function playCoinPickupSound() {
     playBuffer(coinPickupBuffer, SOUNDS.COIN_PICKUP);
+}
+
+export function playFanfareSound() {
+    playBuffer(fanfareBuffer, SOUNDS.COIN_PICKUP);
 }
