@@ -61,7 +61,7 @@ export default class Enemy implements IPositionable {
     radius: number = 8 * PIXEL_SIZE/2;
     lastDamagedTime: number = 0;
     lastFlashedTime: number = 0;
-    hitWaitTime: number = .5;
+    hitWaitTime: number = 1;
     life: number = 100;
     visible: boolean = true;
 
@@ -191,8 +191,8 @@ export default class Enemy implements IPositionable {
             this.vel.x = cos * ENEMY_MOVING_SPEED;
             this.vel.y = sin * ENEMY_MOVING_SPEED;
             // move slightly towards the player
-            this.vel.x += dirToPlayer.x * ENEMY_MOVING_SPEED/4;
-            this.vel.y += dirToPlayer.y * ENEMY_MOVING_SPEED/4;
+            this.vel.x += dirToPlayer.x * ENEMY_MOVING_SPEED/2;
+            this.vel.y += dirToPlayer.y * ENEMY_MOVING_SPEED/2;
 
         }
 
