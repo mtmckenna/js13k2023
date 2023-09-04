@@ -59,10 +59,11 @@ export default class Enemy implements IPositionable {
     randomStart: number = 0;
     active: boolean = true;
     radius: number = 8 * PIXEL_SIZE/2;
-    lastHitPlayerTime: number = 0;
     lastDamagedTime: number = 0;
-    hitWaitTime: number = .25;
+    lastFlashedTime: number = 0;
+    hitWaitTime: number = .5;
     life: number = 100;
+    visible: boolean = true;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -85,7 +86,6 @@ export default class Enemy implements IPositionable {
 
     deactivate() {
         this.active = false;
-        this.lastHitPlayerTime = 0;
     }
 
     recoil(x: number, y:number) {
@@ -99,6 +99,19 @@ export default class Enemy implements IPositionable {
 
     draw(ctx: CanvasRenderingContext2D, scale: number = 1, t: number) {
         if (!this.active) return;
+
+        // flash when hit
+        const readyToFlash = GLOBAL.time - this.lastFlashedTime > this.hitWaitTime/10;
+        const wasHitRecently = this.lastDamagedTime && (GLOBAL.time - this.lastDamagedTime < this.hitWaitTime);
+        if (wasHitRecently && readyToFlash) {
+            this.lastFlashedTime = GLOBAL.time;
+            this.visible = !this.visible;
+        } else {
+            this.visible = true;
+        }
+
+        if (!this.visible) return;
+
         ctx.save();
         ctx.translate(this.center.x * scale, this.center.y * scale);
         ctx.rotate(this.angle);
@@ -106,7 +119,6 @@ export default class Enemy implements IPositionable {
 
         const sx = this.frameCounter * this.size.x; // source x on sprite sheet
         ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x / 2 * scale, -this.size.y / 2 * scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
-
         ctx.restore();
 
         if (this.forwardDirection) {

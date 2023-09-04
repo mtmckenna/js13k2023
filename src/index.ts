@@ -26,6 +26,7 @@ import Boat from "./boat";
 import {updatePos} from "./game_objects";
 import {GLOBAL} from "./constants";
 import {playCannonballHitEnemySound, playCoinPickupSound, playHitPlayerSound} from "./sound";
+import {Bullet} from "./bullet";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -318,10 +319,10 @@ function handleEnemiesCollidingWithPlayer() {
         const enemy = enemies[i];
         if (!enemy || !enemy.active) continue;
         // continue if enemy last hit player within wait time
-        if (enemy.lastHitPlayerTime && (GLOBAL.time - enemy.lastHitPlayerTime) < enemy.hitWaitTime) continue;
+        if (player.lastDamagedTime && (GLOBAL.time - player.lastDamagedTime) < enemy.hitWaitTime) continue;
         if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
             player.life -= 1 * player.armorUpgrade;
-            enemy.lastHitPlayerTime = GLOBAL.time;
+            player.lastDamagedTime = GLOBAL.time;
             playHitPlayerSound();
             if (player.life <= 0) {
                 player.life = 0;

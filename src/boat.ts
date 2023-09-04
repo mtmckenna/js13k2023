@@ -2,7 +2,7 @@ import {ICircle, IGold, IGridCell, IPoint, IPositionable, ISpeedable, IVehicleIn
 import Grid from "./grid";
 import {clamp, dot, getCos, getSin, normalizeVector, subtractVectors} from "./math";
 import {drawPixels, updatePos} from "./game_objects";
-import { PIXEL_SIZE} from "./constants";
+import {GLOBAL, PIXEL_SIZE} from "./constants";
 import {BulletPool} from "./pools";
 import { playCannonSound} from "./sound";
 
@@ -77,6 +77,11 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     armorUpgrade: number = 1;
 
     numberOfGuns: number = 1;
+
+    visible: boolean = true;
+    lastDamagedTime: number = 0;
+    lastFlashedTime: number = 0;
+    hitWaitTime: number = .5;
 
     constructor(grid: Grid, inputState: IVehicleInputState) {
         this.inputState = inputState;
@@ -182,6 +187,18 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     }
 
     draw(ctx: CanvasRenderingContext2D, scale:number = 1): void {
+        const readyToFlash = GLOBAL.time - this.lastFlashedTime > this.hitWaitTime/10;
+        const wasHitRecently = this.lastDamagedTime && (GLOBAL.time - this.lastDamagedTime < this.hitWaitTime);
+        if (wasHitRecently && readyToFlash) {
+            this.lastFlashedTime = GLOBAL.time;
+            this.visible = !this.visible;
+        } else {
+            this.visible = true;
+        }
+
+        if (!this.visible) return;
+
+
         ctx.save();
         ctx.translate(this.center.x * scale, this.center.y * scale);
         ctx.rotate(this.angle);
