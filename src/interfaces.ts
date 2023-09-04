@@ -62,6 +62,12 @@ export interface IPositionable extends ICenterable {
     index: number;
 }
 
+
+export interface IQueueItem extends IPoolable{
+    x: number; // cellIndex
+    y: number; // depth
+}
+
 export interface ICollision {
     depth: number;
     edge: IEdge;

@@ -1,11 +1,12 @@
 import {PIXEL_SIZE} from "./constants";
 
-import { IEdge, IGridCell, IPoint, IPositionable, IRegion} from "./interfaces";
+import { IEdge, IGridCell, IPoint, IPositionable, IRegion, IQueueItem} from "./interfaces";
 import Enemy from "./enemy";
 import Road from "./road";
 
 import {getCos, getSin, squaredDistance} from "./math";
 import {drawPixels} from "./game_objects";
+import {PointPool} from "./pools";
 
 
 export const GRID_CELL_SIZE = 300;
@@ -115,16 +116,21 @@ export default class Grid {
         }
     }
 
+    // TODO: combine getNeighborEnemies and getNearestEnemy
     getNeighborEnemies(pos: IPoint, enemies: Enemy[]): Enemy[] {
         neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: Set<number> = new Set();
-        const queue: IQueueItem[] = [{cellIndex: startCellIndex, depth: 0}];
+        // const queue: IQueueItem[] = [{cellIndex: startCellIndex, depth: 0}];
+        const startQueueItem: IQueueItem = PointPool.get(startCellIndex, 0);
+        const queue: IQueueItem[] = [startQueueItem];
 
         let count = 0;
 
         while (queue.length > 0) {
-            const {cellIndex: currentCellIndex, depth} = queue.shift()!;
+            const queueItem = queue.shift()!;
+            const {x: currentCellIndex, y: depth} = queueItem;
+            PointPool.release(queueItem);
 
             if (depth > 5) break;
 
@@ -136,21 +142,25 @@ export default class Grid {
                 if (enemy && enemy.active) {
                     enemies[count] = enemy;
                     count++;
-                    if (count >= enemies.length) return enemies;
+                    if (count >= enemies.length) {
+                        emptyQueue(queue);
+                        return enemies;
+                    }
                 }
 
 
             }
 
-            // TODO: don't allocate memory
             this.setNeighborGridCells(currentCellIndex, neighbors);
             for (const neighbor of neighbors) {
                 if (neighbor && !visited.has(neighbor.index)) {
-                    queue.push({cellIndex: neighbor.index, depth: depth + 1});
+                    const queueItem = PointPool.get(neighbor.index, depth + 1);
+                    queue.push(queueItem);
                 }
             }
         }
 
+        emptyQueue(queue);
         return enemies;
     }
 
@@ -158,13 +168,18 @@ export default class Grid {
         neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: Set<number> = new Set();
-        const queue: IQueueItem[] = [{cellIndex: startCellIndex, depth: 0}];
+        // const queue: IQueueItem[] = [{cellIndex: startCellIndex, depth: 0}];
+        const startQueueItem: IQueueItem = PointPool.get(startCellIndex, 0);
+        const queue: IQueueItem[] = [startQueueItem];
 
         let minDistance = Number.MAX_VALUE;
         let minEnemy: Enemy | null = null;
 
         while (queue.length > 0) {
-            const {cellIndex: currentCellIndex, depth} = queue.shift()!;
+            // const {x: currentCellIndex, y: depth} = queue.shift()!;
+            const queueItem = queue.shift()!;
+            const {x: currentCellIndex, y: depth} = queueItem;
+            PointPool.release(queueItem);
 
             if (depth > 5) break;
 
@@ -182,14 +197,16 @@ export default class Grid {
                 }
             }
 
-            // TODO: don't allocate memory
             this.setNeighborGridCells(currentCellIndex, neighbors);
             for (const neighbor of neighbors) {
                 if (neighbor && !visited.has(neighbor.index)) {
-                    queue.push({cellIndex: neighbor.index, depth: depth + 1});
+                    const queueItem = PointPool.get(neighbor.index, depth + 1);
+                    queue.push(queueItem);
                 }
             }
         }
+
+        emptyQueue(queue)
 
         return minEnemy;
     }
@@ -380,7 +397,9 @@ export function indexForPos(x: number, y: number, gridSizeX: number): number {
     return x2 + y2 * gridSizeX;
 }
 
-interface IQueueItem {
-    cellIndex: number;
-    depth: number;
+function emptyQueue(queue: IQueueItem[]) {
+    for (let i = 0; i < queue.length; i++) {
+        PointPool.release(queue[i]);
+    }
+    queue.length = 0;
 }

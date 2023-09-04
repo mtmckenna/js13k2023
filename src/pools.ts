@@ -1,4 +1,4 @@
-import {ICenterable, IGold, IPoint, IPoolPoint, IPositionable} from "./interfaces";
+import {ICenterable, IGold, IPoint, IPoolable, IPoolPoint, IPositionable} from "./interfaces";
 import {Bullet} from "./bullet";
 import {drawPixels, updatePos} from "./game_objects";
 import Grid from "./grid";
@@ -38,9 +38,6 @@ export class PointPool {
         point.active = false;
     }
 }
-
-PointPool.initialize(1000);
-
 export class BulletPool {
     public static available: Bullet[] = [];
     public static gameSize: IPoint = {x: 0, y: 0};
@@ -230,5 +227,5 @@ function createGold(): IGold {
     const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
     return gold;
 }
-
+PointPool.initialize(5000);
 GoldPool.initialize(5000);
