@@ -135,7 +135,6 @@ export interface IBoundingBox {
 export interface IGold extends IPositionable, ICircle, IPoolable, IUpdateable {
     target: ICenterable;
     offset: IPoint;
-    time: number;
     updateDelay: number;
     updateable: boolean;
     drawable: boolean;

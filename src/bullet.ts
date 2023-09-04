@@ -1,7 +1,8 @@
 import {ICircle, IGridCell, IPoint, IPoolable, IPositionable} from "./interfaces";
 import {generateVertices, updatePos} from "./game_objects";
 import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
-import {clamp} from "./math";
+import {clamp, randomFloat} from "./math";
+import {GLOBAL} from "./constants";
 
 export class Bullet implements IPositionable, ICircle, IPoolable {
     angle: number = 0;
@@ -28,12 +29,6 @@ export class Bullet implements IPositionable, ICircle, IPoolable {
         const posY = this.pos.y + this.vel.y;
         this.angle += .01 % 2* Math.PI;
 
-        if (this.type === "particle") {
-            // apply gravity
-            this.vel.y += .2;
-            this.vel.y = clamp(this.vel.y, -5, 5);
-        }
-
         updatePos(posX, posY, this);
     }
 
@@ -42,8 +37,9 @@ export class Bullet implements IPositionable, ICircle, IPoolable {
         this.maxLifeTime = 1;
         this.radius = 5;
         this.color = "#fff";
-        this.vel.y = -3;
-        this.vel.x = Math.random() * 3 - 1;
+        this.vel.y = randomFloat(-2,2);
+        this.vel.x = randomFloat(-2,2);
+        this.maxLifeTime = 1;
     }
 
     makeBullet() {
@@ -51,5 +47,6 @@ export class Bullet implements IPositionable, ICircle, IPoolable {
         this.maxLifeTime = 2;
         this.radius = 5;
         this.color = "#000";
+        this.maxLifeTime = 2;
     }
 }

@@ -90,7 +90,7 @@ offscreenCanvas.height = grid.gameSize.y;
 
 BulletPool.gameSize = grid.gameSize;
 BulletPool.grid = grid;
-BulletPool.initialize(1000);
+BulletPool.initialize(5000);
 
 const joystick = new Joystick(canvas, joystickMoveCallback);
 const keyboard = new KeyboardInput(window, keyCallback);
@@ -242,6 +242,7 @@ function tick(t: number) {
 }
 
 function update(t: number) {
+    GLOBAL.absoluteTime += t;
     GoldPool.update(t);
 
     if (UI_STATE.transferringCoins) return;
@@ -352,12 +353,15 @@ function handleBulletsCollidingWithEnemies() {
                 playCannonballHitEnemySound();
                 enemy.life -= 25;
                 enemy.recoil(bullet.vel.x, bullet.vel.y);
-                const b = BulletPool.get(enemy.center.x, enemy.center.y);
-                b.makeParticle();
+                for (let i = 0; i < 3; i++) {
+                    const b = BulletPool.get(enemy.center.x + randomFloat(-enemy.size.x/2, enemy.size.x/2), enemy.center.y + randomFloat(-enemy.size.y/2,enemy.size.y/2));
+                    b.makeParticle();
+                }
+
                 if (enemy.life <= 0) {
                     enemy.deactivate();
-                    for (let i = 0; i < 10; i++) {
-                        const b = BulletPool.get(enemy.center.x, enemy.center.y);
+                    for (let i = 0; i < 20; i++) {
+                        const b = BulletPool.get(enemy.center.x + randomFloat(-enemy.size.x/2, enemy.size.x/2), enemy.center.y + randomFloat(-enemy.size.y/2,enemy.size.y/2));
                         b.makeParticle();
                     }
                 }
@@ -385,6 +389,7 @@ function handleCollectingGold() {
                 gold.updateable = true;
                 gold.drawable = true;
                 gold.target = player;
+                gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
 
                 player.gold.push(gold);
             }
@@ -409,8 +414,7 @@ function handleCollectingGold() {
                 gold.offset.x = offsetX;
                 gold.offset.y = offsetY;
                 gold.arrived = false;
-                gold.updateDelay = i * .1;
-                gold.time = 0;
+                gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
                 gold.arrivalCallback = goldArrivedAtDepot;
                 depot.gold.push(gold);
             }

@@ -2,7 +2,7 @@ import {ICenterable, IGold, IPoint, IPoolPoint, IPositionable} from "./interface
 import {Bullet} from "./bullet";
 import {drawPixels, updatePos} from "./game_objects";
 import Grid from "./grid";
-import {PIXEL_SIZE} from "./constants";
+import {GLOBAL, PIXEL_SIZE} from "./constants";
 import {addVectors, normalizeVector, subtractVectors} from "./math";
 
 
@@ -95,8 +95,9 @@ export class BulletPool {
                 ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
 
                 // draw bullet which is a square that rotates based on the bullets angle
-                ctx.fillStyle = bullet.color
-                ctx.fillRect(-bullet.size.x*scale, -bullet.size.y*scale, bullet.size.x*scale, bullet.size.y*scale);
+                ctx.fillStyle = bullet.color;
+                const percentLife = 1 - (Math.max(bullet.lifeTime, Number.EPSILON) / bullet.maxLifeTime);
+                ctx.fillRect(-bullet.size.x*scale * percentLife, -bullet.size.y*scale* percentLife, bullet.size.x*scale* percentLife, bullet.size.y*scale * percentLife);
 
                 ctx.restore();
             }
@@ -195,9 +196,8 @@ function updateGold(t: number) {
     if (!this.active) return;
     if (!this.updateable) return;
 
-    this.time += t;
     if (!this.target) return;
-    if (this.updateDelay === -1 || this.time < this.updateDelay) return;
+    if (this.updateDelay === -1 || GLOBAL.absoluteTime < this.updateDelay) return;
     const direction = PointPool.get();
 
     subtractVectors(addVectors(this.target.center, this.offset, direction), this.center, direction)
@@ -227,7 +227,7 @@ function updateGold(t: number) {
 
 function createGold(): IGold {
     const canvas = Math.random() > .5 ? goldCanvas : goldCanvas2;
-    const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, time: 0, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
+    const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
     return gold;
 }
 
