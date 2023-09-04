@@ -17,11 +17,11 @@ const PIXELS = [
     [0, 1, 2, 2, 2, 2, 1, 0],
     [0, 1, 2, 2, 2, 2, 1, 0],
     [1, 1, 2, 2, 2, 2, 1, 0],
-    [1, 1, 2, 3, 3, 2, 1, 1],
+    [1, 1, 2, 2, 2, 2, 1, 1],
+    [1, 2, 2, 3, 3, 2, 2, 1],
     [1, 2, 2, 2, 2, 2, 2, 1],
     [1, 2, 2, 2, 2, 2, 2, 1],
     [1, 2, 3, 3, 3, 3, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 1],
     [1, 2, 2, 2, 2, 2, 2, 1],
     [1, 2, 2, 2, 2, 2, 2, 1],
     [1, 1, 2, 3, 3, 2, 1, 1],
@@ -37,7 +37,7 @@ const boatWidth = PIXELS[0].length * PIXEL_SIZE
 const boatHeight = PIXELS.length * PIXEL_SIZE
 boatCanvas.width = boatWidth;
 boatCanvas.height = boatHeight;
-const BASE_MAX_SPEED = 2;
+const BASE_MAX_SPEED = 2.5;
 export default class Boat implements IPositionable, ICircle, ISpeedable {
     inputState: IVehicleInputState;
     grid: Grid;
@@ -46,6 +46,7 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     acc: IPoint = {x: 0, y: 0};
     radius: number = 10
     center: IPoint = {x: 0, y: 0};
+    front: IPoint = {x: 0, y: 0};
     pos: IPoint = {x: 0, y: 0};
     vel: IPoint = {x: 0, y: 0};
     angle: number = 0;
@@ -168,6 +169,15 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
         const y = clamp(this.pos.y + this.vel.y, 0, this.grid.gameSize.y - this.size.y);
         updatePos(x, y, this);
 
+        const frontOffset = this.size.y / 4; // Halfway between the middle and the front
+        this.front.x = this.center.x + this.direction.x * frontOffset;
+        this.front.y = this.center.y + this.direction.y * frontOffset;
+
+        // make the gold all be at the same angle as the boat
+        for (let i = 0; i < this.gold.length; i++) {
+            this.gold[i].angle = this.angle;
+        }
+
         if ((this.currentTime - this.trackingGunLastFiredTime) > this.trackingGunSpeed) {
             this.trackingGunLastFiredTime = this.currentTime;
             const enemy = this.grid.getNearestEnemy(this.center)
@@ -184,6 +194,7 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
             this.forwardGunLastFiredTime = this.currentTime;
             shootGun(this.center, this.direction, this.bulletSpeed + this.speed);
         }
+
     }
 
     draw(ctx: CanvasRenderingContext2D, scale:number = 1): void {

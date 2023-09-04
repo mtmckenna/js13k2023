@@ -201,7 +201,7 @@ for (const region of regions) {
     if (region.type !== "empty") continue;
     const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
     for (let i = 0; i < amount; i++) {
-        const gold = GoldPool.get(region.center.x, region.center.y, depot, i * .1)
+        const gold = GoldPool.get(region.center.x, region.center.y, depot.center, i * .1)
         gold.arrivalCallback = goldArrivedAtBoat;
         gold.arrived = false;
         region.gold.push(gold);
@@ -429,7 +429,7 @@ function handleCollectingGold() {
                 const gold = region.gold[i];
                 gold.updateable = true;
                 gold.drawable = true;
-                gold.target = player;
+                gold.target = player.front;
                 gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
 
                 player.gold.push(gold);
@@ -451,7 +451,7 @@ function handleCollectingGold() {
                 const gold = player.gold[i];
                 const offsetX = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
                 const offsetY = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
-                gold.target = depot;
+                gold.target = depot.center;
                 gold.offset.x = offsetX;
                 gold.offset.y = offsetY;
                 gold.arrived = false;

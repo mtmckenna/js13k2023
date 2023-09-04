@@ -140,7 +140,7 @@ export class GoldPool {
         }
     }
 
-    static get(x: number, y: number, target: ICenterable, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
+    static get(x: number, y: number, target: IPoint, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
         for (let i = 0; i < GoldPool.available.length; i++) {
             const gold = GoldPool.available[i];
             if (!gold.active) {
@@ -192,7 +192,7 @@ export class GoldPool {
     }
 }
 
-function updateGold(t: number) {
+function updateGold(this: IGold, t: number) {
     if (!this.active) return;
     if (!this.updateable) return;
 
@@ -200,7 +200,7 @@ function updateGold(t: number) {
     if (this.updateDelay === -1 || GLOBAL.absoluteTime < this.updateDelay) return;
     const direction = PointPool.get();
 
-    subtractVectors(addVectors(this.target.center, this.offset, direction), this.center, direction)
+    subtractVectors(addVectors(this.target, this.offset, direction), this.center, direction)
 
     normalizeVector(direction, direction);
 
@@ -212,14 +212,14 @@ function updateGold(t: number) {
 
     updatePos(posX, posY, this);
 
-    const distanceIncludingOffsets = Math.hypot(this.target.center.x - this.center.x + this.offset.x, this.target.center.y - this.center.y + this.offset.y);
+    const distanceIncludingOffsets = Math.hypot(this.target.x - this.center.x + this.offset.x, this.target.y - this.center.y + this.offset.y);
     if (distanceIncludingOffsets < 5) {
         if (!this.arrived)  {
             this.arrived = true;
             this.arrivalCallback(this);
         }
 
-        updatePos(this.target.center.x + this.offset.x, this.target.center.y + this.offset.y, this);
+        updatePos(this.target.x + this.offset.x, this.target.y + this.offset.y, this);
     }
 
     PointPool.release(direction);
