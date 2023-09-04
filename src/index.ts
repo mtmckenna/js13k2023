@@ -325,10 +325,28 @@ function handleEnemiesCollidingWithPlayer() {
             player.life -= 1 * player.armorUpgrade;
             player.lastDamagedTime = GLOBAL.time;
             playHitPlayerSound();
-            if (player.life <= 0) {
+
+            for (let i = 0; i < 10; i++) {
+                const b = BulletPool.get(player.center.x + randomFloat(-player.size.x/2, player.size.x/2), player.center.y + randomFloat(-player.size.y/2,player.size.y/2));
+                b.makeParticle();
+                b.color = "#663931";
+            }
+
+            if (player.life <= 0 && player.active) {
                 player.life = 0;
                 player.active = false;
-                if (!UI_STATE.restartMenuVisible) showRestartMenu();
+
+                for (let i = 0; i < 100; i++) {
+                    const b = BulletPool.get(player.center.x + randomFloat(-player.size.x/2, player.size.x/2), player.center.y + randomFloat(-player.size.y/2,player.size.y/2));
+                    b.makeParticle();
+                    b.color = "#663931";
+                }
+
+                if (!UI_STATE.restartMenuVisible) {
+                    setTimeout(() => {
+                        showRestartMenu();
+                    }, 1000);
+                }
             }
 
             camera.screenShake.active = true;
