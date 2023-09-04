@@ -183,8 +183,6 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
             const enemy = this.grid.getNearestEnemy(this.center)
             if (!enemy) return;
             normalizeVector(subtractVectors(enemy.center, this.center, this.bulletDirection), this.bulletDirection);
-            this.bulletDirection.x += this.vel.x;
-            this.bulletDirection.y += this.vel.y;
             normalizeVector(this.bulletDirection, this.bulletDirection); // Re-normalize after adjustments
             const dotProduct = dot(this.bulletDirection, this.direction);
             shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);

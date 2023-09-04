@@ -4,7 +4,7 @@ import { IEdge, IGridCell, IPoint, IPositionable, IRegion, IQueueItem} from "./i
 import Enemy from "./enemy";
 import Road from "./road";
 
-import {getCos, getSin, squaredDistance} from "./math";
+import {distance, getCos, getSin, squaredDistance} from "./math";
 import {drawPixels} from "./game_objects";
 import {PointPool} from "./pools";
 
@@ -168,7 +168,6 @@ export default class Grid {
         neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: Set<number> = new Set();
-        // const queue: IQueueItem[] = [{cellIndex: startCellIndex, depth: 0}];
         const startQueueItem: IQueueItem = PointPool.get(startCellIndex, 0);
         const queue: IQueueItem[] = [startQueueItem];
 
@@ -176,12 +175,11 @@ export default class Grid {
         let minEnemy: Enemy | null = null;
 
         while (queue.length > 0) {
-            // const {x: currentCellIndex, y: depth} = queue.shift()!;
             const queueItem = queue.shift()!;
             const {x: currentCellIndex, y: depth} = queueItem;
             PointPool.release(queueItem);
 
-            if (depth > 5) break;
+            if (depth > 3) break;
 
             visited.add(currentCellIndex);
             const currentCell = this.cells[currentCellIndex];
@@ -189,9 +187,10 @@ export default class Grid {
             for (let i = 0; i < currentCell.numEnemies; i++) {
                 const enemy = currentCell.enemies[i];
                 if (enemy) {
-                    const distance = squaredDistance(pos, enemy.center);
-                    if (distance < minDistance) {
-                        minDistance = distance;
+                    // const distance = squaredDistance(pos, enemy.center);
+                    const d = distance(pos, enemy.center)
+                    if (d < minDistance) {
+                        minDistance = d;
                         minEnemy = enemy;
                     }
                 }
@@ -215,6 +214,20 @@ export default class Grid {
         ctx.imageSmoothingEnabled = false;
         for (const road of this.roads) {
             road.draw(ctx, scale);
+        }
+    }
+
+    drawGrid(ctx: CanvasRenderingContext2D, scale: number = 1) {
+        ctx.imageSmoothingEnabled = false;
+        for (let i = 0; i < this.cells.length; i++) {
+            const cell = this.cells[i];
+            const x = i % this.gridSize.x;
+            const y = Math.floor(i / this.gridSize.x);
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(x * this.cellSize.x * scale, y * this.cellSize.y * scale, this.cellSize.x * scale, this.cellSize.y * scale);
+            ctx.fillStyle = "black";
+            ctx.font = "20px Arial";
+            ctx.fillText(cell.cost.toString(), x * this.cellSize.x * scale, y * this.cellSize.y * scale);
         }
     }
 

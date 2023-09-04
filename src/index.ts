@@ -343,9 +343,9 @@ function handleEnemiesCollidingWithPlayer() {
         const enemy = enemies[i];
         if (!enemy || !enemy.active) continue;
         // continue if enemy last hit player within wait time
-        if (player.lastDamagedTime && (GLOBAL.time - player.lastDamagedTime) < enemy.hitWaitTime) continue;
+        if (player.lastDamagedTime && (GLOBAL.time - player.lastDamagedTime) < player.hitWaitTime) continue;
         if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
-            player.life -= 1 * player.armorUpgrade;
+            player.life -= 2 * player.armorUpgrade;
             player.lastDamagedTime = GLOBAL.time;
             playHitPlayerSound();
 
@@ -516,6 +516,8 @@ function draw(t: number) {
         drawArrowToBuilding(offscreenBufferCtx, player.center, regions[depotIndex]);
     }
 
+    grid.drawGrid(offscreenBufferCtx, GRID_SCALE);
+
     ctx.drawImage(roadCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
     ctx.drawImage(regionsCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
     ctx.drawImage(offscreenCanvas, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
@@ -528,6 +530,8 @@ function draw(t: number) {
     // const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
     // const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
     clock.textContent = formattedTime(GLOBAL.timeLeft);
+
+
 }
 
 function formattedTime(time: number): string {

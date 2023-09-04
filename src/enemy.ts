@@ -61,7 +61,7 @@ export default class Enemy implements IPositionable {
     radius: number = 8 * PIXEL_SIZE/2;
     lastDamagedTime: number = 0;
     lastFlashedTime: number = 0;
-    hitWaitTime: number = 1;
+    hitWaitTime: number = .5;
     life: number = 100;
     visible: boolean = true;
 
