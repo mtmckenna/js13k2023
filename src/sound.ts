@@ -1,7 +1,7 @@
 let audioCtx: AudioContext = null;
 let ready = false;
-let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer, coinPickupBuffer: AudioBuffer, fanfareBuffer: AudioBuffer;
-function createContext() {
+let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer, coinPickupBuffer: AudioBuffer, fanfareBuffer: AudioBuffer, sadFanfareBuffer: AudioBuffer;
+export function createAudioContext() {
     if (ready) return;
     audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
 
@@ -10,11 +10,12 @@ function createContext() {
     hitEnemyBuffer = generateEnemyHitSoundBuffer();
     coinPickupBuffer = generateCoinPickupSoundBuffer();
     fanfareBuffer = generateFanfareSoundBuffer();
+    sadFanfareBuffer = generateSadFanfareSoundBuffer();
     ready = true;
 }
-window.addEventListener('touchstart', createContext);
-window.addEventListener('mousedown', createContext);
-window.addEventListener('keydown', createContext);
+// window.addEventListener('touchstart', createContext);
+// window.addEventListener('mousedown', createContext);
+// window.addEventListener('keydown', createContext);
 
 
 const SOUNDS = {
@@ -121,6 +122,33 @@ function generateFanfareSoundBuffer(): AudioBuffer {
     return buffer;
 }
 
+function generateSadFanfareSoundBuffer(): AudioBuffer {
+    const duration = 1.2; // total duration of the sound
+    const frameCount = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, frameCount, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    const frequencies = [523.25, 493.88, 466.16, 440.00, 415.30, 391.99, 369.99]; // C5, B4, A#4, A4, G#4, G4, F#4
+    const noteDurations = [0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.6]; // durations of each note
+
+    let currentTime = 0;
+    let currentNote = 0;
+
+    for (let i = 0; i < frameCount; i++) {
+        const time = i / audioCtx.sampleRate;
+        if (time > currentTime + noteDurations[currentNote]) {
+            currentTime += noteDurations[currentNote];
+            currentNote = (currentNote + 1) % frequencies.length;
+        }
+
+        const amplitude = Math.exp(-0.5 * (time - currentTime));
+        const freq = frequencies[currentNote];
+        data[i] = amplitude * Math.sin(freq * Math.PI * 2 * (time - currentTime));
+    }
+
+    return buffer;
+}
+
 
 
 function canPlaySound(soundId) {
@@ -158,4 +186,8 @@ export function playCoinPickupSound() {
 
 export function playFanfareSound() {
     playBuffer(fanfareBuffer, SOUNDS.COIN_PICKUP);
+}
+
+export function playSadFanfareSound() {
+    playBuffer(sadFanfareBuffer, SOUNDS.COIN_PICKUP);
 }

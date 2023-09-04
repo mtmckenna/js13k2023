@@ -25,7 +25,13 @@ import {BulletPool, GoldPool, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
 import {GLOBAL} from "./constants";
-import {playCannonballHitEnemySound, playCoinPickupSound, playFanfareSound, playHitPlayerSound} from "./sound";
+import {
+    createAudioContext,
+    playCannonballHitEnemySound,
+    playCoinPickupSound,
+    playFanfareSound,
+    playHitPlayerSound, playSadFanfareSound
+} from "./sound";
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -712,6 +718,7 @@ function hideStartMenu() {
     startMenu.style.pointerEvents = "none";
     startMenu.classList.add("hide");
     started = true;
+    createAudioContext()
     playFanfareSound();
 }
 
