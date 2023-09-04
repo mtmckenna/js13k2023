@@ -132,7 +132,7 @@ export default class Grid {
             const {x: currentCellIndex, y: depth} = queueItem;
             PointPool.release(queueItem);
 
-            if (depth > 5) break;
+            if (depth > 2) break;
 
             visited.add(currentCellIndex);
             const currentCell = this.cells[currentCellIndex];
