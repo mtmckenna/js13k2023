@@ -1,5 +1,6 @@
 import {IPoint} from "./interfaces";
 import Boat from "./boat";
+import { clamp} from "./math";
 
 export default class Camera {
     pos: IPoint;  // The position of the camera.
@@ -16,6 +17,7 @@ export default class Camera {
         active: boolean;
     }
     offset: IPoint = {x: 0, y: 0};
+    viewableBounds: { topLeft: IPoint, bottomRight: IPoint };
 
     constructor(pos: IPoint, maxZoom: number, minZoom: number, canvasSize: IPoint, worldSize: IPoint, scale:number) {
         this.pos = pos;
@@ -31,6 +33,7 @@ export default class Camera {
             elapsed: 0,
             active: false,
         }
+        this.viewableBounds = { topLeft: {x: 0, y: 0}, bottomRight: {x: 0, y: 0}};
     }
 
     setOffset(x: number, y: number) {
@@ -43,22 +46,22 @@ export default class Camera {
         this.offset.y = 0;
     }
 
-    // Clamp the value between the min and max.
-    clamp(value: number, min: number, max: number) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    centerOn(target: Boat, deltaTime: number) {
+    centerOn(target: Boat) {
         const sign = target.speed > 1 ? -1 : 1;
-        this.currentZoom = this.clamp(this.currentZoom + sign * .01, this.minZoom, this.maxZoom);
+        this.currentZoom = clamp(this.currentZoom + sign * .01, this.minZoom, this.maxZoom);
 
         let targetX = target.center.x - this.canvasSize.x / 2 / this.currentZoom;
         let targetY = target.center.y - this.canvasSize.y / 2 / this.currentZoom;
 
-        targetX = this.clamp(targetX, 0, this.worldSize.x - this.canvasSize.x / this.currentZoom);
-        targetY = this.clamp(targetY, 0, this.worldSize.y - this.canvasSize.y / this.currentZoom);
+        targetX = clamp(targetX, 0, this.worldSize.x - this.canvasSize.x / this.currentZoom);
+        targetY = clamp(targetY, 0, this.worldSize.y - this.canvasSize.y / this.currentZoom);
 
         this.pos.x = targetX + this.offset.x;
         this.pos.y = targetY + this.offset.y;
+
+        this.viewableBounds.topLeft.x = this.pos.x;
+        this.viewableBounds.topLeft.y = this.pos.y;
+        this.viewableBounds.bottomRight.x = (this.pos.x + this.canvasSize.x / this.currentZoom);
+        this.viewableBounds.bottomRight.y = (this.pos.y + this.canvasSize.y / this.currentZoom);
     }
 }

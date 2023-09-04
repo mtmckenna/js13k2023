@@ -44,7 +44,6 @@ export function normalizeVector(vector: IPoint, out: IPoint): IPoint {
     out.y = y;
     return out;
 }
-
 export function vectorFromEdge(edge: IEdge, out: IVector): IVector {
     const x= edge.v1.x - edge.v0.x;
     const y = edge.v1.y - edge.v0.y;

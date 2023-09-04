@@ -163,13 +163,36 @@ grid.setRoads(roads);
 const depot: IRegion = regions[depotIndex];
 depot.type = "depot";
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
+camera.centerOn(player);
 player.angle = randomRoad.angle + Math.PI / 2;
 
 // Generate enemies
 for (let i = 0; i < NUM_ENEMIES; i++) {
-    const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
+    const pos = generateRandomPositionOutsideView(camera.viewableBounds, grid.gameSize);
+    // const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
+    const enemy = new Enemy({x: pos.x, y: pos.y}, grid, player)
     enemies.push(enemy);
     grid.addToEnemyMap(enemy);
+}
+
+function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
+    let x: number, y: number;
+    let i = 0;
+
+    do {
+        x = Math.random() * worldSize.x;
+        y = Math.random() * worldSize.y;
+        i++;
+        if (i > 100) {
+            console.log("failed to generate random position outside viewable bounds");
+            break;
+        }
+    } while (
+        (x > viewableBounds.topLeft.x && x < viewableBounds.bottomRight.x) ||
+        (y > viewableBounds.topLeft.y && y < viewableBounds.bottomRight.y)
+        );
+
+    return { x, y };
 }
 
 // Generate gold for each region based on how far away it is from the depot (further away is more gold)
@@ -298,7 +321,7 @@ function update(t: number) {
 
     handleCollectingGold();
 
-    camera.centerOn(player, FIXED_TIMESTEP);
+    camera.centerOn(player);
 
     // Update screen shake
     if (camera.screenShake.active) {
