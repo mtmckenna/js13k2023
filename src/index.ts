@@ -110,6 +110,7 @@ const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
 const allGold: IGold[] = [];
+let goldRemaining = 0;
 let previousXMarkRegionIndices: number[] = [];
 let selectedUpgrade: string = null;
 let desiredXMarkDistance = 0;
@@ -747,10 +748,15 @@ function showUpgradeMenu() {
     upgradeMenu.style.pointerEvents = "auto";
     upgradeMenu.style.removeProperty("opacity");
     UI_STATE.upgradeMenuVisible = true;
+    goldRemaining = depot.gold.length;
 
     const currentMenuItems = document.querySelectorAll('.upgrade-item');
     currentMenuItems.forEach(item => {
         item.removeEventListener('click', handleMenuItemClick);
+    });
+
+    currentMenuItems.forEach(item => {
+        item.remove();
     });
 
     for (const upgrade of upgrades) {
@@ -764,12 +770,14 @@ function showUpgradeMenu() {
 
     }
 
-    const menuItems = document.querySelectorAll('.upgrade-item');
+    const menuItems = document.querySelectorAll('.upgrade-item') as NodeListOf<HTMLElement>;
     menuItems.forEach(item => {
         item.addEventListener('click', handleMenuItemClick);
     });
 
-    goldRemainingElement.textContent = `Remaining gold: ${depot.gold.length.toString()}`;
+    goldRemainingElement.textContent = `Remaining gold: ${goldRemaining}`;
+    disableMenuItems(menuItems);
+
 }
 
 function showStartMenu() {
@@ -810,30 +818,49 @@ function hideUpgradeMenu() {
 
 function handleMenuItemClick(e: Event) {
     const element = (e.target as HTMLElement).parentNode as HTMLElement;
+    const disabled = element.classList.contains('disabled');
     const isSelected = element.getAttribute('data-selected') === 'true';
+
+    if (disabled && !isSelected) return;
+
     element.setAttribute('data-selected', (!isSelected).toString());
     element.style.backgroundColor = isSelected ? '' : '#F0E68C';
     element.style.color = isSelected ? '' : '#000';
     const upgrade = element.getAttribute('data-upgrade');
     selectedUpgrade = upgrade;
 
-    const menuItems = document.querySelectorAll('.upgrade-item');
+    const menuItems = document.querySelectorAll('.upgrade-item') as NodeListOf<HTMLElement>;
 
+    goldRemaining = depot.gold.length;
     upgradeButton.disabled = true;
     for (let i = 0; i < menuItems.length; i++) {
         const item = menuItems[i];
         const isSelected = item.getAttribute('data-selected') === 'true';
         const cost = parseInt(item.getAttribute('data-cash'));
-        // remove gold from depot based on the cost
         if (isSelected) {
-            depot.gold.length -= cost;
+            goldRemaining -= cost;
             upgradeButton.disabled = false;
         }
     }
 
+    disableMenuItems(menuItems);
 
+    goldRemainingElement.textContent = `Remaining gold: ${goldRemaining}`;
 }
 
+function disableMenuItems(menuItems: NodeListOf<HTMLElement>) {
+    for (let i = 0; i < menuItems.length; i++) {
+        const item = menuItems[i] as HTMLElement;
+        const cost = parseInt(item.getAttribute('data-cash'));
+        const isSelected = menuItems[i].getAttribute('data-selected') === 'true';
+
+        if (cost > goldRemaining && !isSelected) {
+            item.classList.add('disabled');
+        } else {
+            item.classList.remove('disabled');
+        }
+    }
+}
 function addUpgrade(upgrade: string) {
     if (upgrade === "Forward Cannon") {
         player.forwardGun = true;
@@ -853,10 +880,15 @@ showStartMenu();
 window.addEventListener('resize', resizeCanvas);
 upgradeButton.addEventListener("click", () => {
     hideUpgradeMenu();
+    depot.gold.length = goldRemaining;
+    depot.gold.forEach(g => {
+       g.drawable = false;
+    });
     desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
     addUpgrade(selectedUpgrade);
     selectedUpgrade = null;
+    console.log(depot.gold.length);
 });
 
 document.querySelector("#try-again-btn").addEventListener("click", () => {

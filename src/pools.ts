@@ -139,11 +139,15 @@ function updateIndividualGold(this: IGold, t: number) {
 
     normalizeVector(direction, direction);
 
-    const SPEED = 4;
-    const posX = this.pos.x + direction.x * SPEED;
-    const posY = this.pos.y + direction.y * SPEED;
+    let posX = this.target.x + this.offset.x;
+    let posY = this.target.y + this.offset.y;
 
-    if (!this.arrived) this.angle += .01 % 2* Math.PI;
+    if (!this.arrived) {
+        const SPEED = 4;
+        posX = this.pos.x + direction.x * SPEED;
+        posY = this.pos.y + direction.y * SPEED;
+        this.angle += .01 % 2* Math.PI;
+    }
 
     updatePos(posX, posY, this);
 
