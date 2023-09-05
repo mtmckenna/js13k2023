@@ -109,8 +109,7 @@ export class BulletPool {
     }
 }
 
-
-const GOLD_PIXELS = [
+export const GOLD_PIXELS = [
     [0, 1, 1, 0],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -128,68 +127,7 @@ goldCanvas.width = GOLD_PIXELS[0].length * PIXEL_SIZE;
 goldCanvas.height = GOLD_PIXELS.length * PIXEL_SIZE;
 drawPixels(goldCtx, GOLD_PIXELS, GOLD_PIXELS_COLOR_MAP, PIXEL_SIZE);
 drawPixels(goldCtx2, GOLD_PIXELS, GOLD_PIXELS_COLOR_MAP2, PIXEL_SIZE);
-export class GoldPool {
-    public static available: IGold[] = [];
-
-    static initialize(count: number): void {
-        for (let i = 0; i < count; i++) {
-            GoldPool.available.push(createGold());
-        }
-    }
-
-    static get(x: number, y: number, target: IPoint, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
-        for (let i = 0; i < GoldPool.available.length; i++) {
-            const gold = GoldPool.available[i];
-            if (!gold.active) {
-                gold.active = true;
-                updatePos(x, y, gold);
-                gold.target = target;
-                gold.offset.x = offsetX;
-                gold.offset.y = offsetY;
-                gold.updateDelay = updateDelay;
-                return gold;
-            }
-        }
-
-        const gold = createGold();
-        updatePos(x, y, gold);
-        gold.target = target;
-        gold.offset.x = offsetX;
-        gold.offset.y = offsetY;
-        gold.updateDelay = updateDelay;
-        GoldPool.available.push(gold);
-        console.warn("out of gold.");
-        return gold;
-    }
-
-    static update(t: number) {
-        // update gold and deactivate them if they are out of bounds and reset their lifeTime and set them to inactive
-        for (let i = 0; i < GoldPool.available.length; i++) {
-            const gold = GoldPool.available[i];
-            if (gold.active) {
-                gold.update(t);
-            }
-        }
-    }
-
-    static draw(ctx: CanvasRenderingContext2D, scale: number = 1) {
-        for (let i = 0; i < GoldPool.available.length; i++) {
-            const gold = GoldPool.available[i];
-            if (!gold.active) continue;
-            if (!gold.drawable) continue;
-            const height = GOLD_PIXELS.length * PIXEL_SIZE;
-            const width = GOLD_PIXELS[0].length * PIXEL_SIZE;
-            ctx.save();
-            ctx.translate(gold.center.x * scale, gold.center.y * scale);
-            ctx.rotate(gold.angle);
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(gold.pixelCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
-            ctx.restore();
-        }
-    }
-}
-
-function updateGold(this: IGold, t: number) {
+function updateIndividualGold(this: IGold, t: number) {
     if (!this.active) return;
     if (!this.updateable) return;
 
@@ -222,10 +160,16 @@ function updateGold(this: IGold, t: number) {
     PointPool.release(direction);
 }
 
-function createGold(): IGold {
+export function createGold(x: number, y: number, target: IPoint, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
     const canvas = Math.random() > .5 ? goldCanvas : goldCanvas2;
-    const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
+    const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateIndividualGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
+    gold.active = true;
+    updatePos(x, y, gold);
+    gold.target = target;
+    gold.offset.x = offsetX;
+    gold.offset.y = offsetY;
+    gold.updateDelay = updateDelay;
+
     return gold;
 }
 PointPool.initialize(5000);
-GoldPool.initialize(5000);

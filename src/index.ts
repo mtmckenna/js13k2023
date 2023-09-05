@@ -21,10 +21,10 @@ import Enemy from "./enemy";
 
 import Road, {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
-import {BulletPool, GoldPool, PointPool} from "./pools";
+import {BulletPool, createGold, GOLD_PIXELS, PointPool} from "./pools";
 import Boat from "./boat";
 import {updatePos} from "./game_objects";
-import {GLOBAL} from "./constants";
+import {GLOBAL, PIXEL_SIZE} from "./constants";
 import {
     createAudioContext,
     playCannonballHitEnemySound,
@@ -104,6 +104,7 @@ const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
+const allGold: IGold[] = [];
 let lastXMarkRegion: IRegion = null;
 let selectedUpgrade: string = null;
 let desiredXMarkDistance = 0;
@@ -208,10 +209,12 @@ for (const region of regions) {
     if (region.type !== "empty") continue;
     const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
     for (let i = 0; i < amount; i++) {
-        const gold = GoldPool.get(region.center.x, region.center.y, depot.center, i * .1)
+        // const gold = GoldPool.get(region.center.x, region.center.y, depot.center, i * .1)
+        const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
         gold.arrivalCallback = goldArrivedAtBoat;
         gold.arrived = false;
         region.gold.push(gold);
+        allGold.push(gold);
     }
 }
 
@@ -273,7 +276,7 @@ function tick(t: number) {
 
 function update(t: number) {
     GLOBAL.absoluteTime += t;
-    GoldPool.update(t);
+    updateAllGold(t);
 
     if (!started) return;
     if (UI_STATE.transferringCoins) return;
@@ -474,6 +477,29 @@ function handleCollectingGold() {
     }
 }
 
+function updateAllGold(t: number) {
+    for (let i = 0; i < allGold.length; i++) {
+        const gold = allGold[i];
+        if (gold.active) gold.update(t);
+    }
+}
+
+function drawAllGold(ctx: CanvasRenderingContext2D, scale: number = 1) {
+    for (let i = 0; i < allGold.length; i++) {
+        const gold = allGold[i];
+        if (!gold.active) continue;
+        if (!gold.drawable) continue;
+        const height = GOLD_PIXELS.length * PIXEL_SIZE;
+        const width = GOLD_PIXELS[0].length * PIXEL_SIZE;
+        ctx.save();
+        ctx.translate(gold.center.x * scale, gold.center.y * scale);
+        ctx.rotate(gold.angle);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(gold.pixelCanvas, 0, 0, width, height, -width / 2 * scale, -height / 2 * scale, width * scale, height * scale);
+        ctx.restore();
+    }
+}
+
 function draw(t: number) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = false;
@@ -513,7 +539,7 @@ function draw(t: number) {
     if (player.active) player.draw(offscreenBufferCtx, GRID_SCALE);
 
     BulletPool.draw(offscreenBufferCtx, GRID_SCALE);
-    GoldPool.draw(offscreenBufferCtx, GRID_SCALE);
+    drawAllGold(offscreenBufferCtx, GRID_SCALE);
     grid.drawChest(offscreenBufferCtx, depot, GRID_SCALE);
 
     for (const enemy of enemies) enemy.draw(offscreenBufferCtx, GRID_SCALE, t);
@@ -720,6 +746,7 @@ function hideStartMenu() {
     started = true;
     createAudioContext()
     playFanfareSound();
+    // showUpgradeMenu();
 }
 
 
