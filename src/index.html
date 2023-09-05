@@ -43,46 +43,58 @@
         font-size: 24px;
       }
 
-      .menu-list {
-        list-style-type: none;
-        padding: 0;
+      #menu-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 5px;
+
       }
 
-      .menu-list li {
-        display: block;
-        border-bottom: 2px solid #F39C12;
-        padding: 10px;
+      .table-wrapper {
+        /*overflow: auto;*/
+        /*max-height: 200px;*/
+        overflow: auto;
+        flex-grow: 1;
+      }
+
+      #gold-remaining {
+        text-align: center;
+        font-weight: bold;
+      }
+
+      td {
+        border-width: 1px;
+        border-style: solid;
+        border-color: #F39C12;
+        margin: 5px;
+        height: 30px;
         cursor: pointer;
       }
 
-      .menu-list li[data-selected="true"] {
-        background-color: #F39C12;
-        color: #000;
-      }
-
       .menu-container {
-        width: 80%;
+        width: 90%;
         max-width: 500px;
-        margin: 50px auto;
         background-color: rgba(255, 255, 255, 0.9);
-        padding: 20px;
+        padding: 5px;
         border: 3px solid #F39C12;
         position: absolute;
         opacity: 0;            /* hidden */
-        transform: translateY(30px);   /* pushed downward */
+        display: flex;
+        flex-direction: column;
+        max-height: 90%;
       }
 
       .menu-btn {
         display: block;
         width: 100%;
-        padding: 10px;
+        padding: 5px;
         background-color: #F0E68C;
         color: #000;
         border: 2px solid #F39C12;
         border-radius: 0;
         cursor: pointer;
         font-size: 20px;
-        margin-top: 20px;
+        margin-top: 10px;
       }
 
       .menu-btn:hover {
@@ -136,16 +148,30 @@
         cursor: pointer;
       }
 
+      .menu-btn:disabled {
+        opacity: .5;
+      }
+
+      .menu-btn:disabled:hover {
+        background-color: #F0E68C;
+        border-color: #F39C12;
+        cursor: not-allowed;
+      }
+
     </style>
   </head>
   <body>
 
+  <div id="clock">05:00</div>
+
   <div id="upgrade-menu" class="menu-container" style="pointer-events: none">
-    <h2>Select Upgrade</h2>
-    <ul class="menu-list">
-    </ul>
+    <h2 style="margin: 5px">Select Upgrade</h2>
+    <div class="table-wrapper">
+      <table id="menu-table">
+      </table>
+    </div>
     <div>
-      <div>Gold after upgrades: <span id="gold-after-upgrades"></span></div>
+      <div id = "gold-remaining" style="margin-top: 5px"></div>
       <button type="button" class="menu-btn" id="add-upgrade-btn">Add Upgrades</button>
     </div>
   </div>
@@ -162,6 +188,5 @@
     <button type="button" class="menu-btn" id="start-btn">Starrrt plunderin'</button>
   </div>
 
-  <div id="clock">10:00</div>
 
 </html>

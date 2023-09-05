@@ -41,8 +41,12 @@ const restartMenu: HTMLElement = document.querySelector("#restart-menu");
 const startMenu: HTMLElement = document.querySelector("#start-menu");
 const amountGold: HTMLElement = document.querySelector("#amount-gold");
 const surviveElement: HTMLElement = document.querySelector("#survive");
+const goldRemainingElement: HTMLElement = document.querySelector("#gold-remaining");
 const tryAgain = document.querySelector("#try-again");
 const clock = document.querySelector("#clock");
+const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
+const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
+
 
 canvas.id = "game";
 canvas.width = 1000
@@ -63,12 +67,13 @@ let lastTime = performance.now();
 const roadCollisions: IEdge[] = []
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
-let goldCount = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 const MAX_TIME = 60 * 5;
+// const MAX_TIME = 30;
 let started = false;
 // const MAX_TIME = 5;
 GLOBAL.time = 0;
+GLOBAL.timeLeft = MAX_TIME;
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
     roadCollisions[i] = {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}};
@@ -105,7 +110,7 @@ const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
 let enemies: Enemy[] = [];
 const allGold: IGold[] = [];
-let lastXMarkRegion: IRegion = null;
+let previousXMarkRegionIndices: number[] = [];
 let selectedUpgrade: string = null;
 let desiredXMarkDistance = 0;
 const MAX_X_MARK_DISTANCE = GAME_WIDTH / 2;
@@ -152,10 +157,29 @@ const upgrades: {name: string, cost: number}[] = [
     { name: "Sails", cost: 100 },
     { name: "Armor", cost: 100 },
     { name: "Forward Cannon", cost: 100 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+    { name: "Questionable Rum", cost: 1 },
+
+
+
 ];
 
 const depotIndex = Math.floor(regions.length/2);
-const xMarkIndices: number [] = [];
+let xMarkIndices: number [] = [];
 const DROP_OFF_RADIUS = ROAD_WIDTH / 2;
 let circleSize = DROP_OFF_RADIUS * .9 * GRID_SCALE; // Starting size
 let sizeDirection = 1; // 1 for increasing, -1 for decreasing
@@ -170,6 +194,7 @@ grid.setRoads(roads);
 
 const depot: IRegion = regions[depotIndex];
 depot.type = "depot";
+
 updatePos(depot.dropOffPoint.x, depot.dropOffPoint.y, player);
 camera.centerOn(player);
 player.angle = randomRoad.angle + Math.PI / 2;
@@ -425,31 +450,34 @@ function handleBulletsCollidingWithEnemies() {
 
 function handleCollectingGold() {
     if (xMarkIndices.length > 0) {
-        const {x: x1, y: y1} = player.center;
-        const {radius: r1} = player;
-        const region = regions[xMarkIndices[0]];
-        const {x: x2, y: y2} = region.dropOffPoint;
-        const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
+        previousXMarkRegionIndices.length = 0;
+        for (let i = 0; i < xMarkIndices.length; i++) {
+            const {x: x1, y: y1} = player.center;
+            const {radius: r1} = player;
+            const region = regions[xMarkIndices[i]];
+            const {x: x2, y: y2} = region.dropOffPoint;
+            const inDropOffRadius = circlesCollide(x1, y1, r1, x2, y2, DROP_OFF_RADIUS);
 
-        if (inDropOffRadius && player.speed < 1) {
-            lastXMarkRegion =  regions[xMarkIndices.shift()];
-            goldCount += region.gold.length;
-            player.gold.length = 0;
-            for (let i = 0; i < region.gold.length; i++) {
-                // const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
-                const gold = region.gold[i];
-                gold.updateable = true;
-                gold.drawable = true;
-                gold.target = player.front;
-                gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
+            if (inDropOffRadius && player.speed < 1) {
+                previousXMarkRegionIndices.push(xMarkIndices[i]);
+                player.gold.length = 0;
+                for (let i = 0; i < region.gold.length; i++) {
+                    // const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
+                    const gold = region.gold[i];
+                    gold.updateable = true;
+                    gold.drawable = true;
+                    gold.target = player.front;
+                    gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
 
-                player.gold.push(gold);
+                    player.gold.push(gold);
+                }
+
+                UI_STATE.transferringCoins = true;
+                region.gold.length = 0;
+                region.type = "plundered";
             }
-
-            UI_STATE.transferringCoins = true;
-            region.gold.length = 0;
-            region.type = "plundered";
         }
+        xMarkIndices = xMarkIndices.filter(i => previousXMarkRegionIndices.indexOf(i) === -1);
     } else {
         const {x: x1, y: y1} = player.center;
         const {radius: r1} = player;
@@ -506,7 +534,12 @@ function draw(t: number) {
     offscreenBufferCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
     offscreenBufferCtx.imageSmoothingEnabled = false;
 
-    if (lastXMarkRegion) grid.drawRegion(regionsCtx, lastXMarkRegion, GRID_SCALE);
+    for (let i = 0; i < previousXMarkRegionIndices.length; i++) {
+        const region = regions[previousXMarkRegionIndices[i]];
+        grid.drawRegion(regionsCtx, region, GRID_SCALE);
+    }
+    previousXMarkRegionIndices.length = 0;
+    // if (previousXMarkRegionIndices) grid.drawRegion(regionsCtx, previousXMarkRegionIndices, GRID_SCALE);
 
     const sourceX = camera.pos.x * GRID_SCALE;
     const sourceY = camera.pos.y * GRID_SCALE;
@@ -522,19 +555,17 @@ function draw(t: number) {
     circleSize += SIZE_SPEED * sizeDirection;
     if (circleSize > SIZE_MAX || circleSize < SIZE_MIN) sizeDirection *= -1; // Reverse direction
 
-    offscreenBufferCtx.fillStyle = "#F0E68C";
     let region = regions[depotIndex];
-    if (xMarkIndices.length > 0) {
+    for (let i = 0; i < xMarkIndices.length; i++) {
         offscreenBufferCtx.fillStyle = "red";
-        region = regions[xMarkIndices[0]];
+        region = regions[xMarkIndices[i]];
         grid.drawX(offscreenBufferCtx, region, GRID_SCALE);
+        drawDropOffPoint(offscreenBufferCtx, region, "#f00", circleSize);
     }
 
-    offscreenBufferCtx.globalAlpha = .5; // Apply alpha transparency
-    offscreenBufferCtx.beginPath();
-    offscreenBufferCtx.arc(region.dropOffPoint.x * GRID_SCALE, region.dropOffPoint.y * GRID_SCALE, circleSize, 0, 2 * Math.PI);
-    offscreenBufferCtx.fill();
-    offscreenBufferCtx.globalAlpha = 1; // Reset alpha
+    if (xMarkIndices.length === 0) {
+        drawDropOffPoint(offscreenBufferCtx, region, "#F0E68C", circleSize);
+    }
 
     if (player.active) player.draw(offscreenBufferCtx, GRID_SCALE);
 
@@ -542,11 +573,15 @@ function draw(t: number) {
     drawAllGold(offscreenBufferCtx, GRID_SCALE);
     grid.drawChest(offscreenBufferCtx, depot, GRID_SCALE);
 
-    for (const enemy of enemies) enemy.draw(offscreenBufferCtx, GRID_SCALE, t);
-
+    for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        enemy.draw(offscreenBufferCtx, GRID_SCALE, t)
+    }
 
     if (xMarkIndices.length > 0) {
-        drawArrowToBuilding(offscreenBufferCtx, player.center, regions[xMarkIndices[0]]);
+        for (let i = 0; i < xMarkIndices.length; i++) {
+            drawArrowToBuilding(offscreenBufferCtx, player.center, regions[xMarkIndices[i]]);
+        }
     } else {
         drawArrowToBuilding(offscreenBufferCtx, player.center, regions[depotIndex]);
     }
@@ -565,6 +600,15 @@ function draw(t: number) {
     clock.textContent = formattedTime(GLOBAL.timeLeft);
 
 
+}
+
+function drawDropOffPoint(ctx: CanvasRenderingContext2D, region: IRegion, color: string, radius: number) {
+    ctx.fillStyle = color;
+    ctx.globalAlpha = .5; // Apply alpha transparency
+    ctx.beginPath();
+    ctx.arc(region.dropOffPoint.x * GRID_SCALE, region.dropOffPoint.y * GRID_SCALE, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.globalAlpha = 1; // Reset alpha
 }
 
 function formattedTime(time: number): string {
@@ -691,45 +735,41 @@ function showRestartMenu() {
     }
 
     surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
-    amountGold.textContent = `You collected ${goldCount.toString()} gold!`;
+    amountGold.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
 
     UI_STATE.restartMenuVisible = true;
 }
 
 function showUpgradeMenu() {
+    upgradeButton.disabled = true;
     upgradeMenu.classList.remove("hide");
     upgradeMenu.classList.add("show");
     upgradeMenu.style.pointerEvents = "auto";
     upgradeMenu.style.removeProperty("opacity");
     UI_STATE.upgradeMenuVisible = true;
 
-    const currentMenuItems = document.querySelectorAll('.menu-item');
+    const currentMenuItems = document.querySelectorAll('.upgrade-item');
     currentMenuItems.forEach(item => {
         item.removeEventListener('click', handleMenuItemClick);
     });
 
-    // remove existing menu items from DOM and add upgrades
-    const list = document.querySelector('.menu-list');
-    list.innerHTML = '';
-
     for (const upgrade of upgrades) {
-        const li = document.createElement('li');
-        li.classList.add('menu-item');
-        li.setAttribute('data-selected', 'false');
-        // set cash amount in data attribute
-        li.setAttribute('data-cash', upgrade.cost.toString());
-        // set upgrade name in data attribute
-        li.setAttribute('data-upgrade', upgrade.name);
-        li.innerHTML = `${upgrade.name} - $${upgrade.cost}`;
-        list.appendChild(li);
+        const tr = document.createElement('tr');
+        tr.classList.add('upgrade-item');
+        tr.setAttribute('data-selected', 'false');
+        tr.setAttribute('data-cash', upgrade.cost.toString());
+        tr.setAttribute('data-upgrade', upgrade.name);
+        tr.innerHTML = `<td>${upgrade.name}</td><td>${upgrade.cost} Gold</td>`;
+        upgradeTable.appendChild(tr);
+
     }
 
-
-    const menuItems = document.querySelectorAll('.menu-item');
+    const menuItems = document.querySelectorAll('.upgrade-item');
     menuItems.forEach(item => {
         item.addEventListener('click', handleMenuItemClick);
     });
 
+    goldRemainingElement.textContent = `Remaining gold: ${depot.gold.length.toString()}`;
 }
 
 function showStartMenu() {
@@ -746,7 +786,6 @@ function hideStartMenu() {
     started = true;
     createAudioContext()
     playFanfareSound();
-    // showUpgradeMenu();
 }
 
 
@@ -762,7 +801,6 @@ function hideUpgradeMenu() {
         const isSelected = item.getAttribute('data-selected') === 'true';
         if (isSelected) {
             const upgrade = item.getAttribute('data-upgrade');
-            const cash = parseInt(item.getAttribute('data-cash'));
             player.upgrades.push(upgrade);
         }
 
@@ -771,13 +809,29 @@ function hideUpgradeMenu() {
 }
 
 function handleMenuItemClick(e: Event) {
-    const element = e.target as HTMLElement;
+    const element = (e.target as HTMLElement).parentNode as HTMLElement;
     const isSelected = element.getAttribute('data-selected') === 'true';
     element.setAttribute('data-selected', (!isSelected).toString());
     element.style.backgroundColor = isSelected ? '' : '#F0E68C';
     element.style.color = isSelected ? '' : '#000';
     const upgrade = element.getAttribute('data-upgrade');
     selectedUpgrade = upgrade;
+
+    const menuItems = document.querySelectorAll('.upgrade-item');
+
+    upgradeButton.disabled = true;
+    for (let i = 0; i < menuItems.length; i++) {
+        const item = menuItems[i];
+        const isSelected = item.getAttribute('data-selected') === 'true';
+        const cost = parseInt(item.getAttribute('data-cash'));
+        // remove gold from depot based on the cost
+        if (isSelected) {
+            depot.gold.length -= cost;
+            upgradeButton.disabled = false;
+        }
+    }
+
+
 }
 
 function addUpgrade(upgrade: string) {
@@ -797,7 +851,7 @@ generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(ROAD_WIDTH*3);
 requestAnimationFrame(tick);
 showStartMenu();
 window.addEventListener('resize', resizeCanvas);
-document.querySelector("#add-upgrade-btn").addEventListener("click", () => {
+upgradeButton.addEventListener("click", () => {
     hideUpgradeMenu();
     desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
