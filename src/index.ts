@@ -46,7 +46,7 @@ const tryAgain = document.querySelector("#try-again");
 const clock = document.querySelector("#clock");
 const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
-
+const amountRum: HTMLTableElement = document.querySelector("#amount-rum");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -68,6 +68,7 @@ const roadCollisions: IEdge[] = []
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
+let numRum = 0;
 const MAX_TIME = 60 * 5;
 // const MAX_TIME = 30;
 let started = false;
@@ -155,29 +156,13 @@ let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
 const randomRoad = findRoadCenterClosestToCenterOfGame();
 
 const upgrades: {name: string, cost: number}[] = [
-    { name: "Sails", cost: 100 },
-    { name: "Armor", cost: 100 },
-    { name: "Forward Cannon", cost: 100 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
-    { name: "Questionable Rum", cost: 1 },
+    { name: "Sails", cost: 5 },
+    { name: "Armor", cost: 5 },
+    { name: "Forward Cannon", cost: 5 },
+    { name: "Questionable Rum", cost: 0 },
+].sort((a, b) => a.cost - b.cost);
 
 
-
-];
 
 const depotIndex = Math.floor(regions.length/2);
 let xMarkIndices: number [] = [];
@@ -737,6 +722,7 @@ function showRestartMenu() {
 
     surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
     amountGold.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
+    amountRum.textContent = `You drank ${numRum.toString()} rum!`;
 
     UI_STATE.restartMenuVisible = true;
 }
@@ -868,6 +854,8 @@ function addUpgrade(upgrade: string) {
         player.armorUpgrade = Math.max(player.armorUpgrade- .1, .5);
     } else if (upgrade === "Sails") {
         player.speedUpgrade = Math.min(player.speedUpgrade + .5, 2);
+    } else if (upgrade === "Questionable Rum") {
+        numRum++;
     }
 }
 
