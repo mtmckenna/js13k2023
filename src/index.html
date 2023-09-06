@@ -14,7 +14,7 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-        font-family: Helvetica, Arial, Sans-Serif;
+        font-family: Helvetica, Arial, Sans-Serif,sans-serif;
         color: #2C3E50;
       }
 
@@ -51,8 +51,6 @@
       }
 
       .table-wrapper {
-        /*overflow: auto;*/
-        /*max-height: 200px;*/
         overflow: auto;
         flex-grow: 1;
       }
@@ -85,6 +83,20 @@
         max-height: 90%;
       }
 
+      #wave-number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+        font-size: 4em;
+        color: #ffe55e;
+        text-shadow: 2px 2px #000;
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
       .menu-btn {
         display: block;
         width: 100%;
@@ -111,6 +123,7 @@
         font-size: 2em;
         color: #ffe55e;
         text-shadow: 2px 2px #000;
+        pointer-events: none;
       }
 
       @keyframes slideUpFadeIn {
@@ -172,6 +185,7 @@
   <body>
 
   <div id="clock">05:00</div>
+  <div id="wave-number">Wave 0</div>
 
   <div id="upgrade-menu" class="menu-container" style="pointer-events: none">
     <h2 style="margin: 5px">Select Upgrade</h2>
@@ -197,6 +211,5 @@
     <h1 style="text-align: center">Pirate Survivors!!!</h1>
     <button type="button" class="menu-btn" id="start-btn">Starrrt plunderin'</button>
   </div>
-
-
+  </body>
 </html>

@@ -11,7 +11,7 @@ import {circlesCollide, findCollisions} from "./collision";
 import {
     IPoint,
     IVehicleInputState,
-    IEdge, ICollision, CanvasColor, IRegion, IGold,
+    ICollision, CanvasColor, IRegion, IGold,
 } from "./interfaces";
 import {
     roadsAndRegionsFromPoints,
@@ -39,14 +39,15 @@ const grid = new Grid();
 const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
 const restartMenu: HTMLElement = document.querySelector("#restart-menu");
 const startMenu: HTMLElement = document.querySelector("#start-menu");
-const amountGold: HTMLElement = document.querySelector("#amount-gold");
+const amountGoldElement: HTMLElement = document.querySelector("#amount-gold");
 const surviveElement: HTMLElement = document.querySelector("#survive");
 const goldRemainingElement: HTMLElement = document.querySelector("#gold-remaining");
-const tryAgain = document.querySelector("#try-again");
-const clock = document.querySelector("#clock");
+const tryAgainElement = document.querySelector("#try-again");
+const clockElement = document.querySelector("#clock");
 const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
-const amountRum: HTMLTableElement = document.querySelector("#amount-rum");
+const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
+const waveNumberElement: HTMLElement = document.querySelector("#wave-number");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -64,21 +65,15 @@ export const MAX_COLLISIONS = 25
 const FIXED_TIMESTEP = 1 / 60;  // fixed timestep of 60 FPS
 let accumulator = 0;  // accumulates elapsed time
 let lastTime = performance.now();
-const roadCollisions: IEdge[] = []
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 let numRum = 0;
 const MAX_TIME = 60 * 5;
-// const MAX_TIME = 30;
 let started = false;
-// const MAX_TIME = 5;
+let waveNumber = 1;
 GLOBAL.time = 0;
 GLOBAL.timeLeft = MAX_TIME;
-
-for (let i = 0; i < MAX_COLLISIONS; i++) {
-    roadCollisions[i] = {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}};
-}
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
     regionCollisions[i] = {edge: {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}}, depth: 0};
@@ -324,7 +319,13 @@ function update(t: number) {
 
     numRegionCollisions = findCollisions(player.vertices, regionVertices, regionCollisions);
 
-    // wall collisions
+    handleWallCollisions();
+    handleCollectingGold();
+    camera.centerOn(player);
+    updateScreenShake(t);
+}
+
+function handleWallCollisions() {
     for (let i = 0; i < numRegionCollisions; i++) {
         const collision = regionCollisions[i];
 
@@ -340,12 +341,8 @@ function update(t: number) {
         PointPool.release(normalizedCollisionEdge);
         break;
     }
-
-    handleCollectingGold();
-
-    camera.centerOn(player);
-
-    // Update screen shake
+}
+function updateScreenShake(t: number) {
     if (camera.screenShake.active) {
         camera.screenShake.elapsed += t;
 
@@ -583,7 +580,7 @@ function draw(t: number) {
     // const seconds = Math.floor(GLOBAL.timeLeft % 60);
     // const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
     // const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
-    clock.textContent = formattedTime(GLOBAL.timeLeft);
+    clockElement.textContent = formattedTime(GLOBAL.timeLeft);
 
 
 }
@@ -703,6 +700,7 @@ function goldArrivedAtDepot(gold: IGold) {
     if (depot.gold.every(g => g.arrived)) {
         UI_STATE.transferringCoins = false;
         showUpgradeMenu();
+        waveNumber++
     }
 
     playCoinPickupSound();
@@ -715,14 +713,14 @@ function showRestartMenu() {
     restartMenu.style.removeProperty("opacity");
 
     if (GLOBAL.timeLeft <= 0) {
-        tryAgain.textContent = "You survived, me hearty!";
+        tryAgainElement.textContent = "You survived, me hearty!";
     } else {
-        tryAgain.textContent = "You died, me hearty!";
+        tryAgainElement.textContent = "You died, me hearty!";
     }
 
     surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
-    amountGold.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
-    amountRum.textContent = `You drank ${numRum.toString()} rum!`;
+    amountGoldElement.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
+    amountRumElement.textContent = `You drank ${numRum.toString()} rum!`;
 
     UI_STATE.restartMenuVisible = true;
 }
@@ -780,8 +778,21 @@ function hideStartMenu() {
     started = true;
     createAudioContext()
     playFanfareSound();
+    setTimeout(showWaveNumber, 500);
 }
 
+function hideWaveNumber() {
+    waveNumberElement.classList.remove("show");
+    waveNumberElement.classList.add("hide");
+}
+
+function showWaveNumber() {
+    waveNumberElement.textContent = `Wave ${waveNumber}`;
+    waveNumberElement.classList.remove("hide");
+    waveNumberElement.classList.add("show");
+
+    setTimeout(hideWaveNumber, 2000);
+}
 
 function hideUpgradeMenu() {
     upgradeMenu.classList.remove("show");
@@ -800,6 +811,8 @@ function hideUpgradeMenu() {
 
         item.removeEventListener('click', handleMenuItemClick);
     });
+
+    setTimeout(showWaveNumber, 500);
 }
 
 function handleMenuItemClick(e: Event) {
