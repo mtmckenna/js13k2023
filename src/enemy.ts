@@ -88,6 +88,11 @@ export default class Enemy implements IPositionable {
         this.active = false;
     }
 
+    activate() {
+        this.active = true;
+        this.life = 100;
+    }
+
     recoil(x: number, y:number) {
         const normalized = PointPool.get(x,y);
         normalizeVector(normalized, normalized);
@@ -145,7 +150,9 @@ export default class Enemy implements IPositionable {
         const SEPARATION_DISTANCE = 50;
 
         // Calculate separation force
-        for (let enemy of this.neighborEnemies) {
+        const max = Math.min(this.neighborEnemies.length, 10);
+        for (let i = 0; i < max; i++) {
+            const enemy = this.neighborEnemies[i];
             if (enemy === this) continue;  // Don't consider itself
             if (!enemy) break;  // Reached the end of the neighbors
 

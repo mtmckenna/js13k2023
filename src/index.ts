@@ -57,7 +57,11 @@ const GRID_SCALE = 1 / 2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const NUM_ENEMIES = 1000;
+const START_ENEMIES = 1000;
+const MAX_ENEMIES = 5000;
+let tEnemies = 0
+const MIN_WAVE_NUMBER = 1;
+const MAX_WAVE_NUMBER = 50;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -72,6 +76,7 @@ let numRum = 0;
 const MAX_TIME = 60 * 5;
 let started = false;
 let waveNumber = 1;
+const WAVE_NUMBER_ENEMIES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 GLOBAL.time = 0;
 GLOBAL.timeLeft = MAX_TIME;
 
@@ -157,8 +162,6 @@ const upgrades: {name: string, cost: number}[] = [
     { name: "Questionable Rum", cost: 0 },
 ].sort((a, b) => a.cost - b.cost);
 
-
-
 const depotIndex = Math.floor(regions.length/2);
 let xMarkIndices: number [] = [];
 const DROP_OFF_RADIUS = ROAD_WIDTH / 2;
@@ -181,12 +184,25 @@ camera.centerOn(player);
 player.angle = randomRoad.angle + Math.PI / 2;
 
 // Generate enemies
-for (let i = 0; i < NUM_ENEMIES; i++) {
+for (let i = 0; i < MAX_ENEMIES; i++) {
     const pos = generateRandomPositionOutsideView(camera.viewableBounds, grid.gameSize);
-    // const enemy = new Enemy({x: randomFloat(0, grid.gameSize.x), y: randomFloat(0, grid.gameSize.y)}, grid, player)
-    const enemy = new Enemy({x: pos.x, y: pos.y}, grid, player)
+    const enemy = new Enemy({x: 0, y: 0 }, grid, player);
+    enemy.active = false;
     enemies.push(enemy);
-    grid.addToEnemyMap(enemy);
+}
+function activateEnemies(num: number) {
+    let i = 0;
+
+    while (i < num && i < enemies.length) {
+        const enemy = enemies[i];
+        if (!enemy.active) {
+            enemy.activate();
+            const pos = generateRandomPositionOutsideView(camera.viewableBounds, grid.gameSize);
+            updatePos(pos.x, pos.y, enemy);
+        }
+
+        i++;
+    }
 }
 
 function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
@@ -494,7 +510,6 @@ function updateAllGold(t: number) {
         if (gold.active) gold.update(t);
     }
 }
-
 function drawAllGold(ctx: CanvasRenderingContext2D, scale: number = 1) {
     for (let i = 0; i < allGold.length; i++) {
         const gold = allGold[i];
@@ -576,10 +591,6 @@ function draw(t: number) {
     joystick.draw(ctx);
 
     drawLifeBar(ctx, canvas, player.life, 100);
-    // const minutes = Math.floor(GLOBAL.timeLeft / 60);
-    // const seconds = Math.floor(GLOBAL.timeLeft % 60);
-    // const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
-    // const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
     clockElement.textContent = formattedTime(GLOBAL.timeLeft);
 
 
@@ -779,6 +790,12 @@ function hideStartMenu() {
     createAudioContext()
     playFanfareSound();
     setTimeout(showWaveNumber, 500);
+    const numEnemies = numEnemiesForWave(waveNumber);
+    activateEnemies(numEnemies);
+}
+
+function numEnemiesForWave(wave: number): number {
+    return WAVE_NUMBER_ENEMIES[wave-1];
 }
 
 function hideWaveNumber() {
@@ -813,6 +830,8 @@ function hideUpgradeMenu() {
     });
 
     setTimeout(showWaveNumber, 500);
+    const numEnemies = numEnemiesForWave(waveNumber);
+    activateEnemies(numEnemies);
 }
 
 function handleMenuItemClick(e: Event) {
@@ -889,7 +908,6 @@ upgradeButton.addEventListener("click", () => {
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
     addUpgrade(selectedUpgrade);
     selectedUpgrade = null;
-    console.log(depot.gold.length);
 });
 
 document.querySelector("#try-again-btn").addEventListener("click", () => {

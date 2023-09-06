@@ -37,7 +37,7 @@ const boatWidth = PIXELS[0].length * PIXEL_SIZE
 const boatHeight = PIXELS.length * PIXEL_SIZE
 boatCanvas.width = boatWidth;
 boatCanvas.height = boatHeight;
-const BASE_MAX_SPEED = 2.5;
+const BASE_MAX_SPEED = 2;
 export default class Boat implements IPositionable, ICircle, ISpeedable {
     inputState: IVehicleInputState;
     grid: Grid;
