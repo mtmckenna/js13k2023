@@ -71,8 +71,13 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     trackingGunLastFiredTime: number = 0;
 
     forwardGun: boolean = false;
-    forwardGunSpeed: number = .5;
+    forwardGunSpeed: number = .25;
     forwardGunLastFiredTime: number = 0;
+
+    spreadGun: boolean = false;
+    spreadGunSpeed: number = 1;
+    spreadGunLastFiredTime: number = 0;
+    spreadGunNumberOfBullets: number = 10;
 
     speedUpgrade: number = 0;
     armorUpgrade: number = 1;
@@ -191,6 +196,16 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
         if (this.forwardGun && (this.currentTime - this.forwardGunLastFiredTime) > this.forwardGunSpeed) {
             this.forwardGunLastFiredTime = this.currentTime;
             shootGun(this.center, this.direction, this.bulletSpeed + this.speed);
+        }
+
+        if (this.spreadGun && (this.currentTime - this.spreadGunLastFiredTime) > this.spreadGunSpeed) {
+            this.spreadGunLastFiredTime = this.currentTime;
+            const angleIncrement = 2 * Math.PI / this.spreadGunNumberOfBullets;
+            for (let i = 0; i < this.spreadGunNumberOfBullets; i++) {
+                const angle = this.angle + angleIncrement * i;
+                const direction = {x: getCos(angle), y: getSin(angle)};
+                shootGun(this.center, direction, this.bulletSpeed + this.speed);
+            }
         }
 
     }

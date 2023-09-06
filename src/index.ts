@@ -48,6 +48,7 @@ const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-bt
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
 const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
 const waveNumberElement: HTMLElement = document.querySelector("#wave-number");
+const restartTable: HTMLTableElement = document.querySelector("#restart-table");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -57,11 +58,7 @@ const GRID_SCALE = 1 / 2;
 const camera = new Camera({x: 0, y: 0}, 1.25, 1, {x: canvas.width, y: canvas.height}, grid.gameSize, GRID_SCALE);
 
 const NUM_POINTS = 100;
-const START_ENEMIES = 1000;
 const MAX_ENEMIES = 5000;
-let tEnemies = 0
-const MIN_WAVE_NUMBER = 1;
-const MAX_WAVE_NUMBER = 50;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
@@ -73,7 +70,7 @@ const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
 const neighborEnemies: Enemy[] = new Array(100).fill(null);
 let numRum = 0;
-const MAX_TIME = 60 * 5;
+const MAX_TIME = 5 * 60;
 let started = false;
 let waveNumber = 1;
 const WAVE_NUMBER_ENEMIES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
@@ -113,7 +110,7 @@ let enemies: Enemy[] = [];
 const allGold: IGold[] = [];
 let goldRemaining = 0;
 let previousXMarkRegionIndices: number[] = [];
-let selectedUpgrade: string = null;
+let selectedUpgrades: string[] = [];
 let desiredXMarkDistance = 0;
 const MAX_X_MARK_DISTANCE = GAME_WIDTH / 2;
 const UI_STATE = {
@@ -159,6 +156,7 @@ const upgrades: {name: string, cost: number}[] = [
     { name: "Sails", cost: 5 },
     { name: "Armor", cost: 5 },
     { name: "Forward Cannon", cost: 5 },
+    { name: "Spread Cannon", cost: 10 },
     { name: "Questionable Rum", cost: 0 },
 ].sort((a, b) => a.cost - b.cost);
 
@@ -729,9 +727,13 @@ function showRestartMenu() {
         tryAgainElement.textContent = "You died, me hearty!";
     }
 
-    surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
-    amountGoldElement.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
-    amountRumElement.textContent = `You drank ${numRum.toString()} rum!`;
+    // surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
+    // amountGoldElement.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
+    // amountRumElement.textContent = `You drank ${numRum.toString()} rum!`;
+
+    surviveElement.textContent = formattedTime(GLOBAL.time);
+    amountGoldElement.textContent = depot.gold.length.toString();
+    amountRumElement.textContent = numRum.toString();
 
     UI_STATE.restartMenuVisible = true;
 }
@@ -844,20 +846,23 @@ function handleMenuItemClick(e: Event) {
     element.setAttribute('data-selected', (!isSelected).toString());
     element.style.backgroundColor = isSelected ? '' : '#F0E68C';
     element.style.color = isSelected ? '' : '#000';
-    const upgrade = element.getAttribute('data-upgrade');
-    selectedUpgrade = upgrade;
+    // const upgrade = element.getAttribute('data-upgrade');
+    // selectedUpgrades = upgrade;
 
     const menuItems = document.querySelectorAll('.upgrade-item') as NodeListOf<HTMLElement>;
 
     goldRemaining = depot.gold.length;
     upgradeButton.disabled = true;
+    selectedUpgrades.length = 0;
     for (let i = 0; i < menuItems.length; i++) {
         const item = menuItems[i];
         const isSelected = item.getAttribute('data-selected') === 'true';
         const cost = parseInt(item.getAttribute('data-cash'));
+        const upgrade = element.getAttribute('data-upgrade');
         if (isSelected) {
             goldRemaining -= cost;
             upgradeButton.disabled = false;
+            selectedUpgrades.push(upgrade);
         }
     }
 
@@ -888,6 +893,9 @@ function addUpgrade(upgrade: string) {
         player.speedUpgrade = Math.min(player.speedUpgrade + .5, 2);
     } else if (upgrade === "Questionable Rum") {
         numRum++;
+    } else if (upgrade === "Spread Cannon") {
+        console.log("SPREAD CANNON UPGRADE" );
+        player.spreadGun = true;
     }
 }
 
@@ -906,8 +914,12 @@ upgradeButton.addEventListener("click", () => {
     });
     desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
-    addUpgrade(selectedUpgrade);
-    selectedUpgrade = null;
+
+    selectedUpgrades.forEach(upgrade => {
+        addUpgrade(upgrade);
+    });
+
+    selectedUpgrades.length = 0;
 });
 
 document.querySelector("#try-again-btn").addEventListener("click", () => {

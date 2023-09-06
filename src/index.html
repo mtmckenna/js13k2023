@@ -43,11 +43,10 @@
         font-size: 24px;
       }
 
-      #menu-table {
+      table {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 5px;
-
       }
 
       .table-wrapper {
@@ -201,9 +200,25 @@
 
   <div id="restart-menu" class="menu-container" style="pointer-events: none">
     <h2 id="try-again"></h2>
-    <p id="survive"></p>
-    <p id="amount-gold"></p>
-    <p id="amount-rum"></p>
+<!--    <p id="survive"></p>-->
+<!--    <p id="amount-gold"></p>-->
+<!--    <p id="amount-rum"></p>-->
+    <div class="table-wrapper">
+      <table id="restart-table">
+        <tr>
+          <td>Survived</td>
+            <td id="survive"></td>
+        </tr>
+        <tr>
+          <td>Plundered</td>
+          <td id="amount-gold"></td>
+        </tr>
+        <tr>
+          <td>Rum</td>
+          <td id="amount-rum"></td>
+      </table>
+    </div>
+
     <button type="button" class="menu-btn" id="try-again-btn">Starrrt again</button>
   </div>
 
