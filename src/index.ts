@@ -43,7 +43,8 @@ const amountGoldElement: HTMLElement = document.querySelector("#gold-plundered")
 const surviveElement: HTMLElement = document.querySelector("#survive");
 const upgradeGoldRemainingElement: HTMLElement = document.querySelector("#upgrade-gold-remaining");
 const tryAgainElement = document.querySelector("#try-again");
-const clockElement = document.querySelector("#clock");
+const timeRemainingElement = document.querySelector("#time-remaining");
+const waveTimeElement = document.querySelector("#wave-time");
 const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
 const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
@@ -74,10 +75,13 @@ const MAX_TIME = 5 * 60;
 let started = false;
 let waveNumber = 1;
 let regionNumber = 1;
-const WAVE_NUMBER_ENEMIES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+const MAX_WAVES = 5;
+const WAVE_NUMBER_ENEMIES = [50, 100, 200, 300, 400];
 const MAX_GOLD_PER_REGION = [2,5,10,20,40,80,100];
+const WAVE_TIMES = [0, 60, 120, 180, 240];
 GLOBAL.time = 0;
 GLOBAL.timeLeft = MAX_TIME;
+GLOBAL.nextWaveInTime = WAVE_TIMES[1];
 
 for (let i = 0; i < MAX_COLLISIONS; i++) {
     regionCollisions[i] = {edge: {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}}, depth: 0};
@@ -325,6 +329,13 @@ function update(t: number) {
 
     GLOBAL.time +=t;
     GLOBAL.timeLeft = Math.max(MAX_TIME - GLOBAL.time, 0);
+    const nextWaveInTime = WAVE_TIMES[waveNumber] - GLOBAL.time;
+    GLOBAL.nextWaveInTime = Math.max(nextWaveInTime, 0);
+
+    if (nextWaveInTime <= 0 && waveNumber < MAX_WAVES) {
+        waveNumber++;
+        setTimeout(showWaveNumber, 500);
+    }
 
     if (GLOBAL.timeLeft <= 0) {
         showRestartMenu();
@@ -609,7 +620,8 @@ function draw(t: number) {
     joystick.draw(ctx);
 
     drawLifeBar(ctx, canvas, player.life, 100);
-    clockElement.textContent = formattedTime(GLOBAL.timeLeft);
+    timeRemainingElement.textContent = formattedTime(GLOBAL.timeLeft);
+    waveTimeElement.textContent = formattedTime(GLOBAL.nextWaveInTime);
 
 
 }
@@ -729,7 +741,6 @@ function goldArrivedAtDepot(gold: IGold) {
     if (depot.gold.every(g => g.arrived)) {
         UI_STATE.transferringCoins = false;
         showUpgradeMenu();
-        waveNumber++
     }
 
     playCoinPickupSound();
@@ -848,7 +859,7 @@ function hideUpgradeMenu() {
         item.removeEventListener('click', handleMenuItemClick);
     });
 
-    setTimeout(showWaveNumber, 500);
+    // setTimeout(showWaveNumber, 500);
     const numEnemies = numEnemiesForWave(waveNumber);
     activateEnemies(numEnemies);
 }
@@ -918,10 +929,7 @@ function addUpgrade(upgradeName: string) {
     } else if (upgradeName === "Spread Cannon") {
         player.spreadGun = true;
     } else if (upgradeName === "50% Damage Recovery") {
-        console.log("50% Damage Recovery" );
-        console.log(player.life);
         player.life = player.life + Math.floor((100-player.life) * .5);
-        console.log(player.life);
     }
 }
 

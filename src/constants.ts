@@ -3,4 +3,5 @@ export const GLOBAL = {
     time: 0,
     timeLeft: 0,
     absoluteTime: 0,
+    nextWaveInTime: 0,
 }
