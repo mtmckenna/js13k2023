@@ -858,7 +858,8 @@ function handleMenuItemClick(e: Event) {
         const item = menuItems[i];
         const isSelected = item.getAttribute('data-selected') === 'true';
         const cost = parseInt(item.getAttribute('data-cash'));
-        const upgrade = element.getAttribute('data-upgrade');
+        const upgrade = item.getAttribute('data-upgrade');
+
         if (isSelected) {
             goldRemaining -= cost;
             upgradeButton.disabled = false;
@@ -914,6 +915,8 @@ upgradeButton.addEventListener("click", () => {
     });
     desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
+
+
 
     selectedUpgrades.forEach(upgrade => {
         addUpgrade(upgrade);
