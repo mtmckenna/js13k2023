@@ -1,7 +1,7 @@
 import {Joystick} from "./joystick";
 import {KeyboardInput} from "./keyboard_input";
 import {
-    calculateAngle, distance,
+    calculateAngle, clamp, distance,
     getCos, getSin,
     normalizeVector,
     randomFloat,
@@ -11,7 +11,7 @@ import {circlesCollide, findCollisions} from "./collision";
 import {
     IPoint,
     IVehicleInputState,
-    ICollision, CanvasColor, IRegion, IGold,
+    ICollision, CanvasColor, IRegion, IGold, IUpgrade,
 } from "./interfaces";
 import {
     roadsAndRegionsFromPoints,
@@ -39,16 +39,16 @@ const grid = new Grid();
 const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
 const restartMenu: HTMLElement = document.querySelector("#restart-menu");
 const startMenu: HTMLElement = document.querySelector("#start-menu");
-const amountGoldElement: HTMLElement = document.querySelector("#amount-gold");
+const amountGoldElement: HTMLElement = document.querySelector("#gold-plundered");
 const surviveElement: HTMLElement = document.querySelector("#survive");
-const goldRemainingElement: HTMLElement = document.querySelector("#gold-remaining");
+const upgradeGoldRemainingElement: HTMLElement = document.querySelector("#upgrade-gold-remaining");
 const tryAgainElement = document.querySelector("#try-again");
 const clockElement = document.querySelector("#clock");
 const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
 const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
+const endGoldRemainingElement: HTMLTableElement = document.querySelector("#end-gold-remaining");
 const waveNumberElement: HTMLElement = document.querySelector("#wave-number");
-const restartTable: HTMLTableElement = document.querySelector("#restart-table");
 
 canvas.id = "game";
 canvas.width = 1000
@@ -73,7 +73,9 @@ let numRum = 0;
 const MAX_TIME = 5 * 60;
 let started = false;
 let waveNumber = 1;
-const WAVE_NUMBER_ENEMIES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+let regionNumber = 1;
+const WAVE_NUMBER_ENEMIES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+const MAX_GOLD_PER_REGION = [2,5,10,20,40,80,100];
 GLOBAL.time = 0;
 GLOBAL.timeLeft = MAX_TIME;
 
@@ -152,13 +154,14 @@ function randomPointWithinBounds(bounds: IPoint): IPoint {
 let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
 const randomRoad = findRoadCenterClosestToCenterOfGame();
 
-const upgrades: {name: string, cost: number}[] = [
-    { name: "Sails", cost: 5 },
-    { name: "Armor", cost: 5 },
-    { name: "Forward Cannon", cost: 5 },
-    { name: "Spread Cannon", cost: 10 },
-    { name: "Questionable Rum", cost: 0 },
-].sort((a, b) => a.cost - b.cost);
+let upgrades: IUpgrade[] = [
+    { name: "Questionable Rum", currentLevel: 0, maxLevel: 999, cost: 0 },
+    { name: "50% Damage Recovery", currentLevel: 0, maxLevel: 10, cost: 2 },
+    { name: "Sails", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Armor", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Forward Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Spread Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
+];
 
 const depotIndex = Math.floor(regions.length/2);
 let xMarkIndices: number [] = [];
@@ -171,7 +174,7 @@ const SIZE_MIN = DROP_OFF_RADIUS * .6 * GRID_SCALE; // Minimum size value
 
 const regionVertices = regions.map(r => r.vertices);
 
-const player = new Boat(grid, playerInputState);
+const player = new Boat(grid, playerInputState, upgrades);
 grid.setRoads(roads);
 
 const depot: IRegion = regions[depotIndex];
@@ -223,20 +226,20 @@ function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
     return { x, y };
 }
 
-// Generate gold for each region based on how far away it is from the depot (further away is more gold)
-// If the dropoff point overlaps with the depot dropoff point, bail
-for (const region of regions) {
-    if (region.type !== "empty") continue;
-    const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
-    for (let i = 0; i < amount; i++) {
-        // const gold = GoldPool.get(region.center.x, region.center.y, depot.center, i * .1)
-        const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
-        gold.arrivalCallback = goldArrivedAtBoat;
-        gold.arrived = false;
-        region.gold.push(gold);
-        allGold.push(gold);
-    }
-}
+// // Generate gold for each region based on how far away it is from the depot (further away is more gold)
+// // If the dropoff point overlaps with the depot dropoff point, bail
+// for (const region of regions) {
+//     if (region.type !== "empty") continue;
+//     const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
+//     for (let i = 0; i < amount; i++) {
+//         // const gold = GoldPool.get(region.center.x, region.center.y, depot.center, i * .1)
+//         const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
+//         gold.arrivalCallback = goldArrivedAtBoat;
+//         gold.arrived = false;
+//         region.gold.push(gold);
+//         allGold.push(gold);
+//     }
+// }
 
 function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
     let minIndex = null;
@@ -255,9 +258,26 @@ function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: nu
         }
     }
 
-    regions[minIndex].type = "x-mark";
+    const region = regions[minIndex];
+    region.type = "x-mark";
+
+    const goldAmount = getGoldAmountForRegionNumber(regionNumber);
+        for (let i = 0; i < goldAmount; i++) {
+        const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
+        gold.arrivalCallback = goldArrivedAtBoat;
+        gold.arrived = false;
+        region.gold.push(gold);
+        allGold.push(gold);
+    }
+
     xMarkIndices.push(minIndex);
+    regionNumber++;
     return minIndex;
+}
+
+function getGoldAmountForRegionNumber(number: number): number {
+    const clampedNum = clamp(number, 0, MAX_GOLD_PER_REGION.length - 1)
+    return Math.floor(randomFloat(MAX_GOLD_PER_REGION[clampedNum-1], MAX_GOLD_PER_REGION[clampedNum]));
 }
 
 function findRoadCenterClosestToCenterOfGame(): Road {
@@ -727,13 +747,10 @@ function showRestartMenu() {
         tryAgainElement.textContent = "You died, me hearty!";
     }
 
-    // surviveElement.textContent = `You survived for ${formattedTime(GLOBAL.time)}!`;
-    // amountGoldElement.textContent = `You plundered ${depot.gold.length.toString()} gold!`;
-    // amountRumElement.textContent = `You drank ${numRum.toString()} rum!`;
-
     surviveElement.textContent = formattedTime(GLOBAL.time);
     amountGoldElement.textContent = depot.gold.length.toString();
     amountRumElement.textContent = numRum.toString();
+    endGoldRemainingElement.textContent = allGold.length.toString();
 
     UI_STATE.restartMenuVisible = true;
 }
@@ -762,7 +779,7 @@ function showUpgradeMenu() {
         tr.setAttribute('data-selected', 'false');
         tr.setAttribute('data-cash', upgrade.cost.toString());
         tr.setAttribute('data-upgrade', upgrade.name);
-        tr.innerHTML = `<td>${upgrade.name}</td><td>${upgrade.cost} Gold</td>`;
+        tr.innerHTML = `<td>${upgrade.name}</td><td>${upgrade.currentLevel}</td><td>${upgrade.cost} Gold</td>`;
         upgradeTable.appendChild(tr);
 
     }
@@ -772,7 +789,7 @@ function showUpgradeMenu() {
         item.addEventListener('click', handleMenuItemClick);
     });
 
-    goldRemainingElement.textContent = `Remaining gold: ${goldRemaining}`;
+    upgradeGoldRemainingElement.textContent = `Remaining gold: ${goldRemaining}`;
     disableMenuItems(menuItems);
 
 }
@@ -822,11 +839,11 @@ function hideUpgradeMenu() {
     const menuItems = document.querySelectorAll('.menu-item');
     // add selected upgrades to player and subtract cash
     menuItems.forEach(item => {
-        const isSelected = item.getAttribute('data-selected') === 'true';
-        if (isSelected) {
-            const upgrade = item.getAttribute('data-upgrade');
-            player.upgrades.push(upgrade);
-        }
+        // const isSelected = item.getAttribute('data-selected') === 'true';
+        // if (isSelected) {
+            // const upgrade = item.getAttribute('data-upgrade');
+            // player.upgrades.push(upgrade);
+        // }
 
         item.removeEventListener('click', handleMenuItemClick);
     });
@@ -869,7 +886,7 @@ function handleMenuItemClick(e: Event) {
 
     disableMenuItems(menuItems);
 
-    goldRemainingElement.textContent = `Remaining gold: ${goldRemaining}`;
+    upgradeGoldRemainingElement.textContent = `Remaining gold: ${goldRemaining}`;
 }
 
 function disableMenuItems(menuItems: NodeListOf<HTMLElement>) {
@@ -885,19 +902,31 @@ function disableMenuItems(menuItems: NodeListOf<HTMLElement>) {
         }
     }
 }
-function addUpgrade(upgrade: string) {
-    if (upgrade === "Forward Cannon") {
+function addUpgrade(upgradeName: string) {
+    const upgrade = findUpgrade(upgradeName);
+    upgrade.currentLevel++;
+    upgrade.cost = Math.floor(upgrade.cost * 3);
+
+    if (upgradeName === "Forward Cannon") {
         player.forwardGun = true;
-    } else if (upgrade === "Armor") {
+    } else if (upgradeName === "Armor") {
         player.armorUpgrade = Math.max(player.armorUpgrade- .1, .5);
-    } else if (upgrade === "Sails") {
+    } else if (upgradeName === "Sails") {
         player.speedUpgrade = Math.min(player.speedUpgrade + .5, 2);
-    } else if (upgrade === "Questionable Rum") {
+    } else if (upgradeName === "Questionable Rum") {
         numRum++;
-    } else if (upgrade === "Spread Cannon") {
-        console.log("SPREAD CANNON UPGRADE" );
+    } else if (upgradeName === "Spread Cannon") {
         player.spreadGun = true;
+    } else if (upgradeName === "50% Damage Recovery") {
+        console.log("50% Damage Recovery" );
+        console.log(player.life);
+        player.life = player.life + Math.floor((100-player.life) * .5);
+        console.log(player.life);
     }
+}
+
+function findUpgrade(upgrade: string): IUpgrade {
+    return upgrades.find(u => u.name === upgrade);
 }
 
 resizeCanvas()
@@ -910,17 +939,10 @@ window.addEventListener('resize', resizeCanvas);
 upgradeButton.addEventListener("click", () => {
     hideUpgradeMenu();
     depot.gold.length = goldRemaining;
-    depot.gold.forEach(g => {
-       g.drawable = false;
-    });
+    depot.gold.forEach(g => g.drawable = false);
     desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
-
-
-
-    selectedUpgrades.forEach(upgrade => {
-        addUpgrade(upgrade);
-    });
+    selectedUpgrades.forEach(upgrade => addUpgrade(upgrade));
 
     selectedUpgrades.length = 0;
 });

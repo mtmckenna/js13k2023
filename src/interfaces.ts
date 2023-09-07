@@ -1,15 +1,18 @@
 import Enemy from "./enemy";
 import Road from "./road";
+
 export interface IPoint {
     x: number;
     y: number;
 }
 
-export interface IPoolPoint extends IPoint, IPoolable {}
+export interface IPoolPoint extends IPoint, IPoolable {
+}
 
 export interface IPoolable {
     active: boolean;
 }
+
 export interface IEdge {
     v0: IPoint;
     v1: IPoint;
@@ -43,10 +46,12 @@ export interface IDropOff extends IPolygon {
     type: "empty" | "depot" | "x-mark" | "plundered";
     dropOffPoint: IPoint;
 }
+
 export interface IVoronoiResult {
     edges: IEdge[];
     polygons: IPolygon[];
 }
+
 export interface ITriangleInTriangulation extends ITriangle {
     circumcircle: ICircle;
     neighbors: ITriangleInTriangulation[];
@@ -63,7 +68,7 @@ export interface IPositionable extends ICenterable {
 }
 
 
-export interface IQueueItem extends IPoolable{
+export interface IQueueItem extends IPoolable {
     x: number; // cellIndex
     y: number; // depth
 }
@@ -129,8 +134,8 @@ export interface IOrientedBoundingBox {
 }
 
 export interface IBoundingBox {
-    min:IPoint;
-    max:IPoint;
+    min: IPoint;
+    max: IPoint;
     width: number;
     height: number;
     center: IPoint;
@@ -144,7 +149,7 @@ export interface IGold extends IPositionable, ICircle, IPoolable, IUpdateable {
     updateDelay: number;
     updateable: boolean;
     drawable: boolean;
-    arrivalCallback: (gold : IGold) => void;
+    arrivalCallback: (gold: IGold) => void;
     arrived: boolean;
     pixelCanvas: HTMLCanvasElement;
 }
@@ -162,3 +167,10 @@ export interface IRegion extends IPolygon, IDropOff, ISpeedable {
 }
 
 export type IVector = IPoint;
+
+export interface IUpgrade {
+    name: string;
+    currentLevel: number;
+    maxLevel: number;
+    cost: number;
+}

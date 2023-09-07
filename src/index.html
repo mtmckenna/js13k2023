@@ -187,19 +187,19 @@
     <h2 style="margin: 5px">Select Upgrade</h2>
     <div class="table-wrapper">
       <table id="menu-table">
+        <th>Upgrade</th>
+        <th>Level</th>
+        <th>Cost</th>
       </table>
     </div>
     <div>
-      <div id = "gold-remaining" style="margin-top: 5px"></div>
+      <div id="upgrade-gold-remaining" style="margin-top: 5px; text-align: center; font-weight: bold;"></div>
       <button type="button" class="menu-btn" id="add-upgrade-btn">Add Upgrades</button>
     </div>
   </div>
 
   <div id="restart-menu" class="menu-container" style="pointer-events: none">
     <h2 id="try-again"></h2>
-<!--    <p id="survive"></p>-->
-<!--    <p id="amount-gold"></p>-->
-<!--    <p id="amount-rum"></p>-->
     <div class="table-wrapper">
       <table id="restart-table">
         <tr>
@@ -207,8 +207,12 @@
             <td id="survive"></td>
         </tr>
         <tr>
-          <td>Plundered</td>
-          <td id="amount-gold"></td>
+          <td>Gold Remaining</td>
+          <td id="end-gold-remaining"></td>
+        </tr>
+        <tr>
+          <td>Gold Plundered</td>
+          <td id="gold-plundered"></td>
         </tr>
         <tr>
           <td>Rum</td>

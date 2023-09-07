@@ -1,4 +1,4 @@
-import {ICircle, IGold, IGridCell, IPoint, IPositionable, ISpeedable, IVehicleInputState} from "./interfaces";
+import {ICircle, IGold, IGridCell, IPoint, IPositionable, ISpeedable, IUpgrade, IVehicleInputState} from "./interfaces";
 import Grid from "./grid";
 import {clamp, dot, getCos, getSin, normalizeVector, subtractVectors} from "./math";
 import {drawPixels, updatePos} from "./game_objects";
@@ -55,11 +55,11 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     occupiedCells: IGridCell[] = new Array(2000).fill(null);
     numOccupiedCells: number = 0;
     vertices: IPoint[] = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x:0, y: 0}];
-    upgrades: string[] = [];
     direction: IPoint = {x: 1, y: 0};
     life: number = 100;
     active: boolean = true;
     gold: IGold[] = [];
+    upgrades: IUpgrade[];
 
     currentTime: number = 0;
     bulletDirection: IPoint = {x: 0, y: 0};
@@ -89,7 +89,7 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     lastFlashedTime: number = 0;
     hitWaitTime: number = .5;
 
-    constructor(grid: Grid, inputState: IVehicleInputState) {
+    constructor(grid: Grid, inputState: IVehicleInputState, upgrades: IUpgrade[]) {
         this.inputState = inputState;
         this.color = "#b465c7"
         const widthHalf = this.size.x / 2;
@@ -98,6 +98,7 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
         this.radius = radius;
         this.grid = grid;
         this.occupiedCells = new Array(MAX_CELLS).fill(null);
+        this.upgrades = upgrades;
 
         updatePos(grid.gameSize.x / 2, grid.gameSize.y / 2, this);
         drawPixels(boatCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
