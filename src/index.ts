@@ -63,7 +63,6 @@ const MAX_ENEMIES = 5000;
 const MAX_POINT_TRIES = 10;
 const MIN_POINT_DIST = ROAD_WIDTH * 2;
 const MAX_DIMENSION = 1000;
-export const MAX_COLLISIONS = 25
 const FIXED_TIMESTEP = 1 / 60;  // fixed timestep of 60 FPS
 let accumulator = 0;  // accumulates elapsed time
 let lastTime = performance.now();
@@ -83,7 +82,7 @@ GLOBAL.time = 0;
 GLOBAL.timeLeft = MAX_TIME;
 GLOBAL.nextWaveInTime = WAVE_TIMES[1];
 
-for (let i = 0; i < MAX_COLLISIONS; i++) {
+for (let i = 0; i < 25; i++) {
     regionCollisions[i] = {edge: {v0: {x: 0, y: 0}, v1: {x: 0, y: 0}}, depth: 0};
 }
 
@@ -165,6 +164,7 @@ let upgrades: IUpgrade[] = [
     { name: "Armor", currentLevel: 0, maxLevel: 5, cost: 2 },
     { name: "Forward Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
     { name: "Spread Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Add Stop", currentLevel: 0, maxLevel: 5, cost: 2 },
 ];
 
 const depotIndex = Math.floor(regions.length/2);
@@ -219,7 +219,6 @@ function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
         y = Math.random() * worldSize.y;
         i++;
         if (i > 100) {
-            console.log("failed to generate random position outside viewable bounds");
             break;
         }
     } while (
@@ -230,53 +229,45 @@ function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
     return { x, y };
 }
 
-// // Generate gold for each region based on how far away it is from the depot (further away is more gold)
-// // If the dropoff point overlaps with the depot dropoff point, bail
-// for (const region of regions) {
-//     if (region.type !== "empty") continue;
-//     const amount = Math.floor(distance(region.center, depot.dropOffPoint) / 50)
-//     for (let i = 0; i < amount; i++) {
-//         // const gold = GoldPool.get(region.center.x, region.center.y, depot.center, i * .1)
-//         const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
-//         gold.arrivalCallback = goldArrivedAtBoat;
-//         gold.arrived = false;
-//         region.gold.push(gold);
-//         allGold.push(gold);
-//     }
-// }
+function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): void {
 
-function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): number {
-    let minIndex = null;
+    const stopsUpgrade = upgrades.find(u => u.name === "Add Stop");
 
-    for (let i = 0; i < regions.length; i++) {
-        // continue if the region is too close to the depot dropoff point
-        if (regions[i].type !== "empty") continue;
-        if (circlesCollide(regions[i].dropOffPoint.x, regions[i].dropOffPoint.y, DROP_OFF_RADIUS, depot.dropOffPoint.x, depot.dropOffPoint.y, DROP_OFF_RADIUS)) {
-            continue;
+    for (let i = 0; i < stopsUpgrade.currentLevel + 1; i++) {
+        let minIndex = null;
+
+        for (let j = 0; j < regions.length; j++) {
+            // continue if the region is too close to the depot dropoff point
+            if (regions[j].type !== "empty") continue;
+            if (xMarkIndices.includes(j)) continue;
+            if (circlesCollide(regions[j].dropOffPoint.x, regions[j].dropOffPoint.y, DROP_OFF_RADIUS, depot.dropOffPoint.x, depot.dropOffPoint.y, DROP_OFF_RADIUS)) {
+                continue;
+            }
+            if (distance(regions[j].dropOffPoint, depot.dropOffPoint) < desiredDistance) continue;
+
+            // set minIndex to the current index if it's closer to the depot dropoff point than the current minIndex
+            if (minIndex === null || distance(regions[j].dropOffPoint, depot.dropOffPoint) < distance(regions[minIndex].dropOffPoint, depot.dropOffPoint)) {
+                minIndex = j;
+            }
         }
-        if (distance(regions[i].dropOffPoint, depot.dropOffPoint) < desiredDistance) continue;
 
-        // set minIndex to the current index if it's closer to the depot dropoff point than the current minIndex
-        if (minIndex === null || distance(regions[i].dropOffPoint, depot.dropOffPoint) < distance(regions[minIndex].dropOffPoint, depot.dropOffPoint)) {
-            minIndex = i;
-        }
-    }
+        const region = regions[minIndex];
+        region.type = "x-mark";
 
-    const region = regions[minIndex];
-    region.type = "x-mark";
-
-    const goldAmount = getGoldAmountForRegionNumber(regionNumber);
+        const goldAmount = getGoldAmountForRegionNumber(regionNumber);
         for (let i = 0; i < goldAmount; i++) {
-        const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
-        gold.arrivalCallback = goldArrivedAtBoat;
-        gold.arrived = false;
-        region.gold.push(gold);
-        allGold.push(gold);
+            const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
+            gold.arrivalCallback = goldArrivedAtBoat;
+            gold.arrived = false;
+            region.gold.push(gold);
+            allGold.push(gold);
+        }
+
+        xMarkIndices.push(minIndex);
     }
 
-    xMarkIndices.push(minIndex);
+
     regionNumber++;
-    return minIndex;
 }
 
 function getGoldAmountForRegionNumber(number: number): number {
@@ -488,7 +479,7 @@ function handleCollectingGold() {
 
             if (inDropOffRadius && player.speed < 1) {
                 previousXMarkRegionIndices.push(xMarkIndices[i]);
-                player.gold.length = 0;
+                // player.gold.length = 0;
                 for (let i = 0; i < region.gold.length; i++) {
                     // const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
                     const gold = region.gold[i];
@@ -945,12 +936,12 @@ requestAnimationFrame(tick);
 showStartMenu();
 window.addEventListener('resize', resizeCanvas);
 upgradeButton.addEventListener("click", () => {
+    selectedUpgrades.forEach(upgrade => addUpgrade(upgrade));
     hideUpgradeMenu();
     depot.gold.length = goldRemaining;
     depot.gold.forEach(g => g.drawable = false);
     desiredXMarkDistance += (MAX_X_MARK_DISTANCE - desiredXMarkDistance) / 2;
     generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredXMarkDistance);
-    selectedUpgrades.forEach(upgrade => addUpgrade(upgrade));
 
     selectedUpgrades.length = 0;
 });
