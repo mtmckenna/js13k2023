@@ -320,7 +320,9 @@ function update(t: number) {
 
     GLOBAL.time +=t;
     GLOBAL.timeLeft = Math.max(MAX_TIME - GLOBAL.time, 0);
-    const nextWaveInTime = WAVE_TIMES[waveNumber] - GLOBAL.time;
+    let nextWaveInTime = 0
+    if (waveNumber < MAX_WAVES) nextWaveInTime = WAVE_TIMES[waveNumber] - GLOBAL.time;
+
     GLOBAL.nextWaveInTime = Math.max(nextWaveInTime, 0);
 
     if (nextWaveInTime <= 0 && waveNumber < MAX_WAVES) {
@@ -750,9 +752,9 @@ function showRestartMenu() {
     }
 
     surviveElement.textContent = formattedTime(GLOBAL.time);
-    amountGoldElement.textContent = depot.gold.length.toString();
+    amountGoldElement.textContent = allGold.length.toString();
     amountRumElement.textContent = numRum.toString();
-    endGoldRemainingElement.textContent = allGold.length.toString();
+    endGoldRemainingElement.textContent = depot.gold.length.toString();
 
     UI_STATE.restartMenuVisible = true;
 }
