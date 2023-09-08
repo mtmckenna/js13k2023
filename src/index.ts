@@ -180,6 +180,7 @@ const regionVertices = regions.map(r => r.vertices);
 
 const player = new Boat(grid, playerInputState, upgrades);
 grid.setRoads(roads);
+GLOBAL.player = player;
 
 const depot: IRegion = regions[depotIndex];
 depot.type = "depot";
@@ -290,7 +291,7 @@ function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: nu
 
         const goldAmount = getGoldAmountForRegionNumber(regionNumber);
         for (let i = 0; i < goldAmount; i++) {
-            const gold = createGold(region.center.x, region.center.y, depot.center, i * .1)
+            const gold = createGold(region.center.x, region.center.y, depot.center);
             gold.arrivalCallback = goldArrivedAtBoat;
             gold.arrived = false;
             region.gold.push(gold);
@@ -522,7 +523,10 @@ function handleCollectingGold() {
                     gold.updateable = true;
                     gold.drawable = true;
                     gold.target = player.front;
-                    gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
+                    gold.updateDelay = (i % 10) * .1 + GLOBAL.absoluteTime;
+                    const offsetX = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
+                    const offsetY = randomFloat(-ROAD_WIDTH/4, ROAD_WIDTH/4);
+                    updatePos(gold.pos.x + offsetX, gold.pos.y + offsetY, gold);
 
                     player.gold.push(gold);
                 }
@@ -549,7 +553,7 @@ function handleCollectingGold() {
                 gold.offset.x = offsetX;
                 gold.offset.y = offsetY;
                 gold.arrived = false;
-                gold.updateDelay = i * .1 + GLOBAL.absoluteTime;
+                gold.updateDelay = (i % 10) * .1 + GLOBAL.absoluteTime;
                 gold.arrivalCallback = goldArrivedAtDepot;
                 depot.gold.push(gold);
             }

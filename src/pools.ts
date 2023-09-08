@@ -164,7 +164,7 @@ function updateIndividualGold(this: IGold, t: number) {
     PointPool.release(direction);
 }
 
-export function createGold(x: number, y: number, target: IPoint, updateDelay = -1, offsetX = 0, offsetY = 0): IGold | null {
+export function createGold(x: number, y: number, target: IPoint, offsetX = 0, offsetY = 0): IGold | null {
     const canvas = Math.random() > .5 ? goldCanvas : goldCanvas2;
     const gold: IGold = {active: false, arrived: false, pos: {x:0,y:0}, center: {x:0,y:0}, size: {x:0,y:0}, radius: 0, angle: 0, update: updateIndividualGold, numOccupiedCells: 0, occupiedCells: [], vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}], index:0, target: null, offset: {x:0,y:0}, updateDelay: -1, updateable: false, drawable: false, arrivalCallback: () => {}, pixelCanvas: canvas};
     gold.active = true;
@@ -172,7 +172,7 @@ export function createGold(x: number, y: number, target: IPoint, updateDelay = -
     gold.target = target;
     gold.offset.x = offsetX;
     gold.offset.y = offsetY;
-    gold.updateDelay = updateDelay;
+    gold.updateDelay = -1;
 
     return gold;
 }

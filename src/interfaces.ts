@@ -105,44 +105,12 @@ export interface IVehicleInputState {
     pos: IPoint;
 }
 
-export interface IRectangle extends IPolygon {
-    vertices: IVertices4;
-}
-
-export interface IVertices4 extends Array<IPoint> {
-    0: IPoint;
-    1: IPoint;
-    2: IPoint;
-    3: IPoint;
-    length: 4;
-}
-
 export interface IVertices3 extends Array<IPoint> {
     0: IPoint;
     1: IPoint;
     2: IPoint;
     length: 3;
 }
-
-export interface IOrientedBoundingBox {
-    angle: number;
-    width: number;
-    height: number;
-    center: IPoint;
-    vertices: IPoint[];
-    color?: CanvasColor;
-}
-
-export interface IBoundingBox {
-    min: IPoint;
-    max: IPoint;
-    width: number;
-    height: number;
-    center: IPoint;
-}
-
-// export type IGold = IPositionable & ICircle & IPoolable & IUpdateable;
-
 export interface IGold extends IPositionable, ICircle, IPoolable, IUpdateable {
     target: IPoint;
     offset: IPoint;
