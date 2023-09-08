@@ -75,7 +75,7 @@ let started = false;
 let waveNumber = 1;
 let regionNumber = 1;
 const MAX_WAVES = 5;
-const WAVE_NUMBER_ENEMIES = [50, 100, 200, 300, 400];
+const WAVE_NUMBER_ENEMIES = [25, 50, 100, 400, 700];
 const MAX_GOLD_PER_REGION = [2,5,10,20,40,80,100];
 const WAVE_TIMES = [0, 60, 120, 180, 240];
 GLOBAL.time = 0;
@@ -191,7 +191,7 @@ player.angle = randomRoad.angle + Math.PI / 2;
 // Generate enemies
 for (let i = 0; i < MAX_ENEMIES; i++) {
     const pos = generateRandomPositionOutsideView(camera.viewableBounds, grid.gameSize);
-    const enemy = new Enemy({x: 0, y: 0 }, grid, player);
+    const enemy = new Enemy({x: pos.x, y: pos.y }, grid, player);
     enemy.active = false;
     enemies.push(enemy);
 }
@@ -212,22 +212,56 @@ function activateEnemies(num: number) {
 
 function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
     let x: number, y: number;
+    let inView = false;
+    let inWorld = false;
+
     let i = 0;
 
     do {
-        x = Math.random() * worldSize.x;
-        y = Math.random() * worldSize.y;
+        const angle = Math.random() * Math.PI * 2;
+        const center = {
+            x: (viewableBounds.bottomRight.x - viewableBounds.topLeft.x) / 2 + viewableBounds.topLeft.x,
+            y: (viewableBounds.bottomRight.y - viewableBounds.topLeft.y) / 2 + viewableBounds.topLeft.y
+        };
+        const radius = Math.hypot(
+            Math.abs(viewableBounds.topLeft.x - center.x),
+            Math.abs(viewableBounds.topLeft.y - center.y)
+        ) + Math.random() * ROAD_WIDTH/2;  // I added a random additional radius here to ensure the point is well outside the view
+
+        x = center.x + radius * Math.cos(angle);
+        y = center.y + radius * Math.sin(angle);
+
+        inView = x > viewableBounds.topLeft.x && x < viewableBounds.bottomRight.x && y > viewableBounds.topLeft.y && y < viewableBounds.bottomRight.y;
+        inWorld = x >= 0 && y >= 0 && x <= worldSize.x && y <= worldSize.y;
+
         i++;
         if (i > 100) {
+            console.log("no");
             break;
         }
-    } while (
-        (x > viewableBounds.topLeft.x && x < viewableBounds.bottomRight.x) ||
-        (y > viewableBounds.topLeft.y && y < viewableBounds.bottomRight.y)
-        );
+    } while (inView || !inWorld);
 
     return { x, y };
 }
+
+// function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
+//     let x: number, y: number;
+//     let i = 0;
+//
+//     do {
+//         x = Math.random() * worldSize.x;
+//         y = Math.random() * worldSize.y;
+//         i++;
+//         if (i > 100) {
+//             break;
+//         }
+//     } while (
+//         (x > viewableBounds.topLeft.x && x < viewableBounds.bottomRight.x) ||
+//         (y > viewableBounds.topLeft.y && y < viewableBounds.bottomRight.y)
+//         );
+//
+//     return { x, y };
+// }
 
 function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): void {
 
