@@ -1,7 +1,7 @@
 import {PIXEL_SIZE} from "./constants";
 
 import { IEdge, IGridCell, IPoint, IPositionable, IRegion, IQueueItem} from "./interfaces";
-import Enemy from "./enemy";
+import Ghost from "./ghost";
 import Road from "./road";
 
 import {distance, getCos, getSin, squaredDistance} from "./math";
@@ -117,7 +117,7 @@ export default class Grid {
     }
 
     // TODO: combine getNeighborEnemies and getNearestEnemy
-    getNeighborEnemies(pos: IPoint, enemies: Enemy[]): Enemy[] {
+    getNeighborEnemies(pos: IPoint, enemies: Ghost[]): Ghost[] {
         neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: Set<number> = new Set();
@@ -164,7 +164,7 @@ export default class Grid {
         return enemies;
     }
 
-    getNearestEnemy(pos: IPoint): Enemy | null {
+    getNearestEnemy(pos: IPoint): Ghost | null {
         neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: Set<number> = new Set();
@@ -172,7 +172,7 @@ export default class Grid {
         const queue: IQueueItem[] = [startQueueItem];
 
         let minDistance = Number.MAX_VALUE;
-        let minEnemy: Enemy | null = null;
+        let minEnemy: Ghost | null = null;
 
         while (queue.length > 0) {
             const queueItem = queue.shift()!;
@@ -304,7 +304,7 @@ export default class Grid {
         return neighborGridCells;
     }
 
-    addToEnemyMap(enemy: Enemy) {
+    addToEnemyMap(enemy: Ghost) {
         const cell = this.cells[enemy.index];
         const numEnemies = cell.numEnemies;
         cell.enemies[numEnemies] = enemy;

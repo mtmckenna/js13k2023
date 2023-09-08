@@ -37,14 +37,17 @@ offscreenCanvas.height = characterHeight;
 const spriteSheetCanvas = document.createElement("canvas");
 const NUM_FRAMES = 120;
 createSpriteSheet({x: characterWidth, y: characterHeight})
+const regularSize = {x: 8 * PIXEL_SIZE, y: 8 * PIXEL_SIZE};
+const bigSize = {x: 16 * PIXEL_SIZE, y: 16 * PIXEL_SIZE};
+const hugeSize = {x: 64 * PIXEL_SIZE, y: 64 * PIXEL_SIZE};
 
-export default class Enemy implements IPositionable {
-    size: IPoint = {x: 8 * PIXEL_SIZE, y: 8 * PIXEL_SIZE};
+export default class Ghost implements IPositionable {
+    size: IPoint = regularSize;
     index: number = 0;
     grid: Grid | null;
     player: IPositionable | null;
     neighborGridCells: IGridCell[];
-    neighborEnemies: Enemy[] = [];
+    neighborEnemies: Ghost[] = [];
     rotorRandomOffsets: number[] = [];
     sign: number = 1;
     pos: IPoint = {x: 0, y: 0};
@@ -64,6 +67,8 @@ export default class Enemy implements IPositionable {
     hitWaitTime: number = .5;
     life: number = 100;
     visible: boolean = true;
+    sizes = [regularSize, bigSize, hugeSize];
+    currentSizeIndex = 0;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
         this.grid = grid;
@@ -91,6 +96,12 @@ export default class Enemy implements IPositionable {
     activate() {
         this.active = true;
         this.life = 100;
+        this.size = regularSize;
+    }
+
+    setSizeType(index:number) {
+        this.currentSizeIndex = index;
+        this.size = this.sizes[index];
     }
 
     recoil(x: number, y:number) {
@@ -122,8 +133,18 @@ export default class Enemy implements IPositionable {
         ctx.rotate(this.angle);
         ctx.imageSmoothingEnabled = false;
 
-        const sx = this.frameCounter * this.size.x; // source x on sprite sheet
-        ctx.drawImage(spriteSheetCanvas, sx, 0, this.size.x, this.size.y + FRINGE_AMPLITUDE, -this.size.x / 2 * scale, -this.size.y / 2 * scale, this.size.x * scale, (this.size.y + FRINGE_AMPLITUDE) * scale);
+        const sx = this.frameCounter * regularSize.x; // source x on sprite sheet
+        ctx.drawImage(spriteSheetCanvas,
+            sx,
+            0,
+            regularSize.x,
+            regularSize.y + FRINGE_AMPLITUDE,
+            -this.size.x / 2 * scale,
+            -this.size.y / 2 * scale,
+            this.size.x * scale,
+            (this.size.y + FRINGE_AMPLITUDE) * scale
+        );
+
         ctx.restore();
 
         if (this.forwardDirection) {

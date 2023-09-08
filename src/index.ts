@@ -17,7 +17,7 @@ import {
     roadsAndRegionsFromPoints,
 } from "./level_generation";
 import Grid, {GAME_WIDTH} from "./grid";
-import Enemy from "./enemy";
+import Ghost from "./ghost";
 
 import Road, {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
@@ -68,16 +68,18 @@ let accumulator = 0;  // accumulates elapsed time
 let lastTime = performance.now();
 const regionCollisions: ICollision[] = []
 let numRegionCollisions = 0;
-const neighborEnemies: Enemy[] = new Array(100).fill(null);
+const neighborEnemies: Ghost[] = new Array(100).fill(null);
 let numRum = 0;
 const MAX_TIME = 5 * 60;
 let started = false;
 let waveNumber = 1;
 let regionNumber = 1;
-const MAX_WAVES = 5;
-const WAVE_NUMBER_ENEMIES = [25, 50, 100, 400, 700];
-const MAX_GOLD_PER_REGION = [2,5,10,20,40,80,100];
-const WAVE_TIMES = [0, 60, 120, 180, 240];
+const MAX_WAVES = 10;
+const WAVE_NUMBER_ENEMIES = [25, 50, 100, 200, 300, 400, 500, 600, 700, 800];
+const WAVE_PERCENT_CHANCE_BIG_GHOST = [.01, .05, .01, .1, .1, .1, .1, .15, .2, .2];
+const WAVE_PERCENT_CHANCE_HUGE_GHOST = [0, 0, 0, 0, 0, 0, 0, .001, .005, .01];
+const MAX_GOLD_PER_REGION = 7;
+const WAVE_TIMES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270];
 GLOBAL.time = 0;
 GLOBAL.timeLeft = MAX_TIME;
 GLOBAL.nextWaveInTime = WAVE_TIMES[1];
@@ -111,7 +113,7 @@ const joystick = new Joystick(canvas, joystickMoveCallback);
 const keyboard = new KeyboardInput(window, keyCallback);
 const playerInputState: IVehicleInputState = {pos: {x: 0, y: 0}, mode: "kb"};
 let points: IPoint[] = [];
-let enemies: Enemy[] = [];
+let ghosts: Ghost[] = [];
 const allGold: IGold[] = [];
 let goldRemaining = 0;
 let previousXMarkRegionIndices: number[] = [];
@@ -192,17 +194,27 @@ player.angle = randomRoad.angle + Math.PI / 2;
 // Generate enemies
 for (let i = 0; i < MAX_ENEMIES; i++) {
     const pos = generateRandomPositionOutsideView(camera.viewableBounds, grid.gameSize);
-    const enemy = new Enemy({x: pos.x, y: pos.y }, grid, player);
-    enemy.active = false;
-    enemies.push(enemy);
+    const ghost = new Ghost({x: pos.x, y: pos.y }, grid, player);
+    ghost.active = false;
+    ghosts.push(ghost);
 }
 function activateEnemies(num: number) {
     let i = 0;
 
-    while (i < num && i < enemies.length) {
-        const enemy = enemies[i];
+    while (i < num && i < ghosts.length) {
+        const enemy = ghosts[i];
         if (!enemy.active) {
             enemy.activate();
+            // set the enemy size type based on percent chance for the wave
+            const rand = Math.random();
+            if (rand < WAVE_PERCENT_CHANCE_HUGE_GHOST[waveNumber-1]) {
+                enemy.setSizeType(2);
+            } else if (rand < WAVE_PERCENT_CHANCE_BIG_GHOST[waveNumber-1]) {
+                enemy.setSizeType(1);
+            } else {
+                enemy.setSizeType(0);
+            }
+
             const pos = generateRandomPositionOutsideView(camera.viewableBounds, grid.gameSize);
             updatePos(pos.x, pos.y, enemy);
         }
@@ -306,8 +318,9 @@ function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: nu
 }
 
 function getGoldAmountForRegionNumber(number: number): number {
-    const clampedNum = clamp(number, 0, MAX_GOLD_PER_REGION.length - 1)
-    return Math.floor(randomFloat(MAX_GOLD_PER_REGION[clampedNum-1], MAX_GOLD_PER_REGION[clampedNum]));
+    return Math.floor(Math.random() * MAX_GOLD_PER_REGION) + 1;
+    // const clampedNum = clamp(number, 0, MAX_GOLD_PER_REGION.length - 1)
+    // return Math.floor(randomFloat(MAX_GOLD_PER_REGION[clampedNum-1], MAX_GOLD_PER_REGION[clampedNum]));
 }
 
 function findRoadCenterClosestToCenterOfGame(): Road {
@@ -372,14 +385,14 @@ function update(t: number) {
 
     grid.clearEnemyMap();
 
-    for (let i = 0; i < enemies.length; i++) {
-        const enemy = enemies[i];
+    for (let i = 0; i < ghosts.length; i++) {
+        const enemy = ghosts[i];
         if (!enemy || !enemy.active) continue;
         grid.addToEnemyMap(enemy);
     }
 
-    for (let i = 0; i < enemies.length; i++) {
-        const enemy = enemies[i];
+    for (let i = 0; i < ghosts.length; i++) {
+        const enemy = ghosts[i];
         if (!enemy || !enemy.active) continue;
         enemy.update(t);
     }
@@ -431,8 +444,8 @@ function updateScreenShake(t: number) {
 }
 
 function handleEnemiesCollidingWithPlayer() {
-    for (let i = 0; i < enemies.length; i++) {
-        const enemy = enemies[i];
+    for (let i = 0; i < ghosts.length; i++) {
+        const enemy = ghosts[i];
         if (!enemy || !enemy.active) continue;
         // continue if enemy last hit player within wait time
         if (player.lastDamagedTime && (GLOBAL.time - player.lastDamagedTime) < player.hitWaitTime) continue;
@@ -631,8 +644,8 @@ function draw(t: number) {
     drawAllGold(offscreenBufferCtx, GRID_SCALE);
     grid.drawChest(offscreenBufferCtx, depot, GRID_SCALE);
 
-    for (let i = 0; i < enemies.length; i++) {
-        const enemy = enemies[i];
+    for (let i = 0; i < ghosts.length; i++) {
+        const enemy = ghosts[i];
         enemy.draw(offscreenBufferCtx, GRID_SCALE, t)
     }
 

@@ -1,4 +1,4 @@
-import Enemy from "./enemy";
+import Ghost from "./ghost";
 import Road from "./road";
 
 export interface IPoint {
@@ -81,7 +81,7 @@ export interface ICollision {
 export interface IGridCell {
     index: number;
     cost: number;
-    enemies: Enemy[];
+    enemies: Ghost[];
     roads: Road[];
     numEnemies: number;
     numRoads: number;
