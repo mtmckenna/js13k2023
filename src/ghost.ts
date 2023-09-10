@@ -126,9 +126,8 @@ export default class Ghost implements IPositionable {
             this.visible = true;
         }
 
-        if (!this.visible) return;
-
         ctx.save();
+        if (!this.visible) ctx.globalAlpha = .5;
         ctx.translate(this.center.x * scale, this.center.y * scale);
         ctx.rotate(this.angle);
         ctx.imageSmoothingEnabled = false;
@@ -145,7 +144,9 @@ export default class Ghost implements IPositionable {
             (this.size.y + FRINGE_AMPLITUDE) * scale
         );
 
+        ctx.globalAlpha = 1;
         ctx.restore();
+
 
         if (this.forwardDirection) {
             this.frameCounter++;

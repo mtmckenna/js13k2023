@@ -4,9 +4,6 @@ import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
 
 export function drawPixels(offscreenCtx: CanvasRenderingContext2D, pixelValues: number[][], characterColorMap: string[], pixelSize: number, xOffset: number = 0, yOffset: number = 0, stroke = false) {
     offscreenCtx.imageSmoothingEnabled = false;  // Ensure no smoothing
-    //clear the canvas
-    // offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-
     // Draw the pixel data onto the off-screen canvas without any scaling
     for (let y = 0; y < pixelValues.length; y++) {
         const row = pixelValues[y];

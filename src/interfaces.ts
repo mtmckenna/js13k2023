@@ -38,6 +38,8 @@ export interface ICenterable {
     center: IPoint;
 }
 
+
+
 export interface ISpeedable {
     speed: number;
 }
@@ -55,6 +57,11 @@ export interface IVoronoiResult {
 export interface ITriangleInTriangulation extends ITriangle {
     circumcircle: ICircle;
     neighbors: ITriangleInTriangulation[];
+}
+
+export interface IBounds {
+    topLeft: IPoint;
+    bottomRight:IPoint;
 }
 
 export interface IPositionable extends ICenterable {

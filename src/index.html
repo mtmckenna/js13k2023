@@ -96,7 +96,7 @@
         pointer-events: none;
       }
 
-      .menu-btn {
+      .btn {
         display: block;
         width: 100%;
         padding: 5px;
@@ -109,7 +109,7 @@
         margin-top: 10px;
       }
 
-      .menu-btn:hover {
+      .btn:hover {
         background-color: #FFD700;
         border-color: #F0E68C;
       }
@@ -157,12 +157,11 @@
         pointer-events: auto;
       }
 
-
-      .menu-btn:disabled {
+      .btn:disabled {
         opacity: .5;
       }
 
-      .menu-btn:disabled:hover {
+      .btn:disabled:hover {
         background-color: #F0E68C;
         border-color: #F39C12;
         cursor: not-allowed;
@@ -194,7 +193,7 @@
     </div>
     <div>
       <div id="upgrade-gold-remaining" style="margin-top: 5px; text-align: center; font-weight: bold;"></div>
-      <button type="button" class="menu-btn" id="add-upgrade-btn">Add Upgrades</button>
+      <button type="button" class="btn" id="add-upgrade-btn">Add Upgrades</button>
     </div>
   </div>
 
@@ -215,17 +214,22 @@
           <td id="gold-plundered"></td>
         </tr>
         <tr>
+          <td>Ghosts Popped</td>
+          <td id="ghosts-popped"></td>
+        </tr>
+        <tr>
           <td>Rum</td>
           <td id="amount-rum"></td>
+        </tr>
       </table>
     </div>
 
-    <button type="button" class="menu-btn" id="try-again-btn">Starrrt again</button>
+    <button type="button" class="btn" id="try-again-btn">Starrrt again</button>
   </div>
 
   <div id="start-menu" class="menu-container" style="pointer-events: none">
     <h1 style="text-align: center">Plunder Survivors!!!</h1>
-    <button type="button" class="menu-btn" id="start-btn">Starrrt plunderin'</button>
+    <button type="button" class="btn" id="start-btn">Starrrt plunderin'</button>
   </div>
   </body>
 </html>

@@ -1,7 +1,7 @@
 import {Joystick} from "./joystick";
 import {KeyboardInput} from "./keyboard_input";
 import {
-    calculateAngle, clamp, distance,
+    calculateAngle, distance,
     getCos, getSin,
     normalizeVector,
     randomFloat,
@@ -11,7 +11,7 @@ import {circlesCollide, findCollisions} from "./collision";
 import {
     IPoint,
     IVehicleInputState,
-    ICollision, CanvasColor, IRegion, IGold, IUpgrade,
+    ICollision, CanvasColor, IRegion, IGold, IUpgrade, IBounds,
 } from "./interfaces";
 import {
     roadsAndRegionsFromPoints,
@@ -48,6 +48,7 @@ const waveTimeElement = document.querySelector("#wave-time");
 const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
 const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
+const ghostsPoppedElement: HTMLTableElement = document.querySelector("#ghosts-popped");
 const endGoldRemainingElement: HTMLTableElement = document.querySelector("#end-gold-remaining");
 const waveNumberElement: HTMLElement = document.querySelector("#wave-number");
 
@@ -74,8 +75,9 @@ const MAX_TIME = 5 * 60;
 let started = false;
 let waveNumber = 1;
 let regionNumber = 1;
+let numGhostsPopped = 0;
 const MAX_WAVES = 10;
-const WAVE_NUMBER_ENEMIES = [25, 50, 100, 200, 300, 400, 500, 600, 700, 800];
+const WAVE_NUMBER_ENEMIES = [10, 50, 100, 200, 300, 400, 500, 600, 700, 800];
 const WAVE_PERCENT_CHANCE_BIG_GHOST = [.01, .05, .01, .1, .1, .1, .1, .15, .2, .2];
 const WAVE_PERCENT_CHANCE_HUGE_GHOST = [0, 0, 0, 0, 0, 0, 0, .001, .005, .01];
 const MAX_GOLD_PER_REGION = 7;
@@ -160,13 +162,14 @@ let {roads, regions} = roadsAndRegionsFromPoints(points, grid.gameSize);
 const randomRoad = findRoadCenterClosestToCenterOfGame();
 
 let upgrades: IUpgrade[] = [
-    { name: "Questionable Rum", currentLevel: 0, maxLevel: 999, cost: 0 },
-    { name: "50% Damage Recovery", currentLevel: 0, maxLevel: 10, cost: 2 },
-    { name: "Sails", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Questionable Rum", currentLevel: 0, maxLevel: 99, cost: 0 },
+    { name: "50% Damage Recovery", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Speed Sails", currentLevel: 0, maxLevel: 5, cost: 2 },
     { name: "Armor", currentLevel: 0, maxLevel: 5, cost: 2 },
-    { name: "Forward Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
-    { name: "Spread Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
-    { name: "Add Stop", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Add 2 Cannons", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Add 1 Target Cannon", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Add Treasure Stop", currentLevel: 0, maxLevel: 5, cost: 2 },
+    { name: "Cannonball Speed Up", currentLevel: 0, maxLevel: 5, cost: 2 },
 ];
 
 const depotIndex = Math.floor(regions.length/2);
@@ -223,7 +226,7 @@ function activateEnemies(num: number) {
     }
 }
 
-function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
+function generateRandomPositionOutsideView(viewableBounds: IBounds , worldSize: IPoint): IPoint {
     let x: number, y: number;
     let inView = false;
     let inWorld = false;
@@ -257,28 +260,9 @@ function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
     return { x, y };
 }
 
-// function generateRandomPositionOutsideView(viewableBounds, worldSize): IPoint {
-//     let x: number, y: number;
-//     let i = 0;
-//
-//     do {
-//         x = Math.random() * worldSize.x;
-//         y = Math.random() * worldSize.y;
-//         i++;
-//         if (i > 100) {
-//             break;
-//         }
-//     } while (
-//         (x > viewableBounds.topLeft.x && x < viewableBounds.bottomRight.x) ||
-//         (y > viewableBounds.topLeft.y && y < viewableBounds.bottomRight.y)
-//         );
-//
-//     return { x, y };
-// }
-
 function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: number): void {
 
-    const stopsUpgrade = upgrades.find(u => u.name === "Add Stop");
+    const stopsUpgrade = upgrades.find(u => u.name === "Add Treasure Stop");
 
     for (let i = 0; i < stopsUpgrade.currentLevel + 1; i++) {
         let minIndex = null;
@@ -318,9 +302,7 @@ function generateXMarkRegionIndexDistanceOrMoreAwayFromDepot(desiredDistance: nu
 }
 
 function getGoldAmountForRegionNumber(number: number): number {
-    return Math.floor(Math.random() * MAX_GOLD_PER_REGION) + 1;
-    // const clampedNum = clamp(number, 0, MAX_GOLD_PER_REGION.length - 1)
-    // return Math.floor(randomFloat(MAX_GOLD_PER_REGION[clampedNum-1], MAX_GOLD_PER_REGION[clampedNum]));
+    return Math.max(Math.floor(Math.random() * MAX_GOLD_PER_REGION) + 1,2);
 }
 
 function findRoadCenterClosestToCenterOfGame(): Road {
@@ -376,6 +358,7 @@ function update(t: number) {
     if (nextWaveInTime <= 0 && waveNumber < MAX_WAVES) {
         waveNumber++;
         setTimeout(showWaveNumber, 500);
+        activateEnemies(numEnemiesForWave(waveNumber));
     }
 
     if (GLOBAL.timeLeft <= 0) {
@@ -425,7 +408,6 @@ function handleWallCollisions() {
         player.pos.y -= normalizedCollisionEdge.y * penetrationDepth;
 
         PointPool.release(normalizedCollisionEdge);
-        break;
     }
 }
 function updateScreenShake(t: number) {
@@ -450,7 +432,7 @@ function handleEnemiesCollidingWithPlayer() {
         // continue if enemy last hit player within wait time
         if (player.lastDamagedTime && (GLOBAL.time - player.lastDamagedTime) < player.hitWaitTime) continue;
         if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
-            player.life -= 2 * player.armorUpgrade;
+            player.life -= 1 * player.armorUpgrade;
             player.lastDamagedTime = GLOBAL.time;
             playHitPlayerSound();
 
@@ -512,6 +494,7 @@ function handleBulletsCollidingWithEnemies() {
                         const b = BulletPool.get(enemy.center.x + randomFloat(-enemy.size.x/2, enemy.size.x/2), enemy.center.y + randomFloat(-enemy.size.y/2,enemy.size.y/2));
                         b.makeParticle();
                     }
+                    numGhostsPopped++;
                 }
                 break;
             }
@@ -533,7 +516,6 @@ function handleCollectingGold() {
                 previousXMarkRegionIndices.push(xMarkIndices[i]);
                 // player.gold.length = 0;
                 for (let i = 0; i < region.gold.length; i++) {
-                    // const gold = GoldPool.get(region.center.x, region.center.y, player, i *.1);
                     const gold = region.gold[i];
                     gold.updateable = true;
                     gold.drawable = true;
@@ -703,9 +685,6 @@ function drawArrowToBuilding(ctx: CanvasRenderingContext2D, center: IPoint, buil
     const color = building.type === "depot" ? "#F0E68C" : "red";
     drawTriangle(ctx, circleX * GRID_SCALE, circleY * GRID_SCALE, TRIANGLE_SIZE * GRID_SCALE, angle, color);
 }
-
-// draw life bar at top of screen the empty part of the life bar is white and the full part is red
-// it stretches across the top of the screen and is 25 px tall
 function drawLifeBar(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, life: number, maxLife: number) {
     ctx.save();
     ctx.translate(0, 5);
@@ -715,7 +694,7 @@ function drawLifeBar(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, l
     ctx.fill();
     ctx.closePath();
     ctx.beginPath();
-    ctx.rect(15, 10, (canvas.width - 30) * life / maxLife, 10);
+    ctx.rect(15, 10, (canvas.width - 30) * Math.max(life,0) / maxLife, 10);
     ctx.fillStyle = "#f00";
     ctx.fill();
     ctx.closePath();
@@ -756,7 +735,7 @@ function joystickMoveCallback() {
 function resizeCanvas() {
     let width = window.innerWidth;
     let height = window.innerHeight;
-    let scale = 1;
+    let scale: number;
 
     if (width > height) {
         scale = MAX_DIMENSION / width;
@@ -808,6 +787,7 @@ function showRestartMenu() {
     amountGoldElement.textContent = allGold.length.toString();
     amountRumElement.textContent = numRum.toString();
     endGoldRemainingElement.textContent = depot.gold.length.toString();
+    ghostsPoppedElement.textContent = numGhostsPopped.toString();
 
     UI_STATE.restartMenuVisible = true;
 }
@@ -836,7 +816,7 @@ function showUpgradeMenu() {
         tr.setAttribute('data-selected', 'false');
         tr.setAttribute('data-cash', upgrade.cost.toString());
         tr.setAttribute('data-upgrade', upgrade.name);
-        tr.innerHTML = `<td>${upgrade.name}</td><td>${upgrade.currentLevel}</td><td>${upgrade.cost} Gold</td>`;
+        tr.innerHTML = `<td>${upgrade.name}</td><td>${upgrade.currentLevel}/${upgrade.maxLevel}</td><td>${upgrade.cost} Gold</td>`;
         upgradeTable.appendChild(tr);
 
     }
@@ -894,20 +874,9 @@ function hideUpgradeMenu() {
     UI_STATE.upgradeMenuVisible = false;
 
     const menuItems = document.querySelectorAll('.menu-item');
-    // add selected upgrades to player and subtract cash
     menuItems.forEach(item => {
-        // const isSelected = item.getAttribute('data-selected') === 'true';
-        // if (isSelected) {
-            // const upgrade = item.getAttribute('data-upgrade');
-            // player.upgrades.push(upgrade);
-        // }
-
         item.removeEventListener('click', handleMenuItemClick);
     });
-
-    // setTimeout(showWaveNumber, 500);
-    const numEnemies = numEnemiesForWave(waveNumber);
-    activateEnemies(numEnemies);
 }
 
 function handleMenuItemClick(e: Event) {
@@ -920,8 +889,6 @@ function handleMenuItemClick(e: Event) {
     element.setAttribute('data-selected', (!isSelected).toString());
     element.style.backgroundColor = isSelected ? '' : '#F0E68C';
     element.style.color = isSelected ? '' : '#000';
-    // const upgrade = element.getAttribute('data-upgrade');
-    // selectedUpgrades = upgrade;
 
     const menuItems = document.querySelectorAll('.upgrade-item') as NodeListOf<HTMLElement>;
 
@@ -950,13 +917,20 @@ function disableMenuItems(menuItems: NodeListOf<HTMLElement>) {
     for (let i = 0; i < menuItems.length; i++) {
         const item = menuItems[i] as HTMLElement;
         const cost = parseInt(item.getAttribute('data-cash'));
+        const name = menuItems[i].getAttribute('data-upgrade');
         const isSelected = menuItems[i].getAttribute('data-selected') === 'true';
+        const upgrade = findUpgrade(name);
 
         if (cost > goldRemaining && !isSelected) {
             item.classList.add('disabled');
         } else {
             item.classList.remove('disabled');
         }
+
+        if (upgrade.currentLevel >= upgrade.maxLevel) {
+            item.classList.add('disabled');
+        }
+
     }
 }
 function addUpgrade(upgradeName: string) {
@@ -964,18 +938,22 @@ function addUpgrade(upgradeName: string) {
     upgrade.currentLevel++;
     upgrade.cost = Math.floor(upgrade.cost * 3);
 
-    if (upgradeName === "Forward Cannon") {
-        player.forwardGun = true;
+    if (upgradeName === "Add 2 Cannons") {
+        player.regularGunLastFiredTimes.push(0,0);
     } else if (upgradeName === "Armor") {
         player.armorUpgrade = Math.max(player.armorUpgrade- .1, .5);
-    } else if (upgradeName === "Sails") {
+    } else if (upgradeName === "Speed Sails") {
         player.speedUpgrade = Math.min(player.speedUpgrade + .5, 2);
     } else if (upgradeName === "Questionable Rum") {
         numRum++;
-    } else if (upgradeName === "Spread Cannon") {
-        player.spreadGun = true;
+    } else if (upgradeName === "Add 1 Target Cannon") {
+        player.targetGunLastFiredTimes.push(0);
     } else if (upgradeName === "50% Damage Recovery") {
         player.life = player.life + Math.floor((100-player.life) * .5);
+    } else if (upgradeName === "Cannonball Speed Up") {
+        player.gunSpeed = Math.max(player.gunSpeed -.025, .01);
+    } else {
+        console.warn("Unknown upgrade: " + upgradeName);
     }
 }
 

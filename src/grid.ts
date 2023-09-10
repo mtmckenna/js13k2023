@@ -164,7 +164,7 @@ export default class Grid {
         return enemies;
     }
 
-    getNearestEnemy(pos: IPoint): Ghost | null {
+    getNearestEnemy(pos: IPoint, num: number): Ghost[] {
         neighbors.length = 0;
         const startCellIndex = indexForPos(pos.x, pos.y, GRID_SIZE_X);
         const visited: Set<number> = new Set();
@@ -173,6 +173,7 @@ export default class Grid {
 
         let minDistance = Number.MAX_VALUE;
         let minEnemy: Ghost | null = null;
+        const enemies: Ghost[] = [];
 
         while (queue.length > 0) {
             const queueItem = queue.shift()!;
@@ -187,11 +188,12 @@ export default class Grid {
             for (let i = 0; i < currentCell.numEnemies; i++) {
                 const enemy = currentCell.enemies[i];
                 if (enemy) {
-                    // const distance = squaredDistance(pos, enemy.center);
                     const d = distance(pos, enemy.center)
                     if (d < minDistance) {
                         minDistance = d;
                         minEnemy = enemy;
+                        enemies.push(enemy);
+                        if (enemies.length > num) enemies.shift();
                     }
                 }
             }
@@ -207,7 +209,8 @@ export default class Grid {
 
         emptyQueue(queue)
 
-        return minEnemy;
+        // return minEnemy;
+        return enemies;
     }
 
     drawRoads(ctx: CanvasRenderingContext2D, scale: number = 1) {

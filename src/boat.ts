@@ -67,22 +67,12 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     index: number = 0;
 
     // Upgrades
-    trackingGunSpeed: number = .25;
-    trackingGunLastFiredTime: number = 0;
-
-    forwardGun: boolean = false;
-    forwardGunSpeed: number = .25;
-    forwardGunLastFiredTime: number = 0;
-
-    spreadGun: boolean = false;
-    spreadGunSpeed: number = 1;
-    spreadGunLastFiredTime: number = 0;
-    spreadGunNumberOfBullets: number = 10;
+    gunSpeed: number = .25;
+    regularGunLastFiredTimes: number[] = [];
+    targetGunLastFiredTimes: number[] = [0];
 
     speedUpgrade: number = 0;
     armorUpgrade: number = 1;
-
-    numberOfGuns: number = 1;
 
     visible: boolean = true;
     lastDamagedTime: number = 0;
@@ -184,30 +174,40 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
             this.gold[i].angle = this.angle;
         }
 
-        if ((this.currentTime - this.trackingGunLastFiredTime) > this.trackingGunSpeed) {
-            this.trackingGunLastFiredTime = this.currentTime;
-            const enemy = this.grid.getNearestEnemy(this.center)
-            if (!enemy) return;
+        const enemies = this.grid.getNearestEnemy(this.center, this.targetGunLastFiredTimes.length);
+        for (let i = 0; i < enemies.length; i++) {
+            if (this.currentTime - this.targetGunLastFiredTimes[i] < this.gunSpeed) continue;
+            const enemy = enemies[i];
+            this.targetGunLastFiredTimes[i] = this.currentTime;
             normalizeVector(subtractVectors(enemy.center, this.center, this.bulletDirection), this.bulletDirection);
             normalizeVector(this.bulletDirection, this.bulletDirection); // Re-normalize after adjustments
             const dotProduct = dot(this.bulletDirection, this.direction);
             shootGun(this.center, this.bulletDirection, this.bulletSpeed + this.speed * dotProduct);
         }
 
-        if (this.forwardGun && (this.currentTime - this.forwardGunLastFiredTime) > this.forwardGunSpeed) {
-            this.forwardGunLastFiredTime = this.currentTime;
-            shootGun(this.center, this.direction, this.bulletSpeed + this.speed);
+        const angleIncrement = 2 * Math.PI / this.regularGunLastFiredTimes.length;
+        for (let i = 0; i < this.regularGunLastFiredTimes.length; i++) {
+            if (this.currentTime - this.regularGunLastFiredTimes[i] < this.gunSpeed) continue;
+            this.regularGunLastFiredTimes[i] = this.currentTime;
+            const angle = this.angle + angleIncrement * i;
+            const direction = {x: getCos(angle), y: getSin(angle)};
+            shootGun(this.center, direction, this.bulletSpeed + this.speed);
         }
 
-        if (this.spreadGun && (this.currentTime - this.spreadGunLastFiredTime) > this.spreadGunSpeed) {
-            this.spreadGunLastFiredTime = this.currentTime;
-            const angleIncrement = 2 * Math.PI / this.spreadGunNumberOfBullets;
-            for (let i = 0; i < this.spreadGunNumberOfBullets; i++) {
-                const angle = this.angle + angleIncrement * i;
-                const direction = {x: getCos(angle), y: getSin(angle)};
-                shootGun(this.center, direction, this.bulletSpeed + this.speed);
-            }
-        }
+        // if (this.forwardGun && (this.currentTime - this.forwardGunLastFiredTime) > this.forwardGunSpeed) {
+        //     this.forwardGunLastFiredTime = this.currentTime;
+        //     shootGun(this.center, this.direction, this.bulletSpeed + this.speed);
+        // }
+
+        // if (this.spreadGun && (this.currentTime - this.spreadGunLastFiredTime) > this.spreadGunSpeed) {
+        //     this.spreadGunLastFiredTime = this.currentTime;
+        //     const angleIncrement = 2 * Math.PI / this.spreadGunNumberOfBullets;
+        //     for (let i = 0; i < this.spreadGunNumberOfBullets; i++) {
+        //         const angle = this.angle + angleIncrement * i;
+        //         const direction = {x: getCos(angle), y: getSin(angle)};
+        //         shootGun(this.center, direction, this.bulletSpeed + this.speed);
+        //     }
+        // }
 
     }
 
@@ -221,15 +221,16 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
             this.visible = true;
         }
 
-        if (!this.visible) return;
+
 
 
         ctx.save();
+        if (!this.visible) ctx.globalAlpha = .5;
         ctx.translate(this.center.x * scale, this.center.y * scale);
         ctx.rotate(this.angle);
         ctx.imageSmoothingEnabled = false;  // Ensure no smoothing for main canvas
         ctx.drawImage(boatCanvas, 0, 0, this.size.x, this.size.y, -this.size.x/2*scale, -this.size.y/2*scale, this.size.x * scale, this.size.y * scale);
-
+        ctx.globalAlpha = 1;
         ctx.restore();
     }
 }
