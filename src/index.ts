@@ -17,7 +17,7 @@ import {
     roadsAndRegionsFromPoints,
 } from "./level_generation";
 import Grid, {GAME_WIDTH} from "./grid";
-import Ghost from "./ghost";
+import Ghost, {GHOST_DAMAGES, PLAYER_DAMAGES} from "./ghost";
 
 import Road, {ROAD_WIDTH} from "./road";
 import Camera from "./camera";
@@ -36,20 +36,20 @@ import {
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
-const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
-const restartMenu: HTMLElement = document.querySelector("#restart-menu");
+const upgradeMenu: HTMLElement = document.querySelector("#um");
+const restartMenu: HTMLElement = document.querySelector("#rm");
 const startMenu: HTMLElement = document.querySelector("#sm");
-const amountGoldElement: HTMLElement = document.querySelector("#gold-plundered");
+const amountGoldElement: HTMLElement = document.querySelector("#gp");
 const surviveElement: HTMLElement = document.querySelector("#survive");
-const upgradeGoldRemainingElement: HTMLElement = document.querySelector("#upgrade-gold-remaining");
-const tryAgainElement = document.querySelector("#try-again");
-const timeRemainingElement = document.querySelector("#time-remaining");
-const waveTimeElement = document.querySelector("#wave-time");
-const upgradeButton: HTMLButtonElement = document.querySelector("#add-upgrade-btn");
+const upgradeGoldRemainingElement: HTMLElement = document.querySelector("#ugr");
+const tryAgainElement = document.querySelector("#ta");
+const timeRemainingElement = document.querySelector("#tr");
+const waveTimeElement = document.querySelector("#wt");
+const upgradeButton: HTMLButtonElement = document.querySelector("#aub");
 const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
 const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
-const ghostsPoppedElement: HTMLTableElement = document.querySelector("#ghosts-popped");
-const endGoldRemainingElement: HTMLTableElement = document.querySelector("#end-gold-remaining");
+const ghostsPoppedElement: HTMLTableElement = document.querySelector("#po");
+const endGoldRemainingElement: HTMLTableElement = document.querySelector("#egr");
 const waveNumberElement: HTMLElement = document.querySelector("#wn");
 
 canvas.id = "g";
@@ -79,7 +79,7 @@ let numGhostsPopped = 0;
 const MAX_WAVES = 10;
 const WAVE_NUMBER_ENEMIES = [10, 50, 100, 200, 300, 400, 500, 600, 700, 800];
 const WAVE_PERCENT_CHANCE_BIG_GHOST = [.01, .05, .01, .1, .1, .1, .1, .15, .2, .2];
-const WAVE_PERCENT_CHANCE_HUGE_GHOST = [0, 0, 0, 0, 0, 0, 0, .001, .005, .01];
+const WAVE_PERCENT_CHANCE_HUGE_GHOST = [0, .001, .001, .001, .001, .001, .001, .0025, .005, .01];
 const MAX_GOLD_PER_REGION = 7;
 const WAVE_TIMES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270];
 GLOBAL.time = 0;
@@ -432,7 +432,7 @@ function handleEnemiesCollidingWithPlayer() {
         // continue if enemy last hit player within wait time
         if (player.lastDamagedTime && (GLOBAL.time - player.lastDamagedTime) < player.hitWaitTime) continue;
         if (circlesCollide(player.center.x, player.center.y, player.radius, enemy.center.x, enemy.center.y, enemy.radius)) {
-            player.life -= 1 * player.armorUpgrade;
+            player.life -= PLAYER_DAMAGES[enemy.currentSizeIndex] * player.armorUpgrade;
             player.lastDamagedTime = GLOBAL.time;
             playHitPlayerSound();
 
@@ -480,11 +480,12 @@ function handleBulletsCollidingWithEnemies() {
                 enemy.lastDamagedTime = GLOBAL.time;
                 BulletPool.release(bullet);
                 playCannonballHitEnemySound();
-                enemy.life -= 25;
+                enemy.life -= GHOST_DAMAGES[enemy.currentSizeIndex];
                 enemy.recoil(bullet.vel.x, bullet.vel.y);
                 for (let i = 0; i < 3; i++) {
                     const b = BulletPool.get(enemy.center.x + randomFloat(-enemy.size.x/2, enemy.size.x/2), enemy.center.y + randomFloat(-enemy.size.y/2,enemy.size.y/2));
                     b.makeParticle();
+                    b.setSize(enemy.currentSizeIndex)
                 }
 
                 if (enemy.life <= 0) {
@@ -493,6 +494,7 @@ function handleBulletsCollidingWithEnemies() {
                     for (let i = 0; i < 20; i++) {
                         const b = BulletPool.get(enemy.center.x + randomFloat(-enemy.size.x/2, enemy.size.x/2), enemy.center.y + randomFloat(-enemy.size.y/2,enemy.size.y/2));
                         b.makeParticle();
+                        b.setSize(enemy.currentSizeIndex)
                     }
                     numGhostsPopped++;
                 }

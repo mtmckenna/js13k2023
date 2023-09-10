@@ -49,7 +49,7 @@
         margin-bottom: 5px;
       }
 
-      .table-wrapper {
+      .tw {
         overflow: auto;
         flex-grow: 1;
       }
@@ -179,12 +179,12 @@
   </head>
   <body>
 
-  <div id="c"><span id="time-remaining">05:00</span> / <span id="wave-time">01:00</span></div>
+  <div id="c"><span id="tr">05:00</span> / <span id="wt">01:00</span></div>
   <div id="wn">Wave 0</div>
 
-  <div id="upgrade-menu" class="mc" style="pointer-events: none">
+  <div id="um" class="mc" style="pointer-events: none">
     <h2 style="margin: 5px">Select Upgrades</h2>
-    <div class="table-wrapper">
+    <div class="tw">
       <table id="menu-table">
         <th>Upgrade</th>
         <th>Level</th>
@@ -192,30 +192,30 @@
       </table>
     </div>
     <div>
-      <div id="upgrade-gold-remaining" style="margin-top: 5px; text-align: center; font-weight: bold;"></div>
-      <button type="button" class="btn" id="add-upgrade-btn">Add Upgrades</button>
+      <div id="ugr" style="margin-top: 5px; text-align: center; font-weight: bold;"></div>
+      <button type="button" class="btn" id="aub">Add Upgrades</button>
     </div>
   </div>
 
-  <div id="restart-menu" class="mc" style="pointer-events: none">
-    <h2 id="try-again"></h2>
-    <div class="table-wrapper">
-      <table id="restart-table">
+  <div id="rm" class="mc" style="pointer-events: none">
+    <h2 id="ta"></h2>
+    <div class="tw">
+      <table>
         <tr>
           <td>Survived</td>
             <td id="survive"></td>
         </tr>
         <tr>
           <td>Gold Remaining</td>
-          <td id="end-gold-remaining"></td>
+          <td id="egr"></td>
         </tr>
         <tr>
           <td>Total Gold Plundered</td>
-          <td id="gold-plundered"></td>
+          <td id="gp"></td>
         </tr>
         <tr>
           <td>Ghosts Popped</td>
-          <td id="ghosts-popped"></td>
+          <td id="po"></td>
         </tr>
         <tr>
           <td>Rum</td>

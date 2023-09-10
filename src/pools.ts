@@ -1,5 +1,5 @@
 import {ICenterable, IGold, IPoint, IPoolable, IPoolPoint, IPositionable} from "./interfaces";
-import {Bullet} from "./bullet";
+import {Bullet, BULLET_SIZES} from "./bullet";
 import {drawPixels, updatePos} from "./game_objects";
 import Grid from "./grid";
 import {GLOBAL, PIXEL_SIZE} from "./constants";
@@ -105,6 +105,8 @@ export class BulletPool {
         bullet.makeBullet();
         bullet.active = false;
         bullet.lifeTime = 0;
+        bullet.size = BULLET_SIZES[0]
+        bullet.radius = bullet.size.x/2
 
     }
 }

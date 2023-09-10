@@ -1,8 +1,12 @@
 import {ICircle, IGridCell, IPoint, IPoolable, IPositionable} from "./interfaces";
-import {generateVertices, updatePos} from "./game_objects";
-import Grid, {GRID_SIZE_X, indexForPos} from "./grid";
-import {clamp, randomFloat} from "./math";
-import {GLOBAL} from "./constants";
+import { updatePos} from "./game_objects";
+import { randomFloat} from "./math";
+
+export const BULLET_SIZES: IPoint[] = [
+    {x: 10, y: 10},
+    {x: 20, y: 20},
+    {x: 40, y: 40},
+];
 
 export class Bullet implements IPositionable, ICircle, IPoolable {
     angle: number = 0;
@@ -40,6 +44,13 @@ export class Bullet implements IPositionable, ICircle, IPoolable {
         this.vel.y = randomFloat(-2,2);
         this.vel.x = randomFloat(-2,2);
         this.maxLifeTime = 1;
+        this.size = BULLET_SIZES[0]
+        this.radius = this.size.x/2
+    }
+
+    setSize(sizeIndex: number) {
+        this.size = BULLET_SIZES[sizeIndex];
+        this.radius = this.size.x/2;
     }
 
     makeBullet() {
@@ -48,5 +59,7 @@ export class Bullet implements IPositionable, ICircle, IPoolable {
         this.radius = 5;
         this.color = "#000";
         this.maxLifeTime = 2;
+        this.size = BULLET_SIZES[0]
+        this.radius = this.size.x/2
     }
 }

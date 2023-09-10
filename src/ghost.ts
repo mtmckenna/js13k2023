@@ -10,7 +10,7 @@ import {PointPool} from "./pools";
 import {drawPixels, updatePos} from "./game_objects";
 import {GLOBAL, PIXEL_SIZE} from "./constants";
 
-const ENEMY_MOVING_SPEED = 1.5;
+// const ENEMY_MOVING_SPEED = 1.5;
 const ENEMY_SEPARATION_FORCE = .9;
 
 const PIXELS = [
@@ -37,12 +37,13 @@ offscreenCanvas.height = characterHeight;
 const spriteSheetCanvas = document.createElement("canvas");
 const NUM_FRAMES = 120;
 createSpriteSheet({x: characterWidth, y: characterHeight})
-const regularSize = {x: 8 * PIXEL_SIZE, y: 8 * PIXEL_SIZE};
-const bigSize = {x: 16 * PIXEL_SIZE, y: 16 * PIXEL_SIZE};
-const hugeSize = {x: 64 * PIXEL_SIZE, y: 64 * PIXEL_SIZE};
+const MOVING_SPEEDS = [1.75, 1.5, 1];
+const SIZES = [8,16,32];
+export const GHOST_DAMAGES = [25, 20, 10];
+export const PLAYER_DAMAGES = [1,2,5];
 
 export default class Ghost implements IPositionable {
-    size: IPoint = regularSize;
+    size: IPoint = {x: SIZES[0] * PIXEL_SIZE, y: SIZES[0] * PIXEL_SIZE};
     index: number = 0;
     grid: Grid | null;
     player: IPositionable | null;
@@ -61,13 +62,16 @@ export default class Ghost implements IPositionable {
     frameCounter: number = 0;
     randomStart: number = 0;
     active: boolean = true;
-    radius: number = 8 * PIXEL_SIZE/2;
+    radius: number = SIZES[0] * PIXEL_SIZE/2;
     lastDamagedTime: number = 0;
     lastFlashedTime: number = 0;
     hitWaitTime: number = .25;
     life: number = 100;
     visible: boolean = true;
-    sizes = [regularSize, bigSize, hugeSize];
+    sizes: IPoint[] = [
+        { x: SIZES[0] * PIXEL_SIZE, y: SIZES[0] * PIXEL_SIZE },
+        { x: SIZES[1] * PIXEL_SIZE, y: SIZES[1] * PIXEL_SIZE },
+        { x: SIZES[2] * PIXEL_SIZE, y: SIZES[2] * PIXEL_SIZE }];
     currentSizeIndex = 0;
 
     constructor(pos: IPoint = {x: 0, y: 0}, grid: Grid = null, player: IPositionable = null) {
@@ -79,8 +83,8 @@ export default class Ghost implements IPositionable {
         const rand = Math.random() * 100;
         const cos = getCos(rand);
         const sin = getSin(rand);
-        this.vel.x = cos * ENEMY_MOVING_SPEED;
-        this.vel.y = sin * ENEMY_MOVING_SPEED;
+        this.vel.x = cos * MOVING_SPEEDS[this.currentSizeIndex];
+        this.vel.y = sin * MOVING_SPEEDS[this.currentSizeIndex];
         this.rotorRandomOffsets = new Array(4).fill(0).map(() => Math.random() * Math.PI * 2);
         this.sign = Math.random() > .5 ? 1 : -1;
         drawPixels(offscreenCtx, PIXELS, PIXELS_COLOR_MAP, PIXEL_SIZE);
@@ -96,12 +100,14 @@ export default class Ghost implements IPositionable {
     activate() {
         this.active = true;
         this.life = 100;
-        this.size = regularSize;
+        this.size = this.sizes[0];
+        this.radius = this.size.x/2;
     }
 
     setSizeType(index:number) {
         this.currentSizeIndex = index;
         this.size = this.sizes[index];
+        this.radius = this.size.x/2;
     }
 
     recoil(x: number, y:number) {
@@ -132,12 +138,12 @@ export default class Ghost implements IPositionable {
         ctx.rotate(this.angle);
         ctx.imageSmoothingEnabled = false;
 
-        const sx = this.frameCounter * regularSize.x; // source x on sprite sheet
+        const sx = this.frameCounter * this.sizes[0].x; // source x on sprite sheet
         ctx.drawImage(spriteSheetCanvas,
             sx,
             0,
-            regularSize.x,
-            regularSize.y + FRINGE_AMPLITUDE,
+            this.sizes[0].x,
+            this.sizes[0].y + FRINGE_AMPLITUDE,
             -this.size.x / 2 * scale,
             -this.size.y / 2 * scale,
             this.size.x * scale,
@@ -204,24 +210,24 @@ export default class Ghost implements IPositionable {
             if (Math.sign(this.vel.x) !== Math.sign(dirToPlayer.x)) {
                 this.vel.x = this.vel.x + Math.sign(dirToPlayer.x) * DECAY;
             } else {
-                this.vel.x = dirToPlayer.x * ENEMY_MOVING_SPEED;
+                this.vel.x = dirToPlayer.x * MOVING_SPEEDS[this.currentSizeIndex];
             }
 
             if (Math.sign(this.vel.y) !== Math.sign(dirToPlayer.y)) {
                 this.vel.y = this.vel.y + Math.sign(dirToPlayer.y) * DECAY
             } else {
-                this.vel.y = dirToPlayer.y * ENEMY_MOVING_SPEED;
+                this.vel.y = dirToPlayer.y * MOVING_SPEEDS[this.currentSizeIndex];
             }
         } else {
             // move sinusoidally and a little bit towards the player
             const t = GLOBAL.time *1000;
             const cos = getCos(t / 1000 + this.randomStart)/2;
             const sin = getSin(t / 1000 + this.randomStart)/2;
-            this.vel.x = cos * ENEMY_MOVING_SPEED;
-            this.vel.y = sin * ENEMY_MOVING_SPEED;
+            this.vel.x = cos * MOVING_SPEEDS[this.currentSizeIndex];
+            this.vel.y = sin * MOVING_SPEEDS[this.currentSizeIndex];
             // move slightly towards the player
-            this.vel.x += dirToPlayer.x * ENEMY_MOVING_SPEED/2;
-            this.vel.y += dirToPlayer.y * ENEMY_MOVING_SPEED/2;
+            this.vel.x += dirToPlayer.x * MOVING_SPEEDS[this.currentSizeIndex]/2;
+            this.vel.y += dirToPlayer.y * MOVING_SPEEDS[this.currentSizeIndex]/2;
 
         }
 
