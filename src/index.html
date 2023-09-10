@@ -25,7 +25,7 @@
         align-items: center;
       }
 
-      #game {
+      #g {
         background-color: #5f80c0;
         width: 100%;
         height: 100%;
@@ -69,7 +69,7 @@
         padding: 5px;
       }
 
-      .menu-container {
+      .mc {
         width: 90%;
         max-width: 500px;
         background-color: rgba(255, 255, 255, 0.9);
@@ -82,7 +82,7 @@
         max-height: 90%;
       }
 
-      #wave-number {
+      #wn {
         display: flex;
         justify-content: center;
         align-items: center;
@@ -114,7 +114,7 @@
         border-color: #F0E68C;
       }
 
-      #clock {
+      #c {
         position: absolute;
         bottom: 30px;
         left: 50%;
@@ -125,7 +125,7 @@
         pointer-events: none;
       }
 
-      @keyframes slideUpFadeIn {
+      @keyframes su {
         from {
           opacity: 0;
           transform: translateY(30px);
@@ -136,7 +136,7 @@
         }
       }
 
-      @keyframes slideDownFadeOut {
+      @keyframes sd {
         from {
           opacity: 1;
           transform: translateY(0);
@@ -147,13 +147,13 @@
         }
       }
 
-      .hide {
-        animation: slideDownFadeOut 0.5s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      .h {
+        animation: sd 0.5s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
         pointer-events: none;
       }
 
-      .show {
-        animation: slideUpFadeIn 0.5s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      .s {
+        animation: su 0.5s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
         pointer-events: auto;
       }
 
@@ -167,11 +167,11 @@
         cursor: not-allowed;
       }
 
-      .disabled {
+      .d {
         opacity: .5;
       }
 
-      .disabled:hover {
+      .d:hover {
         cursor: not-allowed;
       }
 
@@ -179,10 +179,10 @@
   </head>
   <body>
 
-  <div id="clock"><span id="time-remaining">05:00</span> / <span id="wave-time">01:00</span></div>
-  <div id="wave-number">Wave 0</div>
+  <div id="c"><span id="time-remaining">05:00</span> / <span id="wave-time">01:00</span></div>
+  <div id="wn">Wave 0</div>
 
-  <div id="upgrade-menu" class="menu-container" style="pointer-events: none">
+  <div id="upgrade-menu" class="mc" style="pointer-events: none">
     <h2 style="margin: 5px">Select Upgrades</h2>
     <div class="table-wrapper">
       <table id="menu-table">
@@ -197,7 +197,7 @@
     </div>
   </div>
 
-  <div id="restart-menu" class="menu-container" style="pointer-events: none">
+  <div id="restart-menu" class="mc" style="pointer-events: none">
     <h2 id="try-again"></h2>
     <div class="table-wrapper">
       <table id="restart-table">
@@ -227,7 +227,7 @@
     <button type="button" class="btn" id="try-again-btn">Starrrt again</button>
   </div>
 
-  <div id="start-menu" class="menu-container" style="pointer-events: none">
+  <div id="sm" class="mc" style="pointer-events: none">
     <h1 style="text-align: center">Plunder Survivors!!!</h1>
     <button type="button" class="btn" id="start-btn">Starrrt plunderin'</button>
   </div>

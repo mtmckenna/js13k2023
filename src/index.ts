@@ -38,7 +38,7 @@ const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 const grid = new Grid();
 const upgradeMenu: HTMLElement = document.querySelector("#upgrade-menu");
 const restartMenu: HTMLElement = document.querySelector("#restart-menu");
-const startMenu: HTMLElement = document.querySelector("#start-menu");
+const startMenu: HTMLElement = document.querySelector("#sm");
 const amountGoldElement: HTMLElement = document.querySelector("#gold-plundered");
 const surviveElement: HTMLElement = document.querySelector("#survive");
 const upgradeGoldRemainingElement: HTMLElement = document.querySelector("#upgrade-gold-remaining");
@@ -50,9 +50,9 @@ const upgradeTable: HTMLTableElement = document.querySelector("#menu-table");
 const amountRumElement: HTMLTableElement = document.querySelector("#amount-rum");
 const ghostsPoppedElement: HTMLTableElement = document.querySelector("#ghosts-popped");
 const endGoldRemainingElement: HTMLTableElement = document.querySelector("#end-gold-remaining");
-const waveNumberElement: HTMLElement = document.querySelector("#wave-number");
+const waveNumberElement: HTMLElement = document.querySelector("#wn");
 
-canvas.id = "game";
+canvas.id = "g";
 canvas.width = 1000
 canvas.height = 1000;
 const GRID_SCALE = 1 / 2;
@@ -772,8 +772,8 @@ function goldArrivedAtDepot(gold: IGold) {
 }
 
 function showRestartMenu() {
-    restartMenu.classList.remove("hide");
-    restartMenu.classList.add("show");
+    restartMenu.classList.remove("h");
+    restartMenu.classList.add("s");
     restartMenu.style.pointerEvents = "auto";
     restartMenu.style.removeProperty("opacity");
 
@@ -794,8 +794,8 @@ function showRestartMenu() {
 
 function showUpgradeMenu() {
     upgradeButton.disabled = true;
-    upgradeMenu.classList.remove("hide");
-    upgradeMenu.classList.add("show");
+    upgradeMenu.classList.remove("h");
+    upgradeMenu.classList.add("s");
     upgradeMenu.style.pointerEvents = "auto";
     upgradeMenu.style.removeProperty("opacity");
     UI_STATE.upgradeMenuVisible = true;
@@ -832,16 +832,16 @@ function showUpgradeMenu() {
 }
 
 function showStartMenu() {
-    startMenu.classList.remove("hide");
-    startMenu.classList.add("show");
+    startMenu.classList.remove("h");
+    startMenu.classList.add("s");
     startMenu.style.pointerEvents = "auto";
     startMenu.style.removeProperty("opacity");
 }
 
 function hideStartMenu() {
-    startMenu.classList.remove("show");
+    startMenu.classList.remove("s");
     startMenu.style.pointerEvents = "none";
-    startMenu.classList.add("hide");
+    startMenu.classList.add("h");
     started = true;
     createAudioContext()
     playFanfareSound();
@@ -855,22 +855,22 @@ function numEnemiesForWave(wave: number): number {
 }
 
 function hideWaveNumber() {
-    waveNumberElement.classList.remove("show");
-    waveNumberElement.classList.add("hide");
+    waveNumberElement.classList.remove("s");
+    waveNumberElement.classList.add("h");
 }
 
 function showWaveNumber() {
     waveNumberElement.textContent = `Wave ${waveNumber}`;
-    waveNumberElement.classList.remove("hide");
-    waveNumberElement.classList.add("show");
+    waveNumberElement.classList.remove("h");
+    waveNumberElement.classList.add("s");
 
     setTimeout(hideWaveNumber, 2000);
 }
 
 function hideUpgradeMenu() {
-    upgradeMenu.classList.remove("show");
+    upgradeMenu.classList.remove("s");
     upgradeMenu.style.pointerEvents = "none";
-    upgradeMenu.classList.add("hide");
+    upgradeMenu.classList.add("h");
     UI_STATE.upgradeMenuVisible = false;
 
     const menuItems = document.querySelectorAll('.menu-item');
@@ -881,7 +881,7 @@ function hideUpgradeMenu() {
 
 function handleMenuItemClick(e: Event) {
     const element = (e.target as HTMLElement).parentNode as HTMLElement;
-    const disabled = element.classList.contains('disabled');
+    const disabled = element.classList.contains("d");
     const isSelected = element.getAttribute('data-selected') === 'true';
 
     if (disabled && !isSelected) return;
@@ -922,13 +922,13 @@ function disableMenuItems(menuItems: NodeListOf<HTMLElement>) {
         const upgrade = findUpgrade(name);
 
         if (cost > goldRemaining && !isSelected) {
-            item.classList.add('disabled');
+            item.classList.add("d");
         } else {
-            item.classList.remove('disabled');
+            item.classList.remove("d");
         }
 
         if (upgrade.currentLevel >= upgrade.maxLevel) {
-            item.classList.add('disabled');
+            item.classList.add("d");
         }
 
     }
