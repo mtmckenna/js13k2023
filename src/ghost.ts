@@ -64,7 +64,7 @@ export default class Ghost implements IPositionable {
     radius: number = 8 * PIXEL_SIZE/2;
     lastDamagedTime: number = 0;
     lastFlashedTime: number = 0;
-    hitWaitTime: number = .5;
+    hitWaitTime: number = .25;
     life: number = 100;
     visible: boolean = true;
     sizes = [regularSize, bigSize, hugeSize];

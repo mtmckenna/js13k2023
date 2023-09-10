@@ -1,6 +1,12 @@
 let audioCtx: AudioContext = null;
 let ready = false;
-let cannonBuffer:AudioBuffer , hitPlayerBuffer: AudioBuffer, hitEnemyBuffer: AudioBuffer, coinPickupBuffer: AudioBuffer, fanfareBuffer: AudioBuffer, sadFanfareBuffer: AudioBuffer;
+let cannonBuffer:AudioBuffer,
+    hitPlayerBuffer: AudioBuffer,
+    hitEnemyBuffer: AudioBuffer,
+    coinPickupBuffer: AudioBuffer,
+    fanfareBuffer: AudioBuffer,
+    sadFanfareBuffer: AudioBuffer,
+    enemyDeathBuffer: AudioBuffer;
 export function createAudioContext() {
     if (ready) return;
     audioCtx = new (window.AudioContext ? window.AudioContext : window.webkitAudioContext)();
@@ -11,12 +17,9 @@ export function createAudioContext() {
     coinPickupBuffer = generateCoinPickupSoundBuffer();
     fanfareBuffer = generateFanfareSoundBuffer();
     sadFanfareBuffer = generateSadFanfareSoundBuffer();
+    enemyDeathBuffer = generateEnemyDeathSoundBuffer();
     ready = true;
 }
-// window.addEventListener('touchstart', createContext);
-// window.addEventListener('mousedown', createContext);
-// window.addEventListener('keydown', createContext);
-
 
 const SOUNDS = {
     CANNON_SHOOT: 0,
@@ -58,6 +61,23 @@ function generateEnemyHitSoundBuffer(): AudioBuffer {
 
     return buffer;
 }
+
+function generateEnemyDeathSoundBuffer(): AudioBuffer {
+    const duration = 0.5;  // Longer duration for a more dramatic effect.
+    const frameCount = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, frameCount, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < frameCount; i++) {
+        const time = i / audioCtx.sampleRate;
+        const amplitude = Math.exp(-3 * time);  // Slow decay for a dramatic end.
+        const frequency = 800 - 600 * time;  // Descending pitch to add a feeling of falling or ending.
+        data[i] = amplitude * Math.sin(frequency * Math.PI * 2 * time);
+    }
+
+    return buffer;
+}
+
 
 function generatePlayerHitSoundBuffer(): AudioBuffer {
     const duration = 0.3;
@@ -190,4 +210,8 @@ export function playFanfareSound() {
 
 export function playSadFanfareSound() {
     playBuffer(sadFanfareBuffer, SOUNDS.COIN_PICKUP);
+}
+
+export function playEnemyDeathSound() {
+    playBuffer(enemyDeathBuffer, SOUNDS.COIN_PICKUP);
 }

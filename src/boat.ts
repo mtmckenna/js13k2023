@@ -87,7 +87,7 @@ export default class Boat implements IPositionable, ICircle, ISpeedable {
     visible: boolean = true;
     lastDamagedTime: number = 0;
     lastFlashedTime: number = 0;
-    hitWaitTime: number = .5;
+    hitWaitTime: number = .25;
 
     constructor(grid: Grid, inputState: IVehicleInputState, upgrades: IUpgrade[]) {
         this.inputState = inputState;

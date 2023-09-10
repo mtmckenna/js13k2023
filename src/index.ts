@@ -28,7 +28,7 @@ import {GLOBAL, PIXEL_SIZE} from "./constants";
 import {
     createAudioContext,
     playCannonballHitEnemySound,
-    playCoinPickupSound,
+    playCoinPickupSound, playEnemyDeathSound,
     playFanfareSound,
     playHitPlayerSound, playSadFanfareSound
 } from "./sound";
@@ -463,6 +463,7 @@ function handleEnemiesCollidingWithPlayer() {
             if (player.life <= 0 && player.active) {
                 player.life = 0;
                 player.active = false;
+                playSadFanfareSound();
 
                 for (let i = 0; i < 100; i++) {
                     const b = BulletPool.get(player.center.x + randomFloat(-player.size.x/2, player.size.x/2), player.center.y + randomFloat(-player.size.y/2,player.size.y/2));
@@ -506,6 +507,7 @@ function handleBulletsCollidingWithEnemies() {
 
                 if (enemy.life <= 0) {
                     enemy.deactivate();
+                    playEnemyDeathSound();
                     for (let i = 0; i < 20; i++) {
                         const b = BulletPool.get(enemy.center.x + randomFloat(-enemy.size.x/2, enemy.size.x/2), enemy.center.y + randomFloat(-enemy.size.y/2,enemy.size.y/2));
                         b.makeParticle();
